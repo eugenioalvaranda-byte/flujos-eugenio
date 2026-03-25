@@ -276,12 +276,193 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 
 .coming-soon { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text3); gap: 12px; }
 select.field-input, select.rec-input, select.adv-input, select.datepick-input { cursor: pointer; }
+
+/* ── RESPONSIVE LAYOUT ── */
+
+/* APP SHELL */
+.app-shell {
+  display: flex;
+  min-height: 100dvh;
+}
+
+/* SIDEBAR — oculto en móvil */
+.sidebar {
+  display: none;
+}
+
+/* MAIN CONTENT */
+.main-content {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+/* ── TABLET (768px+) ── */
+@media (min-width: 768px) {
+  body {
+    max-width: 100%;
+    padding-bottom: 0;
+  }
+  .nav { display: none; }
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    flex-shrink: 0;
+    background: var(--bg2);
+    border-right: 0.5px solid var(--border2);
+    position: fixed;
+    top: 0; left: 0; bottom: 0;
+    z-index: 50;
+    padding: 0 0 20px;
+    overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 28px 20px 24px;
+    border-bottom: 0.5px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .sidebar-logo-title {
+    font-family: var(--display);
+    font-size: 18px; font-weight: 700;
+    letter-spacing: -0.3px; color: var(--text);
+  }
+  .sidebar-logo-sub {
+    font-size: 11px; color: var(--text3);
+    margin-top: 2px;
+  }
+  .sidebar-nav-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 20px;
+    font-size: 13px; font-weight: 500;
+    color: var(--text2); cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 0;
+    margin: 1px 8px;
+    border-radius: var(--radius-sm);
+    user-select: none;
+  }
+  .sidebar-nav-item:hover { background: var(--bg3); color: var(--text); }
+  .sidebar-nav-item.active { background: var(--green-dim); color: var(--green); }
+  .sidebar-nav-icon { font-size: 18px; width: 22px; text-align: center; flex-shrink: 0; }
+  .sidebar-add-btn {
+    margin: 8px 12px 16px;
+    padding: 13px;
+    background: var(--green); color: #000;
+    border-radius: var(--radius-sm);
+    font-size: 14px; font-weight: 700;
+    text-align: center; cursor: pointer;
+    font-family: var(--display);
+    transition: opacity 0.15s;
+  }
+  .sidebar-add-btn:active { opacity: 0.85; }
+  .sidebar-user {
+    margin: auto 12px 0;
+    padding: 12px;
+    background: var(--bg3);
+    border-radius: var(--radius-sm);
+    border: 0.5px solid var(--border);
+  }
+
+  .main-content { margin-left: 200px; }
+  .topbar { padding: 32px 28px 16px; }
+  .list-topbar { padding: 32px 28px 10px; }
+  .form-page { padding: 32px 28px 20px; max-width: 640px; }
+  .adv-filters { margin: 0 28px 12px; }
+  .filter-row { padding: 0 28px 10px; }
+  .records-list { padding: 0 28px; }
+  .dash-hero { margin: 0 28px 12px; }
+  .dash-mes-row { margin: 0 28px 12px; }
+  .wallets-group-title { padding: 0 28px; }
+  .wallets-grid { margin: 0 28px; grid-template-columns: repeat(3, 1fr); }
+  .modal { max-width: 520px; border-radius: var(--radius); }
+  .datepick-modal { max-width: 420px; border-radius: var(--radius); }
+}
+
+/* ── DESKTOP (1024px+) — Two column layout ── */
+@media (min-width: 1024px) {
+  .sidebar { width: 220px; }
+  .main-content { margin-left: 220px; }
+
+  /* Dashboard: hero + wallets LEFT, balance + filters RIGHT */
+  #page-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: start; }
+  .dash-left-col {
+    padding: 32px 16px 32px 28px;
+    border-right: 0.5px solid var(--border);
+    min-height: calc(100dvh - 0px);
+  }
+  .dash-right-col {
+    padding: 32px 28px 32px 20px;
+  }
+  #page-dash .topbar { display: none; }
+  .dash-desktop-title {
+    font-family: var(--display);
+    font-size: 22px; font-weight: 700;
+    margin-bottom: 20px; color: var(--text);
+    letter-spacing: -0.3px;
+  }
+  .dash-hero { margin: 0 0 16px; }
+  .dash-mes-row { margin: 0 0 16px; }
+  .wallets-group-title { padding: 0; margin: 16px 0 8px; }
+  .wallets-grid { margin: 0; grid-template-columns: 1fr 1fr; }
+
+  /* Registros: two column on desktop */
+  #page-list { max-width: 900px; }
+  .adv-filters { margin: 0 28px 12px; }
+
+  /* Form: centered, max width */
+  .form-page { max-width: 580px; }
+
+  /* Dashboard analytics: two col grid */
+  .analytics-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    padding: 0 28px 28px;
+  }
+  .analytics-full { grid-column: 1 / -1; }
+  #page-proy .topbar { padding: 32px 28px 0; }
+  #page-proy > div:not(.topbar) { padding-left: 0; padding-right: 0; }
+}
+
 </style>
 </head>
 <body>
 
+<!-- SIDEBAR (visible en tablet/desktop) -->
+<div class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <div class="sidebar-logo-title">Flujos Eugenio</div>
+    <div class="sidebar-logo-sub">Sistema de flujos</div>
+  </div>
+  <div class="sidebar-add-btn" onclick="showPage('form')">+ Nuevo movimiento</div>
+  <div class="sidebar-nav-item active" id="snav-dash" onclick="showPage('dash')">
+    <span class="sidebar-nav-icon">◈</span> Resumen
+  </div>
+  <div class="sidebar-nav-item" id="snav-list" onclick="showPage('list')">
+    <span class="sidebar-nav-icon">≡</span> Registros
+  </div>
+  <div class="sidebar-nav-item" id="snav-proy" onclick="showPage('proy')">
+    <span class="sidebar-nav-icon">📊</span> Dashboard
+  </div>
+  <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
+    <span class="sidebar-nav-icon">⚙</span> Configuración
+  </div>
+  <div class="sidebar-user">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">Usuario activo</div>
+    <div style="display:flex;gap:6px;">
+      <div class="user-btn active" onclick="setUser('Eugenio',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👨 Eugenio</div>
+      <div class="user-btn" onclick="setUser('Andrea',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👩 Andrea</div>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN CONTENT -->
+<div class="main-content">
+
 <!-- DASHBOARD -->
 <div id="page-dash" class="page active">
+  <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar">
     <div class="topbar-title">Flujos Eugenio</div>
     <div class="user-toggle">
@@ -290,53 +471,61 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
   </div>
 
-  <!-- Filtros dashboard -->
-  <div style="padding: 0 16px; margin-bottom: 10px; display:flex; gap:6px; align-items:center;">
-    <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()" style="flex-shrink:0">⚙ Filtros</div>
-    <div id="dash-date-chip" class="dash-date-btn" onclick="openDatePicker()" style="flex-shrink:0">📅 Al día de hoy</div>
-  </div>
+  <!-- Desktop: columna izquierda -->
+  <div class="dash-left-col">
+    <div class="dash-desktop-title">Resumen</div>
 
-  <div class="adv-filters" id="dash-adv-filters">
-    <div class="adv-grid">
-      <div><div class="adv-label">Cartera</div><select class="adv-input" id="dash-filt-cartera"><option value="">Todas</option></select></div>
-      <div><div class="adv-label">Categoría</div><select class="adv-input" id="dash-filt-cat"><option value="">Todas</option></select></div>
+    <!-- Filtros y fecha -->
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;">
+      <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()" style="flex-shrink:0">⚙ Filtros</div>
+      <div id="dash-date-chip" class="dash-date-btn" onclick="openDatePicker()" style="flex-shrink:0">📅 Al día de hoy</div>
     </div>
-    <div class="adv-btn-row">
-      <div class="adv-btn clear" onclick="clearDashFilters()">Limpiar</div>
-      <div class="adv-btn apply" onclick="applyDashFilters()">Aplicar</div>
-    </div>
-  </div>
 
-  <div class="dash-hero">
-    <div class="dash-hero-top">
-      <div class="dash-label">Patrimonio Neto</div>
-    </div>
-    <div class="dash-networth"><span class="cur">$</span><span id="dash-total">—</span></div>
-    <div class="dash-networth-label" id="dash-cutoff-label">Patrimonio neto al día de hoy</div>
-    <div class="dash-split">
-      <div class="dash-split-card">
-        <div class="dash-split-label">💵 Cash</div>
-        <div class="dash-split-val cash" id="dash-cash">—</div>
-        <div class="dash-split-sub">Efectivo + Bancos</div>
+    <div class="adv-filters" id="dash-adv-filters" style="margin:0 0 12px;">
+      <div class="adv-grid">
+        <div><div class="adv-label">Cartera</div><select class="adv-input" id="dash-filt-cartera"><option value="">Todas</option></select></div>
+        <div><div class="adv-label">Categoría</div><select class="adv-input" id="dash-filt-cat"><option value="">Todas</option></select></div>
       </div>
-      <div class="dash-split-card">
-        <div class="dash-split-label">💳 Deuda TDC</div>
-        <div class="dash-split-val tdc" id="dash-tdc">—</div>
-        <div class="dash-split-sub">Total tarjetas</div>
+      <div class="adv-btn-row">
+        <div class="adv-btn clear" onclick="clearDashFilters()">Limpiar</div>
+        <div class="adv-btn apply" onclick="applyDashFilters()">Aplicar</div>
       </div>
     </div>
+
+    <div class="dash-hero">
+      <div class="dash-hero-top"><div class="dash-label">Patrimonio Neto</div></div>
+      <div class="dash-networth"><span class="cur">$</span><span id="dash-total">—</span></div>
+      <div class="dash-networth-label" id="dash-cutoff-label">Movimientos reales + deuda TDC futura</div>
+      <div class="dash-split">
+        <div class="dash-split-card">
+          <div class="dash-split-label">💵 Cash</div>
+          <div class="dash-split-val cash" id="dash-cash">—</div>
+          <div class="dash-split-sub">Efectivo + Bancos</div>
+        </div>
+        <div class="dash-split-card">
+          <div class="dash-split-label">💳 Deuda TDC</div>
+          <div class="dash-split-val tdc" id="dash-tdc">—</div>
+          <div class="dash-split-sub">Total tarjetas</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dash-mes-row" style="margin:0 0 12px;">
+      <div class="dash-mes-pill"><div class="dash-mes-label">↑ Ingresos mes</div><div class="dash-mes-val pos" id="dash-ing">—</div></div>
+      <div class="dash-mes-pill"><div class="dash-mes-label">↓ Gastos mes</div><div class="dash-mes-val neg" id="dash-gas">—</div></div>
+      <div class="dash-mes-pill"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
+    </div>
+
+    <div class="wallets-group-title">💵 Carteras Cash</div>
+    <div class="wallets-grid" id="wallets-cash"></div>
+    <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
+    <div class="wallets-grid" id="wallets-tdc"></div>
   </div>
 
-  <div class="dash-mes-row">
-    <div class="dash-mes-pill"><div class="dash-mes-label">↑ Ingresos mes</div><div class="dash-mes-val pos" id="dash-ing">—</div></div>
-    <div class="dash-mes-pill"><div class="dash-mes-label">↓ Gastos mes</div><div class="dash-mes-val neg" id="dash-gas">—</div></div>
-    <div class="dash-mes-pill"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
+  <!-- Desktop: columna derecha (oculta en móvil via CSS) -->
+  <div class="dash-right-col" id="dash-right-col" style="display:none;">
+    <div class="dash-desktop-title">Balance del mes</div>
   </div>
-
-  <div class="wallets-group-title">💵 Carteras Cash</div>
-  <div class="wallets-grid" id="wallets-cash"></div>
-  <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
-  <div class="wallets-grid" id="wallets-tdc"></div>
 </div>
 
 <!-- FORM -->
@@ -541,6 +730,8 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
   </div>
 </div>
+
+</div><!-- end main-content -->
 
 <!-- NAV -->
 <div class="nav">
@@ -1388,21 +1579,32 @@ function renderTrendChart(mesSel, anioSel) {
   if (!ctx) return;
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
-    type: 'bar',
+    type: 'line',
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(0,224,150,0.7)', borderRadius: 4 },
-        { label: 'Gastos', data: gasData, backgroundColor: 'rgba(255,80,80,0.7)', borderRadius: 4 }
+        {
+          label: 'Ingresos', data: ingData,
+          borderColor: '#00e096', backgroundColor: 'rgba(0,224,150,0.1)',
+          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00e096',
+          fill: true, tension: 0.4
+        },
+        {
+          label: 'Gastos', data: gasData,
+          borderColor: '#ff5050', backgroundColor: 'rgba(255,80,80,0.08)',
+          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#ff5050',
+          fill: true, tension: 0.4
+        }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#7e7e94', font: { size: 10 } }, grid: { display: false } },
-        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(255,255,255,0.05)' } }
-      }
+        x: { ticks: { color: '#7e7e94', font: { size: 11 } }, grid: { display: false } },
+        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      },
+      interaction: { intersect: false, mode: 'index' }
     }
   });
 }
@@ -1630,6 +1832,36 @@ function syncCarteras() {
     })
     .catch(() => showToast('Error al sincronizar', 'error'));
 }
+
+// ── RESPONSIVE: mostrar columna derecha en desktop ──
+function updateResponsiveLayout() {
+  const isDesktop = window.innerWidth >= 1024;
+  const rightCol = document.getElementById('dash-right-col');
+  if (rightCol) rightCol.style.display = isDesktop ? 'block' : 'none';
+}
+window.addEventListener('resize', updateResponsiveLayout);
+document.addEventListener('DOMContentLoaded', updateResponsiveLayout);
+
+// ── SIDEBAR SYNC ──
+const origShowPage = showPage;
+function showPageWithSidebar(p) {
+  origShowPage(p);
+  document.querySelectorAll('[id^="snav-"]').forEach(el => el.classList.remove('active'));
+  const sEl = document.getElementById('snav-' + p);
+  if (sEl) sEl.classList.add('active');
+}
+// Override showPage to also update sidebar
+window.addEventListener('DOMContentLoaded', () => {
+  // patch all sidebar nav items
+  document.querySelectorAll('[id^="snav-"]').forEach(el => {
+    const page = el.id.replace('snav-', '');
+    el.onclick = () => {
+      showPage(page);
+      document.querySelectorAll('[id^="snav-"]').forEach(x => x.classList.remove('active'));
+      el.classList.add('active');
+    };
+  });
+});
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </body>

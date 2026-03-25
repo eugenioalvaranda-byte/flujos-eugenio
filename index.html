@@ -45,6 +45,7 @@ body {
   margin: 0 auto;
   padding-bottom: 90px;
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 /* NAV */
@@ -364,7 +365,8 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     border: 0.5px solid var(--border);
   }
 
-  .main-content { margin-left: 200px; }
+  .main-content { margin-left: 200px; height: 100dvh; overflow-y: auto; }
+  .page { height: 100%; overflow-y: auto; }
   .topbar { padding: 32px 28px 16px; }
   .list-topbar { padding: 32px 28px 10px; }
   .form-page { padding: 32px 28px 20px; max-width: 640px; }
@@ -382,18 +384,13 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 /* ── DESKTOP (1024px+) — Two column layout ── */
 @media (min-width: 1024px) {
   .sidebar { width: 220px; }
-  .main-content { margin-left: 220px; }
+  .main-content { margin-left: 220px; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+  .page { flex: 1; overflow-y: auto; height: 100%; }
 
-  /* Dashboard: hero + wallets LEFT, balance + filters RIGHT */
-  #page-dash { display: grid; grid-template-columns: 1fr 1fr; gap: 0; align-items: start; }
-  .dash-left-col {
-    padding: 32px 16px 32px 28px;
-    border-right: 0.5px solid var(--border);
-    min-height: calc(100dvh - 0px);
-  }
-  .dash-right-col {
-    padding: 32px 28px 32px 20px;
-  }
+  /* Dashboard: single scroll column, wider */
+  #page-dash { display: block; }
+  .dash-left-col { padding: 32px 28px; }
+  .dash-right-col { display: none !important; }
   #page-dash .topbar { display: none; }
   .dash-desktop-title {
     font-family: var(--display);
@@ -404,7 +401,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   .dash-hero { margin: 0 0 16px; }
   .dash-mes-row { margin: 0 0 16px; }
   .wallets-group-title { padding: 0; margin: 16px 0 8px; }
-  .wallets-grid { margin: 0; grid-template-columns: 1fr 1fr; }
+  .wallets-grid { margin: 0; grid-template-columns: repeat(3, 1fr); }
 
   /* Registros: two column on desktop */
   #page-list { max-width: 900px; }
@@ -414,15 +411,11 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   .form-page { max-width: 580px; }
 
   /* Dashboard analytics: two col grid */
-  .analytics-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-    padding: 0 28px 28px;
-  }
-  .analytics-full { grid-column: 1 / -1; }
-  #page-proy .topbar { padding: 32px 28px 0; }
-  #page-proy > div:not(.topbar) { padding-left: 0; padding-right: 0; }
+  #page-proy { padding: 0 28px 28px; }
+  #page-proy .topbar { padding: 32px 0 16px; margin-bottom: 0; }
+  #page-proy > div:not(.topbar) { }
+  .an-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .an-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 }
 
 </style>
@@ -655,7 +648,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <!-- Tendencia mensual -->
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 12px;padding:16px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Tendencia mensual</div>
-    <canvas id="an-chart-trend" height="140"></canvas>
+    <canvas id="an-chart-trend" style="height:160px;max-height:160px;"></canvas>
     <div style="display:flex;gap:14px;margin-top:10px;">
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:50%;background:var(--green);"></div>Ingresos</div>
       <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:50%;background:var(--red);"></div>Gastos</div>
@@ -666,12 +659,12 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 12px;">
     <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Gastos</div>
-      <canvas id="an-donut-gas" width="120" height="120" style="display:block;margin:0 auto 8px;"></canvas>
+      <canvas id="an-donut-gas" width="150" height="150" style="display:block;margin:0 auto 8px;"></canvas>
       <div id="an-donut-gas-legend" style="display:flex;flex-direction:column;gap:3px;"></div>
     </div>
     <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;">
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Ingresos</div>
-      <canvas id="an-donut-ing" width="120" height="120" style="display:block;margin:0 auto 8px;"></canvas>
+      <canvas id="an-donut-ing" width="150" height="150" style="display:block;margin:0 auto 8px;"></canvas>
       <div id="an-donut-ing-legend" style="display:flex;flex-direction:column;gap:3px;"></div>
     </div>
   </div>
@@ -1577,32 +1570,33 @@ function renderTrendChart(mesSel, anioSel) {
 
   const ctx = document.getElementById('an-chart-trend');
   if (!ctx) return;
+  // Cap outliers — use median*3 as suggested max so one big month doesn't dwarf others
+  const allVals = [...ingData, ...gasData].filter(v => v > 0).sort((a,b) => a-b);
+  const median = allVals[Math.floor(allVals.length/2)] || 1;
+  const suggestedMax = Math.min(Math.max(...allVals), median * 4);
+
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
-    type: 'line',
+    type: 'bar',
     data: {
       labels,
       datasets: [
-        {
-          label: 'Ingresos', data: ingData,
-          borderColor: '#00e096', backgroundColor: 'rgba(0,224,150,0.1)',
-          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#00e096',
-          fill: true, tension: 0.4
-        },
-        {
-          label: 'Gastos', data: gasData,
-          borderColor: '#ff5050', backgroundColor: 'rgba(255,80,80,0.08)',
-          borderWidth: 2, pointRadius: 4, pointBackgroundColor: '#ff5050',
-          fill: true, tension: 0.4
-        }
+        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(0,224,150,0.75)', borderRadius: 4, barPercentage: 0.6 },
+        { label: 'Gastos',   data: gasData, backgroundColor: 'rgba(255,80,80,0.7)',  borderRadius: 4, barPercentage: 0.6 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: ctx => ' $' + (ctx.raw/1000).toFixed(0) + 'k' }
+      }},
       scales: {
         x: { ticks: { color: '#7e7e94', font: { size: 11 } }, grid: { display: false } },
-        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k' }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        y: {
+          suggestedMax,
+          ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 },
+          grid: { color: 'rgba(255,255,255,0.04)' }
+        }
       },
       interaction: { intersect: false, mode: 'index' }
     }

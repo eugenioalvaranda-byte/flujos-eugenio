@@ -366,7 +366,8 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   }
 
   .main-content { margin-left: 200px; height: 100dvh; overflow-y: auto; }
-  .page { height: 100%; overflow-y: auto; }
+  .page { display: none; }
+  .page.active { display: block; height: 100%; overflow-y: auto; }
   .topbar { padding: 32px 28px 16px; }
   .list-topbar { padding: 32px 28px 10px; }
   .form-page { padding: 32px 28px 20px; max-width: 640px; }
@@ -385,7 +386,8 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 @media (min-width: 1024px) {
   .sidebar { width: 220px; }
   .main-content { margin-left: 220px; height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
-  .page { flex: 1; overflow-y: auto; height: 100%; }
+  .page { display: none !important; }
+  .page.active { display: block !important; flex: 1; overflow-y: auto; height: 100%; }
 
   /* Dashboard: single scroll column, wider */
   #page-dash { display: block; }
@@ -612,79 +614,99 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="records-list" id="records-list"></div>
 </div>
 
-<!-- PROYECCIÓN -->
+<!-- DASHBOARD -->
 <div id="page-proy" class="page">
-  <div class="topbar">
+  <div class="topbar" style="flex-wrap:wrap;gap:8px;">
     <div class="topbar-title">Dashboard</div>
-    <div style="display:flex;gap:6px;align-items:center;">
-      <select id="dash-mes-sel" onchange="renderDashboardAnalytics()" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;padding:7px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer;">
-        <option value="0">Enero</option><option value="1">Febrero</option><option value="2">Marzo</option>
-        <option value="3">Abril</option><option value="4">Mayo</option><option value="5">Junio</option>
-        <option value="6">Julio</option><option value="7">Agosto</option><option value="8">Septiembre</option>
-        <option value="9">Octubre</option><option value="10">Noviembre</option><option value="11">Diciembre</option>
-      </select>
-      <select id="dash-anio-sel" onchange="renderDashboardAnalytics()" style="background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;padding:7px 12px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;cursor:pointer;">
-        <option value="2025">2025</option><option value="2026">2026</option>
-      </select>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">
+      <div class="filter-pill" id="rng-sem" onclick="setRango('sem',this)">Semana</div>
+      <div class="filter-pill active" id="rng-mes" onclick="setRango('mes',this)">Mes</div>
+      <div class="filter-pill" id="rng-tri" onclick="setRango('tri',this)">Trimestre</div>
+      <div class="filter-pill" id="rng-ano" onclick="setRango('ano',this)">Año</div>
+      <div class="filter-pill" id="rng-custom" onclick="setRango('custom',this)">Personalizado</div>
     </div>
+  </div>
+
+  <!-- Rango personalizado -->
+  <div id="rng-custom-row" style="display:none;padding:0 16px 10px;gap:8px;flex-wrap:wrap;" class="filter-row">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;color:var(--text2);">Desde</span>
+      <input type="date" id="rng-desde" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;color:var(--text2);">Hasta</span>
+      <input type="date" id="rng-hasta" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+    </div>
+    <div onclick="renderDashboardAnalytics()" style="padding:7px 16px;background:var(--green);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#000;cursor:pointer;">Aplicar</div>
+  </div>
+
+  <!-- Selector semana/mes según rango -->
+  <div id="rng-nav-row" style="display:flex;align-items:center;gap:10px;padding:0 16px 12px;">
+    <div onclick="navRango(-1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">←</div>
+    <div id="rng-label" style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text);">Marzo 2026</div>
+    <div onclick="navRango(1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">→</div>
   </div>
 
   <!-- KPIs -->
-  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 16px 12px;">
-    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Ingresos</div>
-      <div id="an-ing" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--green);">—</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin:0 16px 14px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Ingresos</div>
+      <div id="an-ing" style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--green);">—</div>
     </div>
-    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Gastos</div>
-      <div id="an-gas" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">—</div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Gastos</div>
+      <div id="an-gas" style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--red);">—</div>
     </div>
-    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;">
-      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Balance</div>
-      <div id="an-bal" style="font-family:var(--display);font-size:16px;font-weight:700;">—</div>
-    </div>
-  </div>
-
-  <!-- Tendencia mensual -->
-  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 12px;padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Tendencia mensual</div>
-    <canvas id="an-chart-trend" style="height:160px;max-height:160px;"></canvas>
-    <div style="display:flex;gap:14px;margin-top:10px;">
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:50%;background:var(--green);"></div>Ingresos</div>
-      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:50%;background:var(--red);"></div>Gastos</div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Balance</div>
+      <div id="an-bal" style="font-family:var(--display);font-size:18px;font-weight:700;">—</div>
     </div>
   </div>
 
-  <!-- Donas -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 12px;">
-    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Gastos</div>
-      <canvas id="an-donut-gas" width="150" height="150" style="display:block;margin:0 auto 8px;"></canvas>
-      <div id="an-donut-gas-legend" style="display:flex;flex-direction:column;gap:3px;"></div>
-    </div>
-    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:14px;">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:10px;">Ingresos</div>
-      <canvas id="an-donut-ing" width="150" height="150" style="display:block;margin:0 auto 8px;"></canvas>
-      <div id="an-donut-ing-legend" style="display:flex;flex-direction:column;gap:3px;"></div>
+  <!-- Tendencia 12 meses -->
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 14px;padding:16px;">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Tendencia 12 meses</div>
+    <div style="position:relative;height:180px;"><canvas id="an-chart-trend"></canvas></div>
+    <div style="display:flex;gap:16px;margin-top:10px;">
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:2px;background:var(--green);"></div>Ingresos</div>
+      <div style="display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text2);"><div style="width:10px;height:10px;border-radius:2px;background:var(--red);"></div>Gastos</div>
     </div>
   </div>
 
-  <!-- Top gastos por categoría -->
-  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 12px;padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Top gastos por categoría</div>
-    <div id="an-top-gas"></div>
+  <!-- Donas grandes -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">Distribución gastos</div>
+      <div style="position:relative;width:180px;height:180px;margin:0 auto 12px;"><canvas id="an-donut-gas"></canvas></div>
+      <div id="an-donut-gas-legend" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);padding:16px;">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:12px;">Distribución ingresos</div>
+      <div style="position:relative;width:180px;height:180px;margin:0 auto 12px;"><canvas id="an-donut-ing"></canvas></div>
+      <div id="an-donut-ing-legend" style="display:flex;flex-direction:column;gap:5px;"></div>
+    </div>
   </div>
 
-  <!-- Presupuesto vs Real -->
-  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 12px;padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Presupuesto vs real</div>
-    <div id="an-presup"></div>
+  <!-- Tablas gastos e ingresos lado a lado -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 16px 14px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div style="padding:14px 16px;background:var(--red-dim);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:0.8px;">Gastos</div>
+      </div>
+      <div id="an-tabla-gas" style="padding:0;"></div>
+    </div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);overflow:hidden;">
+      <div style="padding:14px 16px;background:var(--green-dim);border-bottom:0.5px solid var(--border);">
+        <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:0.8px;">Ingresos</div>
+      </div>
+      <div id="an-tabla-ing" style="padding:0;"></div>
+    </div>
   </div>
 
-  <!-- Top ingresos por categoría -->
+  <!-- Presupuesto vs real (gráfica de barras) -->
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 20px;padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Ingresos por categoría</div>
-    <div id="an-top-ing"></div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Presupuesto vs real</div>
+    <div style="position:relative;height:220px;"><canvas id="an-chart-presup"></canvas></div>
   </div>
 </div>
 
@@ -1486,38 +1508,81 @@ function formatSheetDate(val) {
 }
 function showToast(msg, type) { const t = document.getElementById('toast'); t.textContent = msg; t.className = 'toast show ' + (type || ''); setTimeout(() => { t.className = 'toast'; }, 2800); }
 // ══════════════════════════════════════════
+// ══════════════════════════════════════════
 // DASHBOARD ANALYTICS
 // ══════════════════════════════════════════
 const CHART_COLORS = ['#00e096','#4da6ff','#ffb547','#ff5050','#a855f7','#06b6d4','#f97316','#ec4899','#84cc16','#14b8a6'];
+let trendChart = null, donutGasChart = null, donutIngChart = null, presupChart = null;
 
-let trendChart = null, donutGasChart = null, donutIngChart = null;
+// RANGO STATE
+let anRango = 'mes'; // sem | mes | tri | ano | custom
+let anRefDate = new Date(); // fecha de referencia para navegación
+
+function setRango(r, el) {
+  anRango = r;
+  document.querySelectorAll('[id^="rng-"]').forEach(x => { if(x.classList) x.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  const customRow = document.getElementById('rng-custom-row');
+  const navRow = document.getElementById('rng-nav-row');
+  if(customRow) customRow.style.display = r === 'custom' ? 'flex' : 'none';
+  if(navRow) navRow.style.display = r === 'custom' ? 'none' : 'flex';
+  renderDashboardAnalytics();
+}
+
+function navRango(dir) {
+  const d = new Date(anRefDate);
+  if (anRango === 'sem') d.setDate(d.getDate() + dir * 7);
+  else if (anRango === 'mes') d.setMonth(d.getMonth() + dir);
+  else if (anRango === 'tri') d.setMonth(d.getMonth() + dir * 3);
+  else if (anRango === 'ano') d.setFullYear(d.getFullYear() + dir);
+  anRefDate = d;
+  renderDashboardAnalytics();
+}
+
+function getRangoFechas() {
+  const d = new Date(anRefDate);
+  const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const mFull = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let desde, hasta, label;
+
+  if (anRango === 'sem') {
+    const day = d.getDay();
+    const lun = new Date(d); lun.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
+    desde = lun.toISOString().split('T')[0];
+    hasta = dom.toISOString().split('T')[0];
+    label = formatDate(desde) + ' — ' + formatDate(hasta);
+  } else if (anRango === 'mes') {
+    desde = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+    label = mFull[d.getMonth()] + ' ' + d.getFullYear();
+  } else if (anRango === 'tri') {
+    const q = Math.floor(d.getMonth() / 3);
+    desde = new Date(d.getFullYear(), q * 3, 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), q * 3 + 3, 0).toISOString().split('T')[0];
+    label = 'Q' + (q+1) + ' ' + d.getFullYear();
+  } else if (anRango === 'ano') {
+    desde = new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), 11, 31).toISOString().split('T')[0];
+    label = 'Año ' + d.getFullYear();
+  } else {
+    desde = document.getElementById('rng-desde')?.value || new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    hasta = document.getElementById('rng-hasta')?.value || new Date().toISOString().split('T')[0];
+    label = formatDateShort(desde) + ' — ' + formatDateShort(hasta);
+  }
+  return { desde, hasta, label };
+}
 
 function renderDashboardAnalytics() {
-  const selMes = document.getElementById('dash-mes-sel');
-  const selAnio = document.getElementById('dash-anio-sel');
-  if (!selMes) return;
+  const { desde, hasta, label } = getRangoFechas();
+  const labelEl = document.getElementById('rng-label');
+  if (labelEl) labelEl.textContent = label;
 
-  // Set default to current month/year
-  const now = new Date();
-  if (!selMes.dataset.init) {
-    selMes.value = String(now.getMonth());
-    selAnio.value = String(now.getFullYear());
-    selMes.dataset.init = '1';
-  }
-
-  const mes = parseInt(selMes.value);
-  const anio = parseInt(selAnio.value);
-
-  // Filter records for selected month
-  const recsMes = allRecords.filter(r => {
-    if (!r.fecha) return false;
-    const p = r.fecha.split('-');
-    return parseInt(p[0]) === anio && parseInt(p[1]) - 1 === mes;
-  });
+  const recs = allRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hasta);
 
   // KPIs
   let ing = 0, gas = 0;
-  recsMes.forEach(r => {
+  recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
     if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
     if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
@@ -1529,28 +1594,23 @@ function renderDashboardAnalytics() {
   balEl.textContent = (bal >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(bal));
   balEl.style.color = bal >= 0 ? 'var(--green)' : 'var(--red)';
 
-  // Tendencia — últimos 6 meses
-  renderTrendChart(mes, anio);
-
-  // Donas
-  renderDonutGas(recsMes);
-  renderDonutIng(recsMes);
-
-  // Top gastos
-  renderTopGas(recsMes);
-
-  // Presupuesto vs real
-  renderPresupuesto(recsMes);
-
-  // Top ingresos
-  renderTopIng(recsMes);
+  renderTrendChart12();
+  renderDonutGas(recs);
+  renderDonutIng(recs);
+  renderTablaGas(recs);
+  renderTablaIng(recs);
+  renderPresupuestoChart(recs);
 }
 
-function renderTrendChart(mesSel, anioSel) {
+function renderTrendChart12() {
+  // 6 meses antes + mes actual + 5 meses después = 12 meses
+  const ref = new Date(anRefDate);
   const labels = [], ingData = [], gasData = [];
-  for (let i = 5; i >= 0; i--) {
-    let m = mesSel - i, a = anioSel;
-    if (m < 0) { m += 12; a--; }
+  const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+
+  for (let i = -6; i <= 5; i++) {
+    const d = new Date(ref.getFullYear(), ref.getMonth() + i, 1);
+    const m = d.getMonth(), a = d.getFullYear();
     const recs = allRecords.filter(r => {
       if (!r.fecha) return false;
       const p = r.fecha.split('-');
@@ -1562,18 +1622,18 @@ function renderTrendChart(mesSel, anioSel) {
       if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += mv;
       if (mv < 0 && r.tipo !== 'TRANSFERENCIA') gas += Math.abs(mv);
     });
-    const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-    labels.push(mNames[m]);
+    labels.push(mNames[m] + (a !== ref.getFullYear() ? " '" + String(a).slice(2) : ''));
     ingData.push(Math.round(ing));
     gasData.push(Math.round(gas));
   }
 
   const ctx = document.getElementById('an-chart-trend');
   if (!ctx) return;
-  // Cap outliers — use median*3 as suggested max so one big month doesn't dwarf others
+
+  // Cap outliers with median
   const allVals = [...ingData, ...gasData].filter(v => v > 0).sort((a,b) => a-b);
-  const median = allVals[Math.floor(allVals.length/2)] || 1;
-  const suggestedMax = Math.min(Math.max(...allVals), median * 4);
+  const med = allVals[Math.floor(allVals.length/2)] || 1;
+  const suggestedMax = Math.min(Math.max(...allVals), med * 5);
 
   if (trendChart) trendChart.destroy();
   trendChart = new Chart(ctx, {
@@ -1581,22 +1641,16 @@ function renderTrendChart(mesSel, anioSel) {
     data: {
       labels,
       datasets: [
-        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(0,224,150,0.75)', borderRadius: 4, barPercentage: 0.6 },
-        { label: 'Gastos',   data: gasData, backgroundColor: 'rgba(255,80,80,0.7)',  borderRadius: 4, barPercentage: 0.6 }
+        { label: 'Ingresos', data: ingData, backgroundColor: 'rgba(0,224,150,0.75)', borderRadius: 3, barPercentage: 0.55 },
+        { label: 'Gastos',   data: gasData, backgroundColor: 'rgba(255,80,80,0.7)',  borderRadius: 3, barPercentage: 0.55 }
       ]
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false }, tooltip: {
-        callbacks: { label: ctx => ' $' + (ctx.raw/1000).toFixed(0) + 'k' }
-      }},
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(0) + 'k' } } },
       scales: {
-        x: { ticks: { color: '#7e7e94', font: { size: 11 } }, grid: { display: false } },
-        y: {
-          suggestedMax,
-          ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 },
-          grid: { color: 'rgba(255,255,255,0.04)' }
-        }
+        x: { ticks: { color: '#7e7e94', font: { size: 10 }, maxRotation: 0 }, grid: { display: false } },
+        y: { suggestedMax, ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
       },
       interaction: { intersect: false, mode: 'index' }
     }
@@ -1607,22 +1661,21 @@ function renderDonutGas(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
-      bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
-    }
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
   });
-  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 6);
-  const ctx = document.getElementById('an-donut-gas');
-  if (!ctx) return;
+  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const ctx = document.getElementById('an-donut-gas'); if (!ctx) return;
   if (donutGasChart) donutGasChart.destroy();
   donutGasChart = new Chart(ctx, {
     type: 'doughnut',
     data: { labels: sorted.map(x=>x[0]), datasets: [{ data: sorted.map(x=>Math.round(x[1])), backgroundColor: CHART_COLORS, borderWidth: 0 }] },
-    options: { responsive: false, plugins: { legend: { display: false } }, cutout: '65%' }
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '60%' }
   });
   const leg = document.getElementById('an-donut-gas-legend'); leg.innerHTML = '';
-  sorted.slice(0,4).forEach(([cat, val], i) => {
-    leg.innerHTML += `<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><div style="width:7px;height:7px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div>${cat.split('/')[0].trim()}</div>`;
+  sorted.forEach(([cat, val], i) => {
+    leg.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--text2);padding:2px 0;border-bottom:0.5px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</span></div>
+      <span style="font-weight:700;color:var(--red);flex-shrink:0;">−$${fmtN(val)}</span></div>`;
   });
 }
 
@@ -1630,100 +1683,87 @@ function renderDonutIng(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
-      bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
-    }
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
   });
-  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 6);
-  const ctx = document.getElementById('an-donut-ing');
-  if (!ctx) return;
+  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]).slice(0, 8);
+  const ctx = document.getElementById('an-donut-ing'); if (!ctx) return;
   if (donutIngChart) donutIngChart.destroy();
   donutIngChart = new Chart(ctx, {
     type: 'doughnut',
     data: { labels: sorted.map(x=>x[0]), datasets: [{ data: sorted.map(x=>Math.round(x[1])), backgroundColor: CHART_COLORS, borderWidth: 0 }] },
-    options: { responsive: false, plugins: { legend: { display: false } }, cutout: '65%' }
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '60%' }
   });
   const leg = document.getElementById('an-donut-ing-legend'); leg.innerHTML = '';
-  sorted.slice(0,4).forEach(([cat, val], i) => {
-    leg.innerHTML += `<div style="display:flex;align-items:center;gap:5px;font-size:10px;color:var(--text2);"><div style="width:7px;height:7px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div>${cat.split('/')[0].trim()}</div>`;
+  sorted.forEach(([cat, val], i) => {
+    leg.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--text2);padding:2px 0;border-bottom:0.5px solid var(--border);">
+      <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</span></div>
+      <span style="font-weight:700;color:var(--green);flex-shrink:0;">+$${fmtN(val)}</span></div>`;
   });
 }
 
-function renderTopGas(recs) {
+function renderTablaGas(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
     if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
-  const max = sorted[0] ? sorted[0][1] : 1;
-  const el = document.getElementById('an-top-gas'); el.innerHTML = '';
-  sorted.slice(0, 8).forEach(([cat, val]) => {
-    el.innerHTML += `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="font-size:11px;color:var(--text2);width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${cat}</div>
-        <div style="flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round(val/max*100)}%;background:var(--red);border-radius:3px;"></div>
-        </div>
-        <div style="font-size:11px;font-weight:700;color:var(--red);min-width:58px;text-align:right;">−$${fmtN(val)}</div>
-      </div>`;
-  });
+  const el = document.getElementById('an-tabla-gas'); if (!el) return;
+  el.innerHTML = sorted.map(([cat, val]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:0.5px solid var(--border);">
+      <span style="font-size:12px;color:var(--text);font-weight:500;">${cat}</span>
+      <span style="font-size:12px;font-weight:700;color:var(--red);font-family:var(--display);">−$${fmtN(val)}</span>
+    </div>`
+  ).join('') || '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin datos</div>';
 }
 
-function renderTopIng(recs) {
+function renderTablaIng(recs) {
   const bycat = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
     if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + m;
   });
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
-  const max = sorted[0] ? sorted[0][1] : 1;
-  const el = document.getElementById('an-top-ing'); el.innerHTML = '';
-  sorted.forEach(([cat, val]) => {
-    el.innerHTML += `
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <div style="font-size:11px;color:var(--text2);width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex-shrink:0;">${cat}</div>
-        <div style="flex:1;height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round(val/max*100)}%;background:var(--green);border-radius:3px;"></div>
-        </div>
-        <div style="font-size:11px;font-weight:700;color:var(--green);min-width:58px;text-align:right;">+$${fmtN(val)}</div>
-      </div>`;
-  });
+  const el = document.getElementById('an-tabla-ing'); if (!el) return;
+  el.innerHTML = sorted.map(([cat, val]) =>
+    `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-bottom:0.5px solid var(--border);">
+      <span style="font-size:12px;color:var(--text);font-weight:500;">${cat}</span>
+      <span style="font-size:12px;font-weight:700;color:var(--green);font-family:var(--display);">$${fmtN(val)}</span>
+    </div>`
+  ).join('') || '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin datos</div>';
 }
 
-function renderPresupuesto(recs) {
-  const el = document.getElementById('an-presup'); el.innerHTML = '';
-  if (!metasConfig.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text3);text-align:center;padding:10px;">Sincroniza para cargar presupuestos</div>';
-    return;
-  }
+function renderPresupuestoChart(recs) {
+  if (!metasConfig.length) return;
   const gasReal = {};
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
     if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) gasReal[r.categoria] = (gasReal[r.categoria] || 0) + Math.abs(m);
   });
-  metasConfig.forEach(meta => {
-    const presup = Math.abs(meta.presupuesto);
-    const real = gasReal[meta.categoria] || 0;
-    const pct = presup > 0 ? Math.round(real / presup * 100) : 0;
-    const over = pct > 100;
-    const barW = Math.min(pct, 100);
-    el.innerHTML += `
-      <div style="margin-bottom:10px;">
-        <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
-          <div style="font-size:11px;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px;">${meta.categoria}</div>
-          <div style="font-size:11px;font-weight:700;color:${over?'var(--red)':'var(--green)'};">${pct}%</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:2px;">
-          <div style="height:5px;background:rgba(255,255,255,0.05);border-radius:3px;overflow:hidden;">
-            <div style="height:100%;width:${barW}%;background:${over?'var(--red)':'var(--green)'};border-radius:3px;"></div>
-          </div>
-          <div style="display:flex;justify-content:space-between;">
-            <div style="font-size:9px;color:var(--text3);">Real: $${fmtN(real)}</div>
-            <div style="font-size:9px;color:var(--text3);">Presup: $${fmtN(presup)}</div>
-          </div>
-        </div>
-      </div>`;
+  const cats = metasConfig.filter(x => Math.abs(x.presupuesto) > 0).map(x => ({
+    cat: x.categoria, presup: Math.abs(x.presupuesto), real: gasReal[x.categoria] || 0
+  }));
+
+  const ctx = document.getElementById('an-chart-presup'); if (!ctx) return;
+  if (presupChart) presupChart.destroy();
+  presupChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: cats.map(x => x.cat.length > 12 ? x.cat.substring(0,12)+'…' : x.cat),
+      datasets: [
+        { label: 'Real',        data: cats.map(x => Math.round(x.real)),   backgroundColor: cats.map(x => x.real > x.presup ? 'rgba(255,80,80,0.8)' : 'rgba(77,166,255,0.8)'), borderRadius: 4 },
+        { label: 'Presupuesto', data: cats.map(x => Math.round(x.presup)), backgroundColor: 'rgba(0,224,150,0.35)', borderRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: true, labels: { color: '#7e7e94', font: { size: 11 }, boxWidth: 12 } }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(1) + 'k' } } },
+      scales: {
+        x: { ticks: { color: '#7e7e94', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
+        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      },
+      interaction: { intersect: false, mode: 'index' }
+    }
   });
 }
 

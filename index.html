@@ -440,6 +440,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="sidebar-nav-item" id="snav-proy" onclick="showPage('proy')">
     <span class="sidebar-nav-icon">📊</span> Dashboard
   </div>
+  <div class="sidebar-nav-item" onclick="abrirProyeccion()">
+    <span class="sidebar-nav-icon">📈</span> Proyección
+  </div>
   <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
     <span class="sidebar-nav-icon">⚙</span> Configuración
   </div>
@@ -754,6 +757,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="nav-item" id="nav-list" onclick="showPage('list')"><div class="nav-icon">≡</div><span>Registros</span></div>
   <div class="nav-add" onclick="showPage('form')">+</div>
   <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><div class="nav-icon">📊</div><span>Dashboard</span></div>
+  <div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
   <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><div class="nav-icon">⚙</div><span>Config</span></div>
 </div>
 
@@ -816,6 +820,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
 <div class="toast" id="toast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOVj4HuMjDbCpRWaiTXI5ZsnDM2RuPL9RSGtG8V4628eV0IQSis6FPQ6wNKE52L_GriQ/exec';
 
@@ -1769,6 +1774,23 @@ function renderPresupuestoChart(recs) {
 
 function showConfig() { showPage('cfg'); }
 
+function abrirProyeccion() {
+  const sheetId = '1qkIds3D2Zo9Jv4m6XQNH0k7Qtq_l8_E2CW7jGnVXyCM';
+  const gid = '518129246';
+  const webUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit?gid=' + gid + '#gid=' + gid;
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  if (isIOS) {
+    const nativeUrl = 'googledocs://spreadsheets/d/' + sheetId + '/edit?gid=' + gid;
+    const start = Date.now();
+    window.location = nativeUrl;
+    setTimeout(() => {
+      if (Date.now() - start < 2000) window.open(webUrl, '_blank');
+    }, 1500);
+  } else {
+    window.open(webUrl, '_blank');
+  }
+}
+
 function renderConfigPage() {
   // Conteo
   const countEl = document.getElementById('cfg-count');
@@ -1897,6 +1919,5 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </body>
 </html>

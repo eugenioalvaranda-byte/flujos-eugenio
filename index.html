@@ -973,6 +973,39 @@ document.addEventListener('DOMContentLoaded', () => {
   CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; mc.appendChild(o); });
 
   renderChipsCartera(); renderChipsCategoria(); loadRecords();
+
+  // Auto-refresh silencioso cada 10 segundos
+  setInterval(() => {
+    fetch(APPS_SCRIPT_URL)
+      .then(r => r.json())
+      .then(data => {
+        if (!data.ok || !data.rows) return;
+        const sheetRecs = data.rows.map(r => ({
+          id:             String(r['ID'] || r['id'] || ''),
+          fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
+          hora:           String(r['HORA'] || r['hora'] || ''),
+          cartera:        String(r['CARTERA'] || r['cartera'] || ''),
+          tipo:           String(r['TIPO'] || r['tipo'] || ''),
+          categoria:      String(r['CATEGORIA'] || r['categoría'] || r['CATEGORÍA'] || r['categoria'] || ''),
+          monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
+          fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
+          nota:           String(r['NOTA'] || r['nota'] || ''),
+          usuario:        String(r['USUARIO'] || r['usuario'] || ''),
+          carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+        })).filter(r => r.fecha && r.cartera);
+        const sheetIds = new Set(sheetRecs.map(r => r.id));
+        const pending = allRecords.filter(r => !sheetIds.has(r.id));
+        allRecords = [...pending, ...sheetRecs];
+        allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+        saveLocal();
+        const ap = document.querySelector('.page.active');
+        if (!ap) return;
+        if (ap.id === 'page-dash') renderDashboard();
+        else if (ap.id === 'page-list') renderRecords();
+        else if (ap.id === 'page-proy') renderDashboardAnalytics();
+      })
+      .catch(() => {});
+  }, 10000);
 });
 
 // NAV

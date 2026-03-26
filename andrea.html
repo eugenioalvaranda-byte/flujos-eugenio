@@ -255,6 +255,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
   renderChipsCartera(); renderChipsCategoria();
   loadRecords();
+  startAutoRefresh();
 });
 
 function showPage(p) {
@@ -271,35 +272,7 @@ function loadRecords() {
   myRecords = allRecords.filter(r => r.usuario === USUARIO);
   renderDash();
 
-  fetch(APPS_SCRIPT_URL)
-    .then(r => r.json())
-    .then(data => {
-      if (!data.ok || !data.rows) return;
-      const sheetRecords = data.rows.map(r => ({
-        id:             String(r['ID'] || r['id'] || generateId()),
-        fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
-        hora:           String(r['HORA'] || ''),
-        cartera:        String(r['CARTERA'] || r['cartera'] || ''),
-        tipo:           String(r['TIPO'] || r['tipo'] || ''),
-        categoria:      String(r['CATEGORIA'] || r['CATEGORÍA'] || r['categoria'] || ''),
-        monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
-        fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
-        nota:           String(r['NOTA'] || r['nota'] || ''),
-        usuario:        String(r['USUARIO'] || r['usuario'] || ''),
-        carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
-      })).filter(r => r.fecha && r.cartera);
-
-      // Merge: sheet es la fuente de verdad, pero agregamos locales que aún no llegaron al sheet
-      const sheetIds = new Set(sheetRecords.map(r => r.id));
-      const localPending = allRecords.filter(r => !sheetIds.has(r.id));
-      allRecords = [...localPending, ...sheetRecords];
-      allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
-      myRecords = allRecords.filter(r => r.usuario === USUARIO);
-      localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
-      renderDash();
-      showToast(`${myRecords.length} registros cargados ✓`, 'success');
-    })
-    .catch(() => {});
+  syncFromSheet(true);
 }
 
 function renderDash() {
@@ -530,22 +503,65 @@ function actualizarRegistro() {
   r.nota=document.getElementById('m-nota').value.trim();
   r.fecha=document.getElementById('m-fecha').value;
   r.monto=r.monto<0?-Math.abs(nm):Math.abs(nm);
-  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRow',id:r.id,data:r})}).catch(()=>{});
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
-  showToast('Actualizado ✓','success');
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRow',id:r.id,data:r})})
+    .then(()=>{ showToast('Actualizado ✓','success'); syncFromSheet(); })
+    .catch(()=>showToast('Error al actualizar','error'));
 }
 
 function eliminarRegistro() {
   if (!editingId) return;
   const idx=allRecords.findIndex(x=>x.id===editingId); if(idx<0) return;
-  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteRow',id:allRecords[idx].id})}).catch(()=>{});
+  const id=allRecords[idx].id;
   allRecords.splice(idx,1);
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
-  showToast('Eliminado','error');
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteRow',id})})
+    .then(()=>{ showToast('Eliminado',''); syncFromSheet(); })
+    .catch(()=>showToast('Error al eliminar','error'));
+}
+
+// SYNC
+let autoRefreshTimer = null;
+
+function syncFromSheet(showMsg) {
+  fetch(APPS_SCRIPT_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok || !data.rows) return;
+      const sheetRecords = data.rows.map(r => ({
+        id:             String(r['ID'] || r['id'] || generateId()),
+        fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
+        hora:           String(r['HORA'] || ''),
+        cartera:        String(r['CARTERA'] || r['cartera'] || ''),
+        tipo:           String(r['TIPO'] || r['tipo'] || ''),
+        categoria:      String(r['CATEGORIA'] || r['CATEGORÍA'] || r['categoria'] || ''),
+        monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
+        fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
+        nota:           String(r['NOTA'] || r['nota'] || ''),
+        usuario:        String(r['USUARIO'] || r['usuario'] || ''),
+        carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+      })).filter(r => r.fecha && r.cartera);
+      const sheetIds = new Set(sheetRecords.map(r => r.id));
+      const localPending = allRecords.filter(r => !sheetIds.has(r.id));
+      allRecords = [...localPending, ...sheetRecords];
+      allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+      myRecords = allRecords.filter(r => r.usuario === USUARIO);
+      localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
+      renderDash();
+      const page = document.querySelector('.page.active');
+      if (page && page.id === 'page-list') renderRecords();
+      if (showMsg) showToast(`${myRecords.length} registros ✓`, 'success');
+    })
+    .catch(() => {});
+}
+
+function startAutoRefresh() {
+  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+  autoRefreshTimer = setInterval(() => syncFromSheet(false), 10000);
 }
 
 // UTILS

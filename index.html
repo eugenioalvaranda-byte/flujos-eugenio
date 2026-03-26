@@ -122,7 +122,7 @@ body {
 .dash-split-val.tdc { color: var(--red); }
 .dash-split-sub { font-size: 10px; color: var(--text3); margin-top: 3px; }
 
-.dash-mes-row { display: flex; gap: 8px; margin: 0 16px 12px; }
+.dash-mes-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 16px 12px; }
 .dash-mes-pill { flex: 1; padding: 11px 12px; border-radius: var(--radius-sm); background: var(--bg2); border: 0.5px solid var(--border2); }
 .dash-mes-label { font-size: 10px; color: var(--text3); margin-bottom: 5px; font-weight: 600; }
 .dash-mes-val { font-family: var(--display); font-size: 16px; font-weight: 700; color: var(--text); }
@@ -531,7 +531,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="dash-mes-row" style="margin:0 0 12px;">
       <div class="dash-mes-pill"><div class="dash-mes-label">↑ Ingresos mes</div><div class="dash-mes-val pos" id="dash-ing">—</div></div>
       <div class="dash-mes-pill"><div class="dash-mes-label">↓ Gastos mes</div><div class="dash-mes-val neg" id="dash-gas">—</div></div>
-      <div class="dash-mes-pill"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
+      <div class="dash-mes-pill" style="grid-column:1/-1;"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
     </div>
 
     <!-- Patrimonio Neto repetido como referencia rápida -->

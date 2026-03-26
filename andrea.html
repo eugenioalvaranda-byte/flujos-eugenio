@@ -120,41 +120,91 @@ select.field-input { cursor: pointer; }
 
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
-  <div class="topbar">
+  <div class="topbar" style="flex-wrap:wrap;gap:8px;">
     <div class="topbar-title">Hola Andrea 👩</div>
-    <div class="topbar-badge">Mis finanzas</div>
+  </div>
+  <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
+    <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
+    <div class="filter-pill active" id="a-rng-mes" onclick="setAndreaRango('mes',this)">Mes</div>
+    <div class="filter-pill" id="a-rng-tri" onclick="setAndreaRango('tri',this)">Trimestre</div>
+    <div class="filter-pill" id="a-rng-ano" onclick="setAndreaRango('ano',this)">Año</div>
+    <div class="filter-pill" id="a-rng-custom" onclick="setAndreaRango('custom',this)">Personalizado</div>
+  </div>
+  <div id="a-rng-nav" style="display:flex;align-items:center;gap:10px;padding:0 16px 10px;">
+    <div onclick="navAndreaRango(-1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">←</div>
+    <div id="a-rng-label" style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text);">Cargando...</div>
+    <div onclick="navAndreaRango(1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">→</div>
+  </div>
+  <div id="a-custom-row" style="display:none;padding:0 16px 10px;gap:8px;flex-wrap:wrap;" class="filter-row">
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;color:var(--text2);">Desde</span>
+      <input type="date" id="a-rng-desde" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+    </div>
+    <div style="display:flex;align-items:center;gap:6px;">
+      <span style="font-size:11px;color:var(--text2);">Hasta</span>
+      <input type="date" id="a-rng-hasta" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
+    </div>
+    <div onclick="renderDash()" style="padding:7px 16px;background:var(--pink);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#fff;cursor:pointer;">Aplicar</div>
   </div>
 
-  <div class="an-kpi-row">
-    <div class="an-kpi">
-      <div class="an-kpi-label">↑ Ingresos mes</div>
-      <div class="an-kpi-val pos" id="a-ing">—</div>
-    </div>
-    <div class="an-kpi">
-      <div class="an-kpi-label">↓ Gastos mes</div>
+  <!-- KPI gastos del mes -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 12px;">
+    <div class="an-kpi" style="grid-column:1/-1;">
+      <div class="an-kpi-label">↓ Gastos del mes</div>
       <div class="an-kpi-val neg" id="a-gas">—</div>
     </div>
-    <div class="an-kpi" style="grid-column:1/-1;">
-      <div class="an-kpi-label">= Balance del mes</div>
-      <div class="an-kpi-val" id="a-bal">—</div>
+    <div class="an-kpi">
+      <div class="an-kpi-label">Registros</div>
+      <div class="an-kpi-val" id="a-count" style="color:var(--pink);">—</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi-label">Mayor gasto</div>
+      <div class="an-kpi-val neg" id="a-max">—</div>
     </div>
   </div>
 
-  <div class="an-section">
-    <div class="an-section-title">Mis gastos del mes por categoría</div>
-    <div id="a-cats" style="padding:0;"></div>
+  <!-- Tendencia 6 meses -->
+  <div class="an-section" style="padding:14px;">
+    <div class="an-section-title" style="padding:0 0 10px;border:none;">Tendencia 6 meses</div>
+    <div style="position:relative;height:140px;"><canvas id="a-trend-chart"></canvas></div>
   </div>
 
-  <div class="an-section">
-    <div class="an-section-title">Últimos movimientos</div>
-    <div id="a-recents" style="padding:0;"></div>
+  <!-- Dona distribución gastos -->
+  <div class="an-section" style="padding:14px;">
+    <div class="an-section-title" style="padding:0 0 10px;border:none;">Distribución de gastos</div>
+    <div style="display:flex;gap:12px;align-items:flex-start;">
+      <div style="position:relative;width:140px;height:140px;flex-shrink:0;"><canvas id="a-donut-chart"></canvas></div>
+      <div id="a-donut-legend" style="flex:1;display:flex;flex-direction:column;gap:4px;padding-top:4px;"></div>
+    </div>
+  </div>
+
+  <!-- Tabla gastos por categoría -->
+  <div class="an-section" style="overflow:hidden;margin-bottom:20px;">
+    <div class="an-section-title">Gastos por categoría</div>
+    <div id="a-cats" style="padding:0;"></div>
   </div>
 </div>
 
 <!-- MIS REGISTROS -->
 <div id="page-list" class="page">
-  <div class="topbar" style="padding-bottom:10px;">
-    <div class="topbar-title">Mis registros</div>
+  <div class="list-topbar">
+    <div class="list-title">Mis registros</div>
+    <div class="filter-toggle-btn" id="a-list-adv-btn" onclick="toggleAndreaFilters()" style="font-size:13px;padding:9px 16px;border-radius:22px;border:0.5px solid var(--border2);color:var(--text2);background:var(--bg2);cursor:pointer;">⚙ Filtros</div>
+  </div>
+  <div id="a-adv-filters" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);margin:0 16px 10px;padding:14px;">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
+      <div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Desde</div><input class="adv-input" type="date" id="a-filt-desde" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;"></div>
+      <div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Hasta</div><input class="adv-input" type="date" id="a-filt-hasta" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;"></div>
+    </div>
+    <div style="display:flex;gap:6px;">
+      <div onclick="clearAndreaFilters()" style="flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Limpiar</div>
+      <div onclick="applyAndreaFilters()" style="flex:1;padding:10px;background:var(--pink);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#fff;text-align:center;cursor:pointer;">Aplicar</div>
+    </div>
+  </div>
+  <!-- Buscador -->
+  <div style="padding:0 16px 10px;">
+    <input type="text" id="a-search" placeholder="🔍  Buscar..." oninput="renderRecords()"
+      style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;">
   </div>
   <div class="filter-row">
     <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
@@ -283,70 +333,110 @@ function loadRecords() {
   autoSync(true);
 }
 
+let aTrendChart = null, aDonutChart = null;
+const PINK_COLORS = ['#f472b6','#a855f7','#4da6ff','#ffb547','#00e096','#ff5050','#06b6d4','#f97316'];
+
 function renderDash() {
   const today = new Date().toISOString().split('T')[0];
   const now = new Date(), mes = now.getMonth(), anio = now.getFullYear();
+  const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
-  const resMes = myRecords.filter(r => {
-    if (!r.fecha || r.fecha > today) return false;
-    const p = r.fecha.split('-');
-    return parseInt(p[0]) === anio && parseInt(p[1]) - 1 === mes;
-  });
+  const { desde, hasta, label } = getAndreaRango();
+  const labelEl = document.getElementById('a-rng-label');
+  if (labelEl) labelEl.textContent = label;
+  const today2 = new Date().toISOString().split('T')[0];
+  const hastaReal = hasta > today2 ? today2 : hasta;
+  const resMes = myRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hastaReal);
 
-  let ing = 0, gas = 0;
-  resMes.forEach(r => {
-    const m = parseFloat(r.monto) || 0;
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
-  });
-  const bal = ing + gas;
-  document.getElementById('a-ing').textContent = '$' + fmtN(ing);
-  document.getElementById('a-gas').textContent = '$' + fmtN(Math.abs(gas));
-  const be = document.getElementById('a-bal');
-  be.textContent = (bal >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(bal));
-  be.className = 'an-kpi-val ' + (bal >= 0 ? 'pos' : 'neg');
-
-  // Gastos por categoría del mes
+  let gas = 0, maxGasto = 0;
   const bycat = {};
   resMes.forEach(r => {
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') {
+      gas += Math.abs(m);
+      if (Math.abs(m) > maxGasto) maxGasto = Math.abs(m);
+      if (r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+    }
   });
+
+  const gasEl = document.getElementById('a-gas');
+  if (gasEl) gasEl.textContent = '$' + fmtN(gas);
+  const countEl = document.getElementById('a-count');
+  if (countEl) countEl.textContent = resMes.filter(r => parseFloat(r.monto) < 0).length;
+  const maxEl = document.getElementById('a-max');
+  if (maxEl) maxEl.textContent = maxGasto > 0 ? '$' + fmtN(maxGasto) : '—';
+
+  // Tendencia 6 meses
+  const tLabels = [], tData = [];
+  for (let i = 5; i >= 0; i--) {
+    let m = mes - i, a = anio;
+    if (m < 0) { m += 12; a--; }
+    let g = 0;
+    myRecords.forEach(r => {
+      const p = r.fecha ? r.fecha.split('-') : [];
+      if (parseInt(p[0]) === a && parseInt(p[1]) - 1 === m && parseFloat(r.monto) < 0 && r.tipo !== 'TRANSFERENCIA')
+        g += Math.abs(parseFloat(r.monto) || 0);
+    });
+    tLabels.push(mNames[m]);
+    tData.push(Math.round(g));
+  }
+  const tCtx = document.getElementById('a-trend-chart');
+  if (tCtx && typeof Chart !== 'undefined') {
+    if (aTrendChart) aTrendChart.destroy();
+    aTrendChart = new Chart(tCtx, {
+      type: 'bar',
+      data: { labels: tLabels, datasets: [{ data: tData, backgroundColor: 'rgba(244,114,182,0.75)', borderRadius: 4, barPercentage: 0.6 }] },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { ticks: { color: '#7e7e94', font: { size: 10 } }, grid: { display: false } },
+          y: { ticks: { color: '#7e7e94', font: { size: 9 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 4 }, grid: { color: 'rgba(255,255,255,0.04)' } }
+        }
+      }
+    });
+  }
+
+  // Dona
   const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
-  const maxVal = sorted[0] ? sorted[0][1] : 1;
-  const cats = document.getElementById('a-cats');
-  cats.innerHTML = sorted.length ? sorted.map(([cat, val]) => `
-    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--border);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</div>
-        <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
-          <div style="height:100%;width:${Math.round(val/maxVal*100)}%;background:var(--red);border-radius:2px;"></div>
+  const dCtx = document.getElementById('a-donut-chart');
+  if (dCtx && typeof Chart !== 'undefined') {
+    if (aDonutChart) aDonutChart.destroy();
+    if (sorted.length) {
+      aDonutChart = new Chart(dCtx, {
+        type: 'doughnut',
+        data: { labels: sorted.map(x=>x[0]), datasets: [{ data: sorted.map(x=>Math.round(x[1])), backgroundColor: PINK_COLORS, borderWidth: 0 }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '62%' }
+      });
+    }
+  }
+  const leg = document.getElementById('a-donut-legend');
+  if (leg) {
+    leg.innerHTML = sorted.slice(0, 6).map(([cat, val], i) =>
+      `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border);">
+        <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${PINK_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);">${cat}</span></div>
+        <span style="font-weight:700;color:var(--red);flex-shrink:0;">-$${fmtN(val)}</span>
+      </div>`
+    ).join('');
+  }
+
+  // Tabla por categoría
+  const catsEl = document.getElementById('a-cats');
+  if (catsEl) {
+    const maxVal = sorted[0] ? sorted[0][1] : 1;
+    catsEl.innerHTML = sorted.length ? sorted.map(([cat, val]) =>
+      `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--border);">
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</div>
+          <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+            <div style="height:100%;width:${Math.round(val/maxVal*100)}%;background:var(--pink);border-radius:2px;"></div>
+          </div>
         </div>
-      </div>
-      <div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--display);flex-shrink:0;">−$${fmtN(val)}</div>
-    </div>`).join('')
-  : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin gastos este mes</div>';
-
-  // Últimos 5 movimientos
-  const recents = document.getElementById('a-recents');
-  const last5 = myRecords.filter(r => r.fecha <= today).slice(0, 5);
-  recents.innerHTML = last5.length ? last5.map(r => {
-    const m = parseFloat(r.monto) || 0;
-    const cls = m > 0 ? 'pos' : 'neg';
-    const icon = m > 0 ? '↑' : '↓';
-    const iconcls = m > 0 ? 'ing' : 'gas';
-    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid var(--border);">
-      <div class="record-icon ${iconcls}">${icon}</div>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.categoria || r.tipo}</div>
-        <div style="font-size:11px;color:var(--text2);">${r.cartera}${r.nota ? ' · ' + r.nota : ''}</div>
-      </div>
-      <div style="font-family:var(--display);font-size:14px;font-weight:700;" class="record-amount ${cls}">${m>=0?'+':'−'}$${fmtN(Math.abs(m))}</div>
-    </div>`;
-  }).join('')
-  : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin movimientos</div>';
+        <div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--display);flex-shrink:0;">-$${fmtN(val)}</div>
+      </div>`).join('')
+    : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin gastos este mes</div>';
+  }
 }
-
 function setFilter(f, el) {
   currentFilter = f;
   document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
@@ -357,8 +447,18 @@ function setFilter(f, el) {
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
   const today = new Date().toISOString().split('T')[0];
+  const search = (document.getElementById('a-search')?.value || '').toLowerCase().trim();
   let recs = myRecords.filter(r => r.fecha <= today);
   if (currentFilter !== 'todos') recs = recs.filter(r => r.tipo === currentFilter);
+  if (aListFilters.desde) recs = recs.filter(r => r.fecha >= aListFilters.desde);
+  if (aListFilters.hasta) recs = recs.filter(r => r.fecha <= aListFilters.hasta);
+  if (search) recs = recs.filter(r =>
+    (r.categoria||'').toLowerCase().includes(search) ||
+    (r.nota||'').toLowerCase().includes(search) ||
+    (r.cartera||'').toLowerCase().includes(search) ||
+    String(Math.abs(r.monto||0)).includes(search) ||
+    (r.fecha||'').includes(search)
+  );
   if (!recs.length) { list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;">Sin registros</div>'; return; }
 
   const byDate = {};
@@ -582,7 +682,97 @@ function eliminarRegistro() {
     .catch(()=>showToast('Error al eliminar','error'));
 }
 
-// SYNC STATE
+// ANDREA RANGO STATE
+let aRango = 'mes';
+let aRefDate = new Date();
+let aListAdvOpen = false;
+let aListFilters = { desde: '', hasta: '' };
+
+function setAndreaRango(r, el) {
+  aRango = r;
+  document.querySelectorAll('[id^="a-rng-"]').forEach(x => { if(x.classList) x.classList.remove('active'); });
+  if(el) el.classList.add('active');
+  const customRow = document.getElementById('a-custom-row');
+  const navRow = document.getElementById('a-rng-nav');
+  if(customRow) customRow.style.display = r === 'custom' ? 'flex' : 'none';
+  if(navRow) navRow.style.display = r === 'custom' ? 'none' : 'flex';
+  renderDash();
+}
+
+function navAndreaRango(dir) {
+  const d = new Date(aRefDate);
+  if (aRango === 'sem') d.setDate(d.getDate() + dir * 7);
+  else if (aRango === 'mes') d.setMonth(d.getMonth() + dir);
+  else if (aRango === 'tri') d.setMonth(d.getMonth() + dir * 3);
+  else if (aRango === 'ano') d.setFullYear(d.getFullYear() + dir);
+  aRefDate = d;
+  renderDash();
+}
+
+function getAndreaRango() {
+  const d = new Date(aRefDate);
+  const mFull = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let desde, hasta, label;
+  if (aRango === 'sem') {
+    const day = d.getDay();
+    const lun = new Date(d); lun.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
+    desde = lun.toISOString().split('T')[0];
+    hasta = dom.toISOString().split('T')[0];
+    label = formatDate(desde) + ' — ' + formatDate(hasta);
+  } else if (aRango === 'mes') {
+    desde = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().split('T')[0];
+    label = mFull[d.getMonth()] + ' ' + d.getFullYear();
+  } else if (aRango === 'tri') {
+    const q = Math.floor(d.getMonth() / 3);
+    desde = new Date(d.getFullYear(), q * 3, 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), q * 3 + 3, 0).toISOString().split('T')[0];
+    label = 'Q' + (q+1) + ' ' + d.getFullYear();
+  } else if (aRango === 'ano') {
+    desde = new Date(d.getFullYear(), 0, 1).toISOString().split('T')[0];
+    hasta = new Date(d.getFullYear(), 11, 31).toISOString().split('T')[0];
+    label = 'Año ' + d.getFullYear();
+  } else {
+    desde = document.getElementById('a-rng-desde')?.value || new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    hasta = document.getElementById('a-rng-hasta')?.value || new Date().toISOString().split('T')[0];
+    label = desde + ' — ' + hasta;
+  }
+  return { desde, hasta, label };
+}
+
+function toggleAndreaFilters() {
+  aListAdvOpen = !aListAdvOpen;
+  const el = document.getElementById('a-adv-filters');
+  const btn = document.getElementById('a-list-adv-btn');
+  if (el) el.style.display = aListAdvOpen ? 'block' : 'none';
+  if (btn) { btn.style.color = aListAdvOpen ? 'var(--pink)' : ''; btn.style.borderColor = aListAdvOpen ? 'var(--pink-border)' : ''; }
+}
+
+function applyAndreaFilters() {
+  aListFilters.desde = document.getElementById('a-filt-desde')?.value || '';
+  aListFilters.hasta = document.getElementById('a-filt-hasta')?.value || '';
+  aListAdvOpen = false;
+  const el = document.getElementById('a-adv-filters');
+  if (el) el.style.display = 'none';
+  renderRecords();
+}
+
+function clearAndreaFilters() {
+  aListFilters = { desde: '', hasta: '' };
+  const d = document.getElementById('a-filt-desde'); if(d) d.value = '';
+  const h = document.getElementById('a-filt-hasta'); if(h) h.value = '';
+  renderRecords();
+}
+
+function formatDate(str) {
+  if (!str) return '';
+  const d = new Date(str + 'T12:00:00');
+  return d.toLocaleDateString('es-MX', { day: 'numeric', month: 'short' });
+}
+
+// ANDREA RANGO STATE
+
 const deletedIds = new Set();
 const pendingIds = new Set();
 let syncBusy = false;
@@ -648,5 +838,6 @@ function formatSheetDate(val){
 }
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>{t.className='toast';},2800);}
 </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </body>
 </html>

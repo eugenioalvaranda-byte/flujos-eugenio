@@ -1595,9 +1595,9 @@ function loadRecords() {
         localStorage.setItem('flujos_metas', JSON.stringify(metasConfig));
       }
 
-      // Cargar registros
+      // Cargar registros — merge con locales pendientes
       if (data.rows) {
-        allRecords = data.rows.map(r => ({
+        const sheetRecs = data.rows.map(r => ({
           id:             String(r['ID'] || r['id'] || generateId()),
           fecha:          formatSheetDate(r['FECHA OPERACI\u00d3N'] || r['FECHA OPERACION'] || r['fecha'] || ''),
           hora:           String(r['HORA'] || r['hora'] || ''),
@@ -1610,6 +1610,9 @@ function loadRecords() {
           usuario:        String(r['USUARIO'] || r['usuario'] || ''),
           carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
         })).filter(r => r.fecha && r.cartera);
+        const sheetIds = new Set(sheetRecs.map(r => r.id));
+        const pending = allRecords.filter(r => !sheetIds.has(r.id));
+        allRecords = [...pending, ...sheetRecs];
         allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
         saveLocal();
       }

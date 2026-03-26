@@ -275,7 +275,7 @@ function loadRecords() {
     .then(r => r.json())
     .then(data => {
       if (!data.ok || !data.rows) return;
-      allRecords = data.rows.map(r => ({
+      const sheetRecords = data.rows.map(r => ({
         id:             String(r['ID'] || r['id'] || generateId()),
         fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
         hora:           String(r['HORA'] || ''),
@@ -288,6 +288,11 @@ function loadRecords() {
         usuario:        String(r['USUARIO'] || r['usuario'] || ''),
         carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
       })).filter(r => r.fecha && r.cartera);
+
+      // Merge: sheet es la fuente de verdad, pero agregamos locales que aún no llegaron al sheet
+      const sheetIds = new Set(sheetRecords.map(r => r.id));
+      const localPending = allRecords.filter(r => !sheetIds.has(r.id));
+      allRecords = [...localPending, ...sheetRecords];
       allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
       myRecords = allRecords.filter(r => r.usuario === USUARIO);
       localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
@@ -483,21 +488,27 @@ function guardarRegistro() {
     regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:currentType,categoria:selectedCategoria,monto:m,nota,fechaFlujo:calcFechaFlujo(fecha,selectedCartera),usuario:USUARIO,carteraDestino:'',idTransferencia:'',montoTransferencia:''});
   }
 
-  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'addRows',rows:regs})})
-  .then(r=>r.json())
-  .then(()=>{
-    regs.forEach(r=>{allRecords.unshift(r);});
-    myRecords=allRecords.filter(r=>r.usuario===USUARIO);
-    localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
-    document.getElementById('f-monto').value='';
-    document.getElementById('f-nota').value='';
-    document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
-    selectedCartera=''; selectedCarteraDest=''; selectedCategoria='';
-    btn.classList.remove('loading'); btn.textContent='Guardar registro';
-    showToast('Registro guardado ✓','success');
-    showPage('dash');
-  })
-  .catch(()=>{btn.classList.remove('loading');btn.textContent='Guardar registro';showToast('Error al guardar','error');});
+  // Agregar localmente de inmediato
+  regs.forEach(r => { allRecords.unshift(r); });
+  myRecords = allRecords.filter(r => r.usuario === USUARIO);
+  localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
+  document.getElementById('f-monto').value='';
+  document.getElementById('f-nota').value='';
+  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+  selectedCartera=''; selectedCarteraDest=''; selectedCategoria='';
+  renderChipsCartera(); renderChipsCategoria();
+  btn.classList.remove('loading'); btn.textContent='Guardar registro';
+  showToast('Guardando...', '');
+  showPage('dash');
+
+  // Enviar al Sheet en background
+  fetch(APPS_SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'addRows', rows:regs})})
+    .then(r => r.json())
+    .then(data => {
+      if (data.ok) showToast('Registro guardado ✓', 'success');
+      else showToast('Error al guardar en Sheet', 'error');
+    })
+    .catch(() => showToast('Sin conexión — guardado local', 'error'));
 }
 
 // EDIT MODAL

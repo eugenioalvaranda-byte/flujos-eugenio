@@ -219,12 +219,20 @@ select.field-input { cursor: pointer; }
       <input class="field-input amount-input" type="number" id="m-monto" step="0.01" inputmode="decimal">
     </div>
     <div class="field">
-      <div class="field-label">Nota</div>
-      <input class="field-input" type="text" id="m-nota">
-    </div>
-    <div class="field">
       <div class="field-label">Fecha</div>
       <input class="field-input" type="date" id="m-fecha">
+    </div>
+    <div class="field" id="m-field-cartera">
+      <div class="field-label">Cartera</div>
+      <div class="chips-wrap" id="m-chips-cartera" style="max-height:120px;overflow-y:auto;"></div>
+    </div>
+    <div class="field" id="m-field-cat">
+      <div class="field-label">Categoría</div>
+      <div class="chips-wrap" id="m-chips-cat" style="max-height:120px;overflow-y:auto;"></div>
+    </div>
+    <div class="field">
+      <div class="field-label">Nota</div>
+      <input class="field-input" type="text" id="m-nota">
     </div>
     <div class="modal-actions">
       <div class="modal-btn cancel" onclick="closeModal()">Cancelar</div>
@@ -272,7 +280,7 @@ function loadRecords() {
   myRecords = allRecords.filter(r => r.usuario === USUARIO);
   renderDash();
 
-  syncFromSheet(true);
+  autoSync(true);
 }
 
 function renderDash() {
@@ -462,7 +470,7 @@ function guardarRegistro() {
   }
 
   // Agregar localmente de inmediato
-  regs.forEach(r => { allRecords.unshift(r); });
+  regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
   myRecords = allRecords.filter(r => r.usuario === USUARIO);
   localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
   document.getElementById('f-monto').value='';
@@ -485,13 +493,56 @@ function guardarRegistro() {
 }
 
 // EDIT MODAL
+let editingRecord = null;
+let mSelectedCartera = '';
+let mSelectedCat = '';
+
 function openEditModal(r) {
-  editingId=r.id;
-  document.getElementById('modal-title').textContent=r.categoria||r.tipo;
-  document.getElementById('m-monto').value=Math.abs(parseFloat(r.monto)||0);
-  document.getElementById('m-nota').value=r.nota||'';
-  document.getElementById('m-fecha').value=r.fecha;
+  editingId = r.id;
+  editingRecord = r;
+  mSelectedCartera = r.cartera;
+  mSelectedCat = r.categoria;
+  document.getElementById('modal-title').textContent = r.categoria || r.tipo;
+  document.getElementById('m-monto').value = Math.abs(parseFloat(r.monto)||0);
+  document.getElementById('m-nota').value = r.nota || '';
+  document.getElementById('m-fecha').value = r.fecha;
+  // Render cartera chips
+  const isTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
+  const mCarteraWrap = document.getElementById('m-chips-cartera');
+  const mCatWrap = document.getElementById('m-chips-cat');
+  document.getElementById('m-field-cartera').style.display = 'block';
+  document.getElementById('m-field-cat').style.display = isTransfer ? 'none' : 'block';
+  mCarteraWrap.innerHTML = '';
+  CARTERAS.forEach(ca => {
+    const el = document.createElement('div');
+    el.className = 'chip' + (mSelectedCartera === ca ? ' active' : '');
+    el.textContent = ca;
+    el.onclick = () => { mSelectedCartera = ca; openEditModal({...r, cartera: ca}); return; };
+    mCarteraWrap.appendChild(el);
+  });
+  if (!isTransfer) {
+    mCatWrap.innerHTML = '';
+    const cats = r.monto > 0 ? CAT_INGRESO : CAT_GASTO;
+    cats.forEach(ca => {
+      const el = document.createElement('div');
+      el.className = 'chip' + (mSelectedCat === ca ? ' active' : '');
+      el.textContent = ca;
+      el.onclick = () => { mSelectedCat = ca; renderEditCatChips(cats); };
+      mCatWrap.appendChild(el);
+    });
+  }
   document.getElementById('edit-modal').classList.add('show');
+}
+
+function renderEditCatChips(cats) {
+  const wrap = document.getElementById('m-chips-cat'); wrap.innerHTML = '';
+  cats.forEach(ca => {
+    const el = document.createElement('div');
+    el.className = 'chip' + (mSelectedCat === ca ? ' active' : '');
+    el.textContent = ca;
+    el.onclick = () => { mSelectedCat = ca; renderEditCatChips(cats); };
+    wrap.appendChild(el);
+  });
 }
 function closeModal() { document.getElementById('edit-modal').classList.remove('show'); editingId=null; }
 
@@ -503,11 +554,15 @@ function actualizarRegistro() {
   r.nota=document.getElementById('m-nota').value.trim();
   r.fecha=document.getElementById('m-fecha').value;
   r.monto=r.monto<0?-Math.abs(nm):Math.abs(nm);
+  r.cartera=mSelectedCartera||r.cartera;
+  r.categoria=mSelectedCat||r.categoria;
+  r.fechaFlujo=calcFechaFlujo(r.fecha,r.cartera);
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
   fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRow',id:r.id,data:r})})
-    .then(()=>{ showToast('Actualizado ✓','success'); syncFromSheet(); })
+    .then(r=>r.json())
+    .then(()=>{ showToast('Actualizado ✓','success'); })
     .catch(()=>showToast('Error al actualizar','error'));
 }
 
@@ -515,53 +570,67 @@ function eliminarRegistro() {
   if (!editingId) return;
   const idx=allRecords.findIndex(x=>x.id===editingId); if(idx<0) return;
   const id=allRecords[idx].id;
+  deletedIds.add(id);
   allRecords.splice(idx,1);
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
+  showToast('Eliminando...','');
   fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteRow',id})})
-    .then(()=>{ showToast('Eliminado',''); syncFromSheet(); })
+    .then(r=>r.json())
+    .then(data=>{ if(data.ok){deletedIds.delete(id);showToast('Eliminado ✓','');} })
     .catch(()=>showToast('Error al eliminar','error'));
 }
 
-// SYNC
-let autoRefreshTimer = null;
+// SYNC STATE
+const deletedIds = new Set();
+const pendingIds = new Set();
+let syncBusy = false;
 
-function syncFromSheet(showMsg) {
+function parseSheetRow(r) {
+  return {
+    id:             String(r['ID'] || r['id'] || ''),
+    fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
+    hora:           String(r['HORA'] || ''),
+    cartera:        String(r['CARTERA'] || r['cartera'] || ''),
+    tipo:           String(r['TIPO'] || r['tipo'] || ''),
+    categoria:      String(r['CATEGORIA'] || r['CATEGORÍA'] || r['categoria'] || ''),
+    monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
+    fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
+    nota:           String(r['NOTA'] || r['nota'] || ''),
+    usuario:        String(r['USUARIO'] || r['usuario'] || ''),
+    carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+  };
+}
+
+function autoSync(showMsg) {
+  if (syncBusy) return;
+  syncBusy = true;
   fetch(APPS_SCRIPT_URL)
     .then(r => r.json())
     .then(data => {
       if (!data.ok || !data.rows) return;
-      const sheetRecords = data.rows.map(r => ({
-        id:             String(r['ID'] || r['id'] || generateId()),
-        fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
-        hora:           String(r['HORA'] || ''),
-        cartera:        String(r['CARTERA'] || r['cartera'] || ''),
-        tipo:           String(r['TIPO'] || r['tipo'] || ''),
-        categoria:      String(r['CATEGORIA'] || r['CATEGORÍA'] || r['categoria'] || ''),
-        monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
-        fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
-        nota:           String(r['NOTA'] || r['nota'] || ''),
-        usuario:        String(r['USUARIO'] || r['usuario'] || ''),
-        carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
-      })).filter(r => r.fecha && r.cartera);
-      const sheetIds = new Set(sheetRecords.map(r => r.id));
-      const localPending = allRecords.filter(r => !sheetIds.has(r.id));
-      allRecords = [...localPending, ...sheetRecords];
+      const sheetRecs = data.rows.map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
+      const sheetIds = new Set(sheetRecs.map(r => r.id));
+      deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
+      pendingIds.forEach(id => { if (sheetIds.has(id)) pendingIds.delete(id); });
+      const localPending = allRecords.filter(r => pendingIds.has(r.id));
+      const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
+      allRecords = [...localPending, ...sheetFiltered];
       allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
       myRecords = allRecords.filter(r => r.usuario === USUARIO);
       localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
       renderDash();
-      const page = document.querySelector('.page.active');
-      if (page && page.id === 'page-list') renderRecords();
+      const ap = document.querySelector('.page.active');
+      if (ap && ap.id === 'page-list') renderRecords();
       if (showMsg) showToast(`${myRecords.length} registros ✓`, 'success');
     })
-    .catch(() => {});
+    .catch(() => {})
+    .finally(() => { syncBusy = false; });
 }
 
 function startAutoRefresh() {
-  if (autoRefreshTimer) clearInterval(autoRefreshTimer);
-  autoRefreshTimer = setInterval(() => syncFromSheet(false), 10000);
+  setInterval(() => autoSync(false), 2000);
 }
 
 // UTILS

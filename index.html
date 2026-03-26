@@ -277,6 +277,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 
 .coming-soon { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text3); gap: 12px; }
 select.field-input, select.rec-input, select.adv-input, select.datepick-input { cursor: pointer; }
+@keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
 /* ── RESPONSIVE LAYOUT ── */
 
@@ -442,6 +443,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   </div>
   <div class="sidebar-nav-item" onclick="abrirProyeccion()">
     <span class="sidebar-nav-icon">📈</span> Proyección
+  </div>
+  <div class="sidebar-nav-item" id="snav-chat" onclick="showPage('chat')">
+    <span class="sidebar-nav-icon">🤖</span> Consultar IA
   </div>
   <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
     <span class="sidebar-nav-icon">⚙</span> Configuración
@@ -713,6 +717,40 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   </div>
 </div>
 
+<!-- CHAT IA -->
+<div id="page-chat" class="page">
+  <div class="topbar">
+    <div class="topbar-title">Consultar IA</div>
+  </div>
+  <div style="padding:0 16px;margin-bottom:12px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;font-size:12px;color:var(--text2);line-height:1.6;">
+      Hazme cualquier pregunta sobre tus finanzas. Por ejemplo:<br>
+      <span style="color:var(--green);">¿Cuánto gasté en Salud en enero?</span><br>
+      <span style="color:var(--green);">¿Cuál fue mi categoría de mayor gasto este mes?</span><br>
+      <span style="color:var(--green);">¿Cuánto debo en total en TDCs?</span>
+    </div>
+  </div>
+
+  <!-- Mensajes -->
+  <div id="chat-messages" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;margin-bottom:16px;min-height:200px;"></div>
+
+  <!-- Input -->
+  <div style="position:sticky;bottom:80px;padding:0 16px 16px;background:var(--bg);">
+    <div style="display:flex;gap:8px;align-items:flex-end;">
+      <textarea id="chat-input" placeholder="Pregunta sobre tus finanzas..."
+        rows="1"
+        style="flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:none;line-height:1.5;max-height:120px;overflow-y:auto;"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarConsulta();}">
+      </textarea>
+      <div onclick="enviarConsulta()" id="chat-send-btn"
+        style="width:44px;height:44px;border-radius:50%;background:var(--green);color:#000;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:opacity 0.15s;">
+        ↑
+      </div>
+    </div>
+    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px;">Claude analiza tus registros reales</div>
+  </div>
+</div>
+
 <!-- CONFIG -->
 <div id="page-cfg" class="page">
   <div class="topbar"><div class="topbar-title">Configuración</div></div>
@@ -758,6 +796,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="nav-add" onclick="showPage('form')">+</div>
   <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><div class="nav-icon">📊</div><span>Dashboard</span></div>
   <div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
+  <div class="nav-item" id="nav-chat" onclick="showPage('chat')"><div class="nav-icon">🤖</div><span>IA</span></div>
   <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><div class="nav-icon">⚙</div><span>Config</span></div>
 </div>
 
@@ -891,6 +930,7 @@ function showPage(p) {
   if (p === 'dash') renderDashboard();
   if (p === 'cfg') renderConfigPage();
   if (p === 'proy') renderDashboardAnalytics();
+  if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
 }
 
 function setUser(u, el) {
@@ -1773,6 +1813,149 @@ function renderPresupuestoChart(recs) {
 }
 
 function showConfig() { showPage('cfg'); }
+
+// ══════════════════════════════════════════
+// CHAT IA — Claude consulta financiera
+// ══════════════════════════════════════════
+let chatHistory = [];
+
+function enviarConsulta() {
+  const input = document.getElementById('chat-input');
+  const pregunta = input.value.trim();
+  if (!pregunta) return;
+
+  input.value = '';
+  input.style.height = 'auto';
+
+  // Mostrar mensaje del usuario
+  agregarMensaje('user', pregunta);
+
+  // Deshabilitar botón mientras carga
+  const btn = document.getElementById('chat-send-btn');
+  btn.style.opacity = '0.4';
+  btn.style.pointerEvents = 'none';
+
+  // Mostrar indicador de carga
+  const loadId = 'load-' + Date.now();
+  agregarMensajeCargando(loadId);
+
+  // Construir contexto financiero
+  const contexto = buildContextoFinanciero();
+
+  // Agregar al historial
+  chatHistory.push({ role: 'user', content: pregunta });
+
+  // Llamar a Claude via Apps Script (evita CORS)
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    body: JSON.stringify({
+      action: 'claudeQuery',
+      pregunta,
+      contexto: buildContextoFinanciero(),
+      historial: chatHistory.slice(0, -1) // sin el último que acabamos de agregar
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) loadEl.remove();
+    if (!data.ok) throw new Error(data.error || 'Error desconocido');
+    const respuesta = data.respuesta;
+    chatHistory.push({ role: 'assistant', content: respuesta });
+    agregarMensaje('assistant', respuesta);
+  })
+  .catch(err => {
+    const loadEl = document.getElementById(loadId);
+    if (loadEl) loadEl.remove();
+    agregarMensaje('assistant', 'Error: ' + (err.message || 'Intenta de nuevo.'));
+  })
+  .finally(() => {
+    btn.style.opacity = '1';
+    btn.style.pointerEvents = 'auto';
+  });
+}
+
+function buildContextoFinanciero() {
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date();
+  const mes = now.getMonth(), anio = now.getFullYear();
+
+  // Saldos por cartera
+  const saldos = {};
+  CARTERAS.forEach(c => saldos[c] = getSaldoInicial(c));
+  allRecords.forEach(r => {
+    if (r.fecha <= today && saldos[r.cartera] !== undefined)
+      saldos[r.cartera] += parseFloat(r.monto) || 0;
+  });
+
+  // Gastos e ingresos del mes actual
+  const resMes = allRecords.filter(r => {
+    if (!r.fecha) return false;
+    const p = r.fecha.split('-');
+    return parseInt(p[0]) === anio && parseInt(p[1]) - 1 === mes && r.fecha <= today;
+  });
+  const bycat = {};
+  resMes.forEach(r => {
+    const m = parseFloat(r.monto) || 0;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria)
+      bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+  });
+
+  // Resumen de todos los registros (últimos 500 para no exceder tokens)
+  const recsResumen = allRecords.slice(0, 500).map(r =>
+    `${r.fecha}|${r.cartera}|${r.tipo}|${r.categoria}|${r.monto}|${r.nota||''}`
+  ).join('\n');
+
+  const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+  return `Fecha hoy: ${today}
+Mes actual: ${mNames[mes]} ${anio}
+Usuario activo: ${currentUser}
+Total registros: ${allRecords.length}
+
+SALDOS ACTUALES POR CARTERA:
+${Object.entries(saldos).map(([c,s]) => `${c}: $${fmtN(s)}`).join('\n')}
+
+GASTOS ${mNames[mes].toUpperCase()} POR CATEGORÍA:
+${Object.entries(bycat).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: -$${fmtN(v)}`).join('\n') || 'Sin gastos este mes'}
+
+PRESUPUESTOS MENSUALES:
+${metasConfig.map(m => `${m.categoria}: $${fmtN(Math.abs(m.presupuesto))}`).join('\n') || 'No configurados'}
+
+REGISTROS (fecha|cartera|tipo|categoria|monto|nota):
+${recsResumen}`;
+}
+
+function agregarMensaje(rol, texto) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  const esUser = rol === 'user';
+  div.style.cssText = `display:flex;justify-content:${esUser?'flex-end':'flex-start'};`;
+  div.innerHTML = `
+    <div style="max-width:85%;padding:12px 14px;border-radius:${esUser?'16px 16px 4px 16px':'16px 16px 16px 4px'};
+      background:${esUser?'var(--green)':'var(--bg2)'};
+      color:${esUser?'#000':'var(--text)'};
+      border:${esUser?'none':'0.5px solid var(--border2)'};
+      font-size:13px;line-height:1.6;white-space:pre-wrap;font-family:var(--font);">
+      ${texto.replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function agregarMensajeCargando(id) {
+  const msgs = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.id = id;
+  div.style.cssText = 'display:flex;justify-content:flex-start;';
+  div.innerHTML = `
+    <div style="padding:12px 16px;border-radius:16px 16px 16px 4px;background:var(--bg2);border:0.5px solid var(--border2);font-size:13px;color:var(--text2);">
+      <span style="animation:pulse 1s infinite;">Analizando tus finanzas...</span>
+    </div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
 
 function abrirProyeccion() {
   const sheetId = '1qkIds3D2Zo9Jv4m6XQNH0k7Qtq_l8_E2CW7jGnVXyCM';

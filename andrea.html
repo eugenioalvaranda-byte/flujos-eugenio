@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Flujos Andrea">
+<title>Flujos Andrea</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0a0a0c; --bg2: #131317; --bg3: #1c1c22; --bg4: #24242c; --bg5: #2e2e38;
+  --border: rgba(255,255,255,0.06); --border2: rgba(255,255,255,0.13); --border3: rgba(255,255,255,0.22);
+  --text: #ffffff; --text2: #b0b0c8; --text3: #606078;
+  --green: #00e096; --green-dim: rgba(0,224,150,0.11); --green-border: rgba(0,224,150,0.28);
+  --red: #ff5050; --red-dim: rgba(255,80,80,0.11); --red-border: rgba(255,80,80,0.28);
+  --blue: #4da6ff; --blue-dim: rgba(77,166,255,0.11); --blue-border: rgba(77,166,255,0.28);
+  --pink: #f472b6; --pink-dim: rgba(244,114,182,0.11); --pink-border: rgba(244,114,182,0.28);
+  --radius: 16px; --radius-sm: 10px;
+  --font: 'DM Sans', sans-serif; --display: 'Sora', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100dvh; max-width: 430px; margin: 0 auto; padding-bottom: 90px; -webkit-font-smoothing: antialiased; }
+
+/* NAV */
+.nav { position: fixed; bottom: 0; left: 50%; transform: translateX(-50%); width: 100%; max-width: 430px; background: rgba(10,10,12,0.96); backdrop-filter: blur(24px); border-top: 0.5px solid var(--border2); display: flex; align-items: center; padding: 8px 0 max(14px, env(safe-area-inset-bottom)); z-index: 100; }
+.nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px; font-size: 11px; font-weight: 500; color: var(--text3); cursor: pointer; transition: color 0.2s; user-select: none; padding: 4px 0; }
+.nav-item.active { color: var(--pink); }
+.nav-icon { font-size: 20px; line-height: 1; }
+.nav-add { width: 54px; height: 54px; border-radius: 50%; background: var(--pink); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 28px; font-weight: 300; margin-top: -22px; box-shadow: 0 0 28px rgba(244,114,182,0.45); cursor: pointer; flex-shrink: 0; transition: transform 0.15s; }
+.nav-add:active { transform: scale(0.93); }
+
+/* PAGES */
+.page { display: none; }
+.page.active { display: block; }
+
+/* TOPBAR */
+.topbar { padding: 54px 20px 16px; display: flex; align-items: center; justify-content: space-between; }
+.topbar-title { font-family: var(--display); font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+.topbar-badge { background: var(--pink-dim); border: 0.5px solid var(--pink-border); color: var(--pink); font-size: 11px; font-weight: 700; padding: 5px 12px; border-radius: 20px; }
+
+/* DASHBOARD ANDREA */
+.an-kpi-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 0 16px 12px; }
+.an-kpi { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); padding: 14px; }
+.an-kpi-label { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: 1px; font-weight: 700; margin-bottom: 6px; }
+.an-kpi-val { font-family: var(--display); font-size: 20px; font-weight: 700; }
+.an-kpi-val.pos { color: var(--green); }
+.an-kpi-val.neg { color: var(--red); }
+.an-section { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius); margin: 0 16px 12px; overflow: hidden; }
+.an-section-title { padding: 12px 16px; border-bottom: 0.5px solid var(--border); font-size: 10px; font-weight: 700; color: var(--text3); text-transform: uppercase; letter-spacing: 1.2px; }
+
+/* RECORDS */
+.filter-row { display: flex; gap: 6px; padding: 0 16px 10px; overflow-x: auto; scrollbar-width: none; }
+.filter-row::-webkit-scrollbar { display: none; }
+.filter-pill { padding: 9px 18px; border-radius: 24px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border2); color: var(--text2); background: var(--bg2); white-space: nowrap; cursor: pointer; transition: all 0.15s; flex-shrink: 0; }
+.filter-pill.active { background: var(--bg5); color: var(--text); border-color: var(--border3); }
+.records-list { padding: 0 16px; }
+.day-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 5px; }
+.day-date { font-size: 12px; color: var(--text2); font-weight: 600; }
+.day-total { font-family: var(--display); font-size: 13px; font-weight: 700; }
+.record-item { background: var(--bg2); border: 0.5px solid var(--border); border-radius: var(--radius-sm); margin-bottom: 5px; display: flex; align-items: center; gap: 12px; padding: 13px 14px; cursor: pointer; }
+.record-icon { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; font-size: 16px; flex-shrink: 0; }
+.record-icon.ing { background: var(--green-dim); color: var(--green); }
+.record-icon.gas { background: var(--red-dim); color: var(--red); }
+.record-icon.tra { background: var(--blue-dim); color: var(--blue); }
+.record-body { flex: 1; min-width: 0; }
+.record-cat { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.record-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
+.record-amount { font-family: var(--display); font-size: 16px; font-weight: 700; flex-shrink: 0; }
+.record-amount.pos { color: var(--green); }
+.record-amount.neg { color: var(--red); }
+
+/* FORM */
+.form-page { padding: 54px 20px 20px; }
+.form-title { font-family: var(--display); font-size: 24px; font-weight: 700; margin-bottom: 20px; }
+.type-tabs { display: flex; gap: 8px; margin-bottom: 20px; }
+.type-tab { flex: 1; padding: 15px 0; border-radius: var(--radius); font-size: 14px; font-weight: 600; text-align: center; cursor: pointer; border: 1px solid var(--border2); color: var(--text3); background: var(--bg2); user-select: none; }
+.type-tab.gas.active { background: var(--red-dim); color: var(--red); border-color: var(--red-border); }
+.type-tab.ing.active { background: var(--green-dim); color: var(--green); border-color: var(--green-border); }
+.type-tab.tra.active { background: var(--blue-dim); color: var(--blue); border-color: var(--blue-border); }
+.field { margin-bottom: 18px; }
+.field-label { font-size: 10px; color: var(--text2); margin-bottom: 9px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; }
+.field-input { width: 100%; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 14px 16px; color: var(--text); font-family: var(--font); font-size: 16px; outline: none; -webkit-appearance: none; }
+.field-input.amount-input { font-family: var(--display); font-size: 32px; font-weight: 700; letter-spacing: -1px; text-align: center; padding: 18px 16px; }
+.field-input::placeholder { color: var(--text3); }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
+.chips-wrap { display: flex; flex-wrap: wrap; gap: 7px; }
+.chip { padding: 10px 17px; border-radius: 24px; font-size: 13px; font-weight: 500; border: 0.5px solid var(--border2); color: var(--text2); background: var(--bg2); cursor: pointer; user-select: none; white-space: nowrap; }
+.chip.active { background: var(--bg5); color: var(--text); border-color: var(--border3); }
+.chip.active.gas { background: var(--red-dim); color: var(--red); border-color: var(--red-border); }
+.chip.active.ing { background: var(--green-dim); color: var(--green); border-color: var(--green-border); }
+.chip.active.tra { background: var(--blue-dim); color: var(--blue); border-color: var(--blue-border); }
+.submit-btn { width: 100%; padding: 18px; background: var(--pink); color: #fff; border-radius: var(--radius); font-size: 16px; font-weight: 700; cursor: pointer; text-align: center; margin-top: 8px; font-family: var(--display); transition: opacity 0.15s; }
+.submit-btn:active { opacity: 0.85; }
+.submit-btn.loading { opacity: 0.6; pointer-events: none; }
+
+/* MODAL */
+.modal-overlay { position: fixed; inset: 0; z-index: 200; background: rgba(0,0,0,0.78); backdrop-filter: blur(6px); display: none; align-items: flex-end; }
+.modal-overlay.show { display: flex; }
+.modal { width: 100%; max-width: 430px; margin: 0 auto; background: var(--bg2); border-radius: var(--radius) var(--radius) 0 0; border: 0.5px solid var(--border2); padding: 20px 20px max(30px, env(safe-area-inset-bottom)); animation: slideUp 0.25s ease; }
+@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.modal-handle { width: 36px; height: 4px; border-radius: 2px; background: var(--bg5); margin: 0 auto 20px; }
+.modal-title { font-family: var(--display); font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+.modal-actions { display: flex; gap: 8px; margin-top: 18px; }
+.modal-btn { flex: 1; padding: 15px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; font-family: var(--font); }
+.modal-btn.save { background: var(--pink); color: #fff; }
+.modal-btn.delete { background: var(--red-dim); color: var(--red); border: 0.5px solid var(--red-border); }
+.modal-btn.cancel { background: var(--bg3); color: var(--text2); }
+
+/* TOAST */
+.toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%) translateY(16px); background: var(--bg4); border: 0.5px solid var(--border3); border-radius: 30px; padding: 12px 24px; font-size: 13px; font-weight: 600; z-index: 300; opacity: 0; transition: all 0.3s; white-space: nowrap; pointer-events: none; }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+.toast.success { color: var(--pink); }
+.toast.error { color: var(--red); }
+select.field-input { cursor: pointer; }
+</style>
+</head>
+<body>
+
+<!-- DASHBOARD ANDREA -->
+<div id="page-dash" class="page active">
+  <div class="topbar">
+    <div class="topbar-title">Hola Andrea 👩</div>
+    <div class="topbar-badge">Mis finanzas</div>
+  </div>
+
+  <div class="an-kpi-row">
+    <div class="an-kpi">
+      <div class="an-kpi-label">↑ Ingresos mes</div>
+      <div class="an-kpi-val pos" id="a-ing">—</div>
+    </div>
+    <div class="an-kpi">
+      <div class="an-kpi-label">↓ Gastos mes</div>
+      <div class="an-kpi-val neg" id="a-gas">—</div>
+    </div>
+    <div class="an-kpi" style="grid-column:1/-1;">
+      <div class="an-kpi-label">= Balance del mes</div>
+      <div class="an-kpi-val" id="a-bal">—</div>
+    </div>
+  </div>
+
+  <div class="an-section">
+    <div class="an-section-title">Mis gastos del mes por categoría</div>
+    <div id="a-cats" style="padding:0;"></div>
+  </div>
+
+  <div class="an-section">
+    <div class="an-section-title">Últimos movimientos</div>
+    <div id="a-recents" style="padding:0;"></div>
+  </div>
+</div>
+
+<!-- MIS REGISTROS -->
+<div id="page-list" class="page">
+  <div class="topbar" style="padding-bottom:10px;">
+    <div class="topbar-title">Mis registros</div>
+  </div>
+  <div class="filter-row">
+    <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
+    <div class="filter-pill" onclick="setFilter('GASTO',this)">Gastos</div>
+    <div class="filter-pill" onclick="setFilter('INGRESO',this)">Ingresos</div>
+  </div>
+  <div class="records-list" id="records-list"></div>
+</div>
+
+<!-- NUEVO MOVIMIENTO -->
+<div id="page-form" class="page">
+  <div class="form-page">
+    <div class="form-title">Nuevo movimiento</div>
+    <div class="type-tabs">
+      <div class="type-tab gas active" onclick="setType('GASTO',this)">↓ Gasto</div>
+      <div class="type-tab ing" onclick="setType('INGRESO',this)">↑ Ingreso</div>
+      <div class="type-tab tra" onclick="setType('TRANSFERENCIA',this)">⇄ Transfer</div>
+    </div>
+    <div class="field">
+      <div class="field-label">Monto</div>
+      <input class="field-input amount-input" type="number" id="f-monto" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+    </div>
+    <div class="field">
+      <div class="field-label">Fecha</div>
+      <input class="field-input" type="date" id="f-fecha">
+    </div>
+    <div class="field">
+      <div class="field-label" id="label-cartera">Cartera</div>
+      <div class="chips-wrap" id="chips-cartera"></div>
+    </div>
+    <div class="field" id="field-cartera-dest" style="display:none">
+      <div class="field-label">Cartera destino</div>
+      <div class="chips-wrap" id="chips-cartera-dest"></div>
+    </div>
+    <div class="field" id="field-categoria">
+      <div class="field-label">Categoría</div>
+      <div class="chips-wrap" id="chips-categoria"></div>
+    </div>
+    <div class="field">
+      <div class="field-label">Nota (opcional)</div>
+      <input class="field-input" type="text" id="f-nota" placeholder="Ej. OXXO, Costco...">
+    </div>
+    <div class="submit-btn" id="btn-guardar" onclick="guardarRegistro()">Guardar registro</div>
+  </div>
+</div>
+
+<!-- NAV -->
+<div class="nav">
+  <div class="nav-item active" id="nav-dash" onclick="showPage('dash')"><div class="nav-icon">◈</div><span>Resumen</span></div>
+  <div class="nav-item" id="nav-list" onclick="showPage('list')"><div class="nav-icon">≡</div><span>Mis registros</span></div>
+  <div class="nav-add" onclick="showPage('form')">+</div>
+  <div class="nav-item" style="flex:2;"></div>
+</div>
+
+<!-- EDIT MODAL -->
+<div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modal-title">Editar</div>
+    <div class="field">
+      <div class="field-label">Monto</div>
+      <input class="field-input amount-input" type="number" id="m-monto" step="0.01" inputmode="decimal">
+    </div>
+    <div class="field">
+      <div class="field-label">Nota</div>
+      <input class="field-input" type="text" id="m-nota">
+    </div>
+    <div class="field">
+      <div class="field-label">Fecha</div>
+      <input class="field-input" type="date" id="m-fecha">
+    </div>
+    <div class="modal-actions">
+      <div class="modal-btn cancel" onclick="closeModal()">Cancelar</div>
+      <div class="modal-btn delete" onclick="eliminarRegistro()">Eliminar</div>
+      <div class="modal-btn save" onclick="actualizarRegistro()">Guardar</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOVj4HuMjDbCpRWaiTXI5ZsnDM2RuPL9RSGtG8V4628eV0IQSis6FPQ6wNKE52L_GriQ/exec';
+const USUARIO = 'Andrea';
+
+const CARTERAS_CASH = ['EFECTIVO','EFECTIVO ANDREA','BANAMEX','BAJÍO','SANTANDER','CAJA FUERTE'];
+const CARTERAS_TDC  = ['TDC AMEX PLATINO','TDC LIKE U','TDC AMEX ORO','TDC INVEX VOLARIS','TDC CITI','TDC TARJETA PALACIO'];
+const CARTERAS = [...CARTERAS_CASH, ...CARTERAS_TDC];
+const TDC_CORTE = {'TDC AMEX PLATINO':11,'TDC LIKE U':12,'TDC AMEX ORO':13,'TDC INVEX VOLARIS':12,'TDC CITI':5,'TDC TARJETA PALACIO':8};
+const DIA_PAGO = 24;
+const CAT_GASTO   = ['SUPER','VIAJES','RENTA','GASOLINA','TRANSPORTE / MOVILIDAD','SALUD / DEPORTE','ROPA / ACCESORIOS','FIESTA / COMIDA / RECREACIÓN','DIGITALES','REGALOS','GAS','GASTOS DEPARTAMENTO','COLEGIO','CLASES EXTRACURRICULARES','UBER','ENFERMERA / MUCHACHA','SEGURO COCHES','SEGURO GASTOS MEDICOS','IMPUESTOS','INVERSIÓN','AHORRO GNP','AHORRO HIPERPACK','CRYPTOS','PAGO CREDITO BANCOS','PAGO CREDITO GENERAL','PAGO CREDITO HIPOTECARIO','PRÉSTAMOS'];
+const CAT_INGRESO = ['NOMINA HIPERPACK','KUBEL','COMISIÓN FACT','PAGO DE PRÉSTAMOS','PEDI PRESTADO','BONOS / COMISIONES HIPERPACK','UTILIDADES DE INVERSIÓN','UTILIDADES HIPERPACK','FILTROS','OTROS'];
+
+let allRecords = [], myRecords = [], editingId = null, currentFilter = 'todos';
+let currentType = 'GASTO', selectedCartera = '', selectedCarteraDest = '', selectedCategoria = '';
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  renderChipsCartera(); renderChipsCategoria();
+  loadRecords();
+});
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(e => e.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  const n = document.getElementById('nav-' + p); if (n) n.classList.add('active');
+  if (p === 'list') renderRecords();
+  if (p === 'dash') renderDash();
+}
+
+function loadRecords() {
+  try { allRecords = JSON.parse(localStorage.getItem('flujos_records_andrea') || '[]'); } catch(e) { allRecords = []; }
+  myRecords = allRecords.filter(r => r.usuario === USUARIO);
+  renderDash();
+
+  fetch(APPS_SCRIPT_URL)
+    .then(r => r.json())
+    .then(data => {
+      if (!data.ok || !data.rows) return;
+      allRecords = data.rows.map(r => ({
+        id:             String(r['ID'] || r['id'] || generateId()),
+        fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
+        hora:           String(r['HORA'] || ''),
+        cartera:        String(r['CARTERA'] || r['cartera'] || ''),
+        tipo:           String(r['TIPO'] || r['tipo'] || ''),
+        categoria:      String(r['CATEGORIA'] || r['CATEGORÍA'] || r['categoria'] || ''),
+        monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
+        fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
+        nota:           String(r['NOTA'] || r['nota'] || ''),
+        usuario:        String(r['USUARIO'] || r['usuario'] || ''),
+        carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+      })).filter(r => r.fecha && r.cartera);
+      allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+      myRecords = allRecords.filter(r => r.usuario === USUARIO);
+      localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
+      renderDash();
+      showToast(`${myRecords.length} registros cargados ✓`, 'success');
+    })
+    .catch(() => {});
+}
+
+function renderDash() {
+  const today = new Date().toISOString().split('T')[0];
+  const now = new Date(), mes = now.getMonth(), anio = now.getFullYear();
+
+  const resMes = myRecords.filter(r => {
+    if (!r.fecha || r.fecha > today) return false;
+    const p = r.fecha.split('-');
+    return parseInt(p[0]) === anio && parseInt(p[1]) - 1 === mes;
+  });
+
+  let ing = 0, gas = 0;
+  resMes.forEach(r => {
+    const m = parseFloat(r.monto) || 0;
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+  });
+  const bal = ing + gas;
+  document.getElementById('a-ing').textContent = '$' + fmtN(ing);
+  document.getElementById('a-gas').textContent = '$' + fmtN(Math.abs(gas));
+  const be = document.getElementById('a-bal');
+  be.textContent = (bal >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(bal));
+  be.className = 'an-kpi-val ' + (bal >= 0 ? 'pos' : 'neg');
+
+  // Gastos por categoría del mes
+  const bycat = {};
+  resMes.forEach(r => {
+    const m = parseFloat(r.monto) || 0;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+  });
+  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
+  const maxVal = sorted[0] ? sorted[0][1] : 1;
+  const cats = document.getElementById('a-cats');
+  cats.innerHTML = sorted.length ? sorted.map(([cat, val]) => `
+    <div style="display:flex;align-items:center;gap:8px;padding:10px 16px;border-bottom:0.5px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</div>
+        <div style="height:4px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
+          <div style="height:100%;width:${Math.round(val/maxVal*100)}%;background:var(--red);border-radius:2px;"></div>
+        </div>
+      </div>
+      <div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--display);flex-shrink:0;">−$${fmtN(val)}</div>
+    </div>`).join('')
+  : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin gastos este mes</div>';
+
+  // Últimos 5 movimientos
+  const recents = document.getElementById('a-recents');
+  const last5 = myRecords.filter(r => r.fecha <= today).slice(0, 5);
+  recents.innerHTML = last5.length ? last5.map(r => {
+    const m = parseFloat(r.monto) || 0;
+    const cls = m > 0 ? 'pos' : 'neg';
+    const icon = m > 0 ? '↑' : '↓';
+    const iconcls = m > 0 ? 'ing' : 'gas';
+    return `<div style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:0.5px solid var(--border);">
+      <div class="record-icon ${iconcls}">${icon}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.categoria || r.tipo}</div>
+        <div style="font-size:11px;color:var(--text2);">${r.cartera}${r.nota ? ' · ' + r.nota : ''}</div>
+      </div>
+      <div style="font-family:var(--display);font-size:14px;font-weight:700;" class="record-amount ${cls}">${m>=0?'+':'−'}$${fmtN(Math.abs(m))}</div>
+    </div>`;
+  }).join('')
+  : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin movimientos</div>';
+}
+
+function setFilter(f, el) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderRecords();
+}
+
+function renderRecords() {
+  const list = document.getElementById('records-list'); list.innerHTML = '';
+  const today = new Date().toISOString().split('T')[0];
+  let recs = myRecords.filter(r => r.fecha <= today);
+  if (currentFilter !== 'todos') recs = recs.filter(r => r.tipo === currentFilter);
+  if (!recs.length) { list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;">Sin registros</div>'; return; }
+
+  const byDate = {};
+  recs.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha]=[]; byDate[r.fecha].push(r); });
+  Object.keys(byDate).sort((a,b) => b.localeCompare(a)).forEach(date => {
+    const rs = byDate[date];
+    const dt = rs.reduce((s,r) => s+(parseFloat(r.monto)||0), 0);
+    const grp = document.createElement('div');
+    grp.innerHTML = `<div class="day-header"><span class="day-date">${formatDate(date)}</span><span class="day-total" style="color:${dt>=0?'var(--green)':'var(--red)'}">${dt>=0?'+':'−'}$${fmtN(Math.abs(dt))}</span></div>`;
+    rs.forEach(r => {
+      const m = parseFloat(r.monto)||0;
+      const item = document.createElement('div'); item.className = 'record-item';
+      const iconcls = m>0?'ing':'gas', icon = m>0?'↑':'↓';
+      const amtcls = m>0?'pos':'neg';
+      item.innerHTML = `
+        <div class="record-icon ${iconcls}">${icon}</div>
+        <div class="record-body">
+          <div class="record-cat">${r.categoria||r.tipo}</div>
+          <div class="record-meta">${r.cartera}${r.nota?' · '+r.nota:''}</div>
+        </div>
+        <div class="record-amount ${amtcls}">${m>=0?'+':'−'}$${fmtN(Math.abs(m))}</div>`;
+      item.onclick = () => openEditModal(r);
+      grp.appendChild(item);
+    });
+    list.appendChild(grp);
+  });
+}
+
+// FORM
+function setType(t, el) {
+  currentType = t;
+  document.querySelectorAll('.type-tab').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  selectedCategoria = ''; selectedCarteraDest = ''; selectedCartera = '';
+  document.getElementById('field-cartera-dest').style.display = t==='TRANSFERENCIA'?'block':'none';
+  document.getElementById('field-categoria').style.display = t==='TRANSFERENCIA'?'none':'block';
+  document.getElementById('label-cartera').textContent = t==='TRANSFERENCIA'?'Cartera origen':'Cartera';
+  renderChipsCartera(); renderChipsCategoria(); renderChipsCarteraDest();
+}
+
+function renderChipsCartera() {
+  const wrap = document.getElementById('chips-cartera'); wrap.innerHTML = '';
+  const list = currentType==='INGRESO' ? CARTERAS_CASH : CARTERAS;
+  list.forEach(c => {
+    const el = document.createElement('div');
+    const colorCls = currentType==='INGRESO'?' ing':currentType==='GASTO'?' gas':' tra';
+    el.className = 'chip'+(selectedCartera===c?' active'+colorCls:'');
+    el.textContent = (CARTERAS_TDC.includes(c)?'💳 ':'')+c;
+    el.onclick = () => { selectedCartera=c; renderChipsCartera(); if(currentType==='TRANSFERENCIA') renderChipsCarteraDest(); };
+    wrap.appendChild(el);
+  });
+}
+
+function renderChipsCarteraDest() {
+  const wrap = document.getElementById('chips-cartera-dest'); wrap.innerHTML = '';
+  CARTERAS.filter(c => c!==selectedCartera).forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'chip tra'+(selectedCarteraDest===c?' active':'');
+    el.textContent = (CARTERAS_TDC.includes(c)?'💳 ':'')+c;
+    el.onclick = () => { selectedCarteraDest=c; renderChipsCarteraDest(); };
+    wrap.appendChild(el);
+  });
+}
+
+function renderChipsCategoria() {
+  const wrap = document.getElementById('chips-categoria'); wrap.innerHTML = '';
+  const cats = currentType==='INGRESO'?CAT_INGRESO:CAT_GASTO;
+  const cls = currentType==='INGRESO'?'ing':'gas';
+  cats.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'chip'+(selectedCategoria===c?' active '+cls:'');
+    el.textContent = c;
+    el.onclick = () => { selectedCategoria=c; renderChipsCategoria(); };
+    wrap.appendChild(el);
+  });
+}
+
+function calcFechaFlujo(fechaStr, cartera) {
+  if (!CARTERAS_TDC.includes(cartera)) return fechaStr;
+  const parts = fechaStr.split('-');
+  const anioOp=parseInt(parts[0]), mesOp=parseInt(parts[1])-1, diaOp=parseInt(parts[2]);
+  const corte=TDC_CORTE[cartera]||1;
+  let mesPago=mesOp, anioPago=anioOp;
+  if (diaOp>corte) { mesPago++; if(mesPago>11){mesPago=0;anioPago++;} }
+  return `${anioPago}-${String(mesPago+1).padStart(2,'0')}-${String(DIA_PAGO).padStart(2,'0')}`;
+}
+
+function guardarRegistro() {
+  const monto=parseFloat(document.getElementById('f-monto').value);
+  const fecha=document.getElementById('f-fecha').value;
+  const nota=document.getElementById('f-nota').value.trim();
+  if (!monto||monto<=0) return showToast('Ingresa un monto válido','error');
+  if (!fecha) return showToast('Selecciona una fecha','error');
+  if (!selectedCartera) return showToast('Selecciona una cartera','error');
+  if (currentType!=='TRANSFERENCIA'&&!selectedCategoria) return showToast('Selecciona una categoría','error');
+  if (currentType==='TRANSFERENCIA'&&!selectedCarteraDest) return showToast('Selecciona cartera destino','error');
+
+  const btn=document.getElementById('btn-guardar');
+  btn.classList.add('loading'); btn.textContent='Guardando...';
+
+  const regs=[];
+  if (currentType==='TRANSFERENCIA') {
+    const idT=generateId();
+    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:'TRANSFERENCIA',categoria:'',monto:-Math.abs(monto),nota,fechaFlujo:calcFechaFlujo(fecha,selectedCartera),usuario:USUARIO,carteraDestino:selectedCarteraDest,idTransferencia:idT,montoTransferencia:monto});
+    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCarteraDest,tipo:'INGRESO POR TRANSFERENCIA',categoria:'',monto:Math.abs(monto),nota,fechaFlujo:calcFechaFlujo(fecha,selectedCarteraDest),usuario:USUARIO,carteraDestino:'',idTransferencia:idT,montoTransferencia:monto});
+  } else {
+    const m=currentType==='INGRESO'?Math.abs(monto):-Math.abs(monto);
+    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:currentType,categoria:selectedCategoria,monto:m,nota,fechaFlujo:calcFechaFlujo(fecha,selectedCartera),usuario:USUARIO,carteraDestino:'',idTransferencia:'',montoTransferencia:''});
+  }
+
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'addRows',rows:regs})})
+  .then(r=>r.json())
+  .then(()=>{
+    regs.forEach(r=>{allRecords.unshift(r);});
+    myRecords=allRecords.filter(r=>r.usuario===USUARIO);
+    localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
+    document.getElementById('f-monto').value='';
+    document.getElementById('f-nota').value='';
+    document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+    selectedCartera=''; selectedCarteraDest=''; selectedCategoria='';
+    btn.classList.remove('loading'); btn.textContent='Guardar registro';
+    showToast('Registro guardado ✓','success');
+    showPage('dash');
+  })
+  .catch(()=>{btn.classList.remove('loading');btn.textContent='Guardar registro';showToast('Error al guardar','error');});
+}
+
+// EDIT MODAL
+function openEditModal(r) {
+  editingId=r.id;
+  document.getElementById('modal-title').textContent=r.categoria||r.tipo;
+  document.getElementById('m-monto').value=Math.abs(parseFloat(r.monto)||0);
+  document.getElementById('m-nota').value=r.nota||'';
+  document.getElementById('m-fecha').value=r.fecha;
+  document.getElementById('edit-modal').classList.add('show');
+}
+function closeModal() { document.getElementById('edit-modal').classList.remove('show'); editingId=null; }
+
+function actualizarRegistro() {
+  if (!editingId) return;
+  const idx=allRecords.findIndex(x=>x.id===editingId); if(idx<0) return;
+  const r=allRecords[idx];
+  const nm=parseFloat(document.getElementById('m-monto').value);
+  r.nota=document.getElementById('m-nota').value.trim();
+  r.fecha=document.getElementById('m-fecha').value;
+  r.monto=r.monto<0?-Math.abs(nm):Math.abs(nm);
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRow',id:r.id,data:r})}).catch(()=>{});
+  myRecords=allRecords.filter(r=>r.usuario===USUARIO);
+  localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
+  closeModal(); renderRecords(); renderDash();
+  showToast('Actualizado ✓','success');
+}
+
+function eliminarRegistro() {
+  if (!editingId) return;
+  const idx=allRecords.findIndex(x=>x.id===editingId); if(idx<0) return;
+  fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'deleteRow',id:allRecords[idx].id})}).catch(()=>{});
+  allRecords.splice(idx,1);
+  myRecords=allRecords.filter(r=>r.usuario===USUARIO);
+  localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
+  closeModal(); renderRecords(); renderDash();
+  showToast('Eliminado','error');
+}
+
+// UTILS
+function generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
+function getHora(){return new Date().toTimeString().split(' ')[0];}
+function fmtN(n){return Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
+function formatDate(str){if(!str)return'';const d=new Date(str+'T12:00:00');return d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});}
+function formatSheetDate(val){
+  if(!val)return'';const s=String(val).trim();
+  if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.substring(0,10);
+  if(/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)){const p=s.split('/');return`${p[2]}-${p[1].padStart(2,'0')}-${p[0].padStart(2,'0')}`;}
+  if(typeof val==='number'){const d=new Date(Math.round((val-25569)*86400000));return d.toISOString().split('T')[0];}
+  if(val instanceof Date)return val.toISOString().split('T')[0];
+  return s.substring(0,10);
+}
+function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>{t.className='toast';},2800);}
+</script>
+</body>
+</html>

@@ -1158,6 +1158,27 @@ function getSaldoInicial(cartera) {
   return cfg ? (parseFloat(cfg.saldoInicial) || 0) : 0;
 }
 
+function calcPatrimonio() {
+  const today = new Date().toISOString().split('T')[0];
+  const saldos = {};
+  CARTERAS.forEach(c => saldos[c] = getSaldoInicial(c));
+  allRecords.forEach(r => {
+    const esFuturo = r.fecha > today;
+    const esTdc = CARTERAS_TDC.includes(r.cartera);
+    const m = parseFloat(r.monto) || 0;
+    if (!esFuturo) {
+      if (saldos[r.cartera] !== undefined) saldos[r.cartera] += m;
+    } else {
+      if (esTdc && m < 0 && r.tipo === 'GASTO') {
+        if (saldos[r.cartera] !== undefined) saldos[r.cartera] += m;
+      }
+    }
+  });
+  const cash = CARTERAS_CASH.reduce((s, c) => s + (saldos[c] || 0), 0);
+  const tdc  = CARTERAS_TDC.reduce((s, c) => s + (saldos[c] || 0), 0);
+  return { cash, tdc, neto: cash + tdc };
+}
+
 function renderDashboard() {
   const today = new Date().toISOString().split('T')[0];
   const cutoff = dashCutoffDate;
@@ -1700,27 +1721,13 @@ function renderDashboardAnalytics() {
 
   const recs = allRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hasta);
 
-  // Patrimonio Neto (igual que en el resumen)
-  const today = new Date().toISOString().split('T')[0];
-  let totalCash = 0, totalTdc = 0;
-  CARTERAS_CASH.forEach(c => {
-    let s = getSaldoInicial(c);
-    allRecords.forEach(r => { if (r.cartera===c && r.fecha<=today) s += parseFloat(r.monto)||0; });
-    totalCash += s;
-  });
-  CARTERAS_TDC.forEach(c => {
-    let s = getSaldoInicial(c);
-    allRecords.forEach(r => {
-      if (r.cartera===c && parseFloat(r.monto)<0 && r.tipo!=='TRANSFERENCIA') s += parseFloat(r.monto)||0;
-    });
-    totalTdc += s;
-  });
-  const patrimonioNeto = totalCash + totalTdc;
+  // Patrimonio Neto — usa la misma función que el resumen
+  const { cash: totalCash, tdc: totalTdc, neto: patrimonioNeto } = calcPatrimonio();
   const pnEl = document.getElementById('an-pn-total');
   const cashEl = document.getElementById('an-pn-cash');
   const tdcEl = document.getElementById('an-pn-tdc');
   if (pnEl) { pnEl.textContent = (patrimonioNeto>=0?'$':'−$') + fmtN(Math.abs(patrimonioNeto)); pnEl.style.color = patrimonioNeto>=0?'var(--green)':'var(--red)'; }
-  if (cashEl) cashEl.textContent = (totalCash>=0?'$':'−$') + fmtN(Math.abs(totalCash));
+  if (cashEl) { cashEl.textContent = (totalCash>=0?'$':'−$') + fmtN(Math.abs(totalCash)); cashEl.style.color = totalCash>=0?'var(--green)':'var(--red)'; }
   if (tdcEl) tdcEl.textContent = '−$' + fmtN(Math.abs(totalTdc));
 
   // KPIs del período
@@ -2154,12 +2161,15 @@ function abrirProyeccion() {
   const webUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit?gid=' + gid + '#gid=' + gid;
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
   if (isIOS) {
-    const nativeUrl = 'googledocs://spreadsheets/d/' + sheetId + '/edit?gid=' + gid;
-    const start = Date.now();
-    window.location = nativeUrl;
+    // Intenta abrir app nativa via iframe invisible, fallback a Safari
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = 'googledocs://spreadsheets/d/' + sheetId + '/edit?gid=' + gid;
+    document.body.appendChild(iframe);
     setTimeout(() => {
-      if (Date.now() - start < 2000) window.open(webUrl, '_blank');
-    }, 1500);
+      document.body.removeChild(iframe);
+      window.open(webUrl, '_blank');
+    }, 1000);
   } else {
     window.open(webUrl, '_blank');
   }

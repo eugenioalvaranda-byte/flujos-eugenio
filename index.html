@@ -276,6 +276,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .toast.error { color: var(--red); }
 
 .coming-soon { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 60vh; color: var(--text3); gap: 12px; }
+.privacy-hidden { filter: blur(8px); user-select: none; pointer-events: none; transition: filter 0.2s; }
+.privacy-on .privacy-num { filter: blur(8px); transition: filter 0.2s; }
 select.field-input, select.rec-input, select.adv-input, select.datepick-input { cursor: pointer; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
@@ -427,9 +429,12 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
 <!-- SIDEBAR (visible en tablet/desktop) -->
 <div class="sidebar" id="sidebar">
-  <div class="sidebar-logo">
-    <div class="sidebar-logo-title">Flujos Eugenio</div>
-    <div class="sidebar-logo-sub">Sistema de flujos</div>
+  <div class="sidebar-logo" style="display:flex;align-items:flex-start;justify-content:space-between;">
+    <div>
+      <div class="sidebar-logo-title">Flujos Eugenio</div>
+      <div class="sidebar-logo-sub">Sistema de flujos</div>
+    </div>
+    <div id="privacy-btn-desk" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.5;margin-top:2px;" title="Ocultar números">👁</div>
   </div>
   <div class="sidebar-add-btn" onclick="showPage('form')">+ Nuevo movimiento</div>
   <div class="sidebar-nav-item active" id="snav-dash" onclick="showPage('dash')">
@@ -466,7 +471,10 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar">
-    <div class="topbar-title">Flujos Eugenio</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div class="topbar-title">Flujos Eugenio</div>
+      <div id="privacy-btn" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.6;" title="Ocultar números">👁</div>
+    </div>
     <div class="user-toggle">
       <div class="user-btn active" onclick="setUser('Eugenio',this)">👨 Eugenio</div>
       <div class="user-btn" onclick="setUser('Andrea',this)">👩 Andrea</div>
@@ -518,7 +526,26 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <div class="dash-mes-pill"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
     </div>
 
-    <div class="wallets-group-title">💵 Carteras Cash</div>
+    <!-- Patrimonio Neto repetido como referencia rápida -->
+  <div style="margin:0 16px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:10px;">Patrimonio Neto al día de hoy</div>
+    <div style="display:flex;gap:16px;align-items:center;">
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Total</div>
+        <div id="dash-pn-total" class="privacy-num" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--green);">—</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">💵 Cash</div>
+        <div id="dash-pn-cash" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--green);">—</div>
+      </div>
+      <div style="flex:1;">
+        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">💳 Deuda TDC</div>
+        <div id="dash-pn-tdc" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="wallets-group-title">💵 Carteras Cash</div>
     <div class="wallets-grid" id="wallets-cash"></div>
     <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
     <div class="wallets-grid" id="wallets-tdc"></div>
@@ -600,6 +627,12 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="list-title">Registros</div>
     <div class="filter-toggle-btn" id="list-adv-btn" onclick="toggleListFilters()">⚙ Filtros</div>
   </div>
+  <!-- Buscador -->
+  <div style="padding:0 16px 10px;">
+    <input type="text" id="search-input" placeholder="🔍  Buscar por categoría, nota, monto, cartera..."
+      oninput="renderRecords()"
+      style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;">
+  </div>
   <div class="adv-filters" id="list-adv-filters">
     <div class="adv-grid">
       <div><div class="adv-label">Desde</div><input class="adv-input" type="date" id="filt-desde"></div>
@@ -617,6 +650,11 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="filter-pill" data-filter="GASTO" onclick="setFilter('GASTO',this)">Gastos</div>
     <div class="filter-pill" data-filter="INGRESO" onclick="setFilter('INGRESO',this)">Ingresos</div>
     <div class="filter-pill" data-filter="TRANSFERENCIA" onclick="setFilter('TRANSFERENCIA',this)">Transferencias</div>
+  </div>
+  <div class="filter-row" style="padding-top:0;">
+    <div class="filter-pill active" data-user="todos" onclick="setUserFilter('todos',this)">👥 Todos</div>
+    <div class="filter-pill" data-user="Eugenio" onclick="setUserFilter('Eugenio',this)">👨 Eugenio</div>
+    <div class="filter-pill" data-user="Andrea" onclick="setUserFilter('Andrea',this)">👩 Andrea</div>
   </div>
   <div class="records-list" id="records-list"></div>
 </div>
@@ -652,6 +690,22 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div onclick="navRango(-1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">←</div>
     <div id="rng-label" style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text);">Marzo 2026</div>
     <div onclick="navRango(1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">→</div>
+  </div>
+
+  <!-- Patrimonio Neto -->
+  <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);margin:0 16px 14px;padding:18px 20px;">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.4px;font-weight:700;margin-bottom:8px;">Patrimonio Neto</div>
+    <div class="privacy-num" id="an-pn-total" style="font-family:var(--display);font-size:32px;font-weight:700;color:var(--green);letter-spacing:-1px;margin-bottom:10px;">—</div>
+    <div style="display:flex;gap:8px;">
+      <div style="flex:1;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg3);border:0.5px solid var(--border);">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">💵 Cash</div>
+        <div class="privacy-num" id="an-pn-cash" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--green);">—</div>
+      </div>
+      <div style="flex:1;padding:10px 12px;border-radius:var(--radius-sm);background:var(--bg3);border:0.5px solid var(--border);">
+        <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">💳 Deuda TDC</div>
+        <div class="privacy-num" id="an-pn-tdc" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--red);">—</div>
+      </div>
+    </div>
   </div>
 
   <!-- KPIs -->
@@ -721,6 +775,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 <div id="page-chat" class="page">
   <div class="topbar">
     <div class="topbar-title">Consultar IA</div>
+    <div onclick="limpiarChat()" style="padding:7px 14px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;font-size:12px;font-weight:500;color:var(--text2);cursor:pointer;">🗑 Limpiar</div>
   </div>
   <div style="padding:0 16px;margin-bottom:12px;">
     <div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;font-size:12px;color:var(--text2);line-height:1.6;">
@@ -732,11 +787,11 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   </div>
 
   <!-- Mensajes -->
-  <div id="chat-messages" style="padding:0 16px;display:flex;flex-direction:column;gap:10px;margin-bottom:16px;min-height:200px;"></div>
+  <div id="chat-messages" style="padding:0 16px 120px;display:flex;flex-direction:column;gap:10px;min-height:100px;"></div>
 
   <!-- Input -->
-  <div style="position:sticky;bottom:80px;padding:0 16px 16px;background:var(--bg);">
-    <div style="display:flex;gap:8px;align-items:flex-end;">
+  <div style="position:fixed;bottom:max(80px,env(safe-area-inset-bottom));left:220px;right:0;padding:12px 16px;background:var(--bg);border-top:0.5px solid var(--border);">
+    <div style="display:flex;gap:8px;align-items:flex-end;max-width:900px;margin:0 auto;">
       <textarea id="chat-input" placeholder="Pregunta sobre tus finanzas..."
         rows="1"
         style="flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:none;line-height:1.5;max-height:120px;overflow-y:auto;"
@@ -927,7 +982,7 @@ function showPage(p) {
   document.getElementById('page-' + p).classList.add('active');
   const n = document.getElementById('nav-' + p); if (n) n.classList.add('active');
   if (p === 'list') renderRecords();
-  if (p === 'dash') renderDashboard();
+  if (p === 'dash') { renderDashboard(); if(privacyOn) setTimeout(togglePrivacy,10) && setTimeout(togglePrivacy,10); }
   if (p === 'cfg') renderConfigPage();
   if (p === 'proy') renderDashboardAnalytics();
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
@@ -1136,6 +1191,14 @@ function renderDashboard() {
   pnEl.textContent = (patrimonioNeto < 0 ? '−' : '') + fmtN(Math.abs(patrimonioNeto));
   pnEl.style.color = patrimonioNeto < 0 ? 'var(--red)' : 'var(--green)';
 
+  // Update PN summary card in resumen tab
+  const pnTotal = document.getElementById('dash-pn-total');
+  const pnCash  = document.getElementById('dash-pn-cash');
+  const pnTdc   = document.getElementById('dash-pn-tdc');
+  if (pnTotal) { pnTotal.textContent = (patrimonioNeto<0?'−':'')+'$'+fmtN(Math.abs(patrimonioNeto)); pnTotal.style.color = patrimonioNeto<0?'var(--red)':'var(--green)'; }
+  if (pnCash)  { pnCash.textContent  = (cashHoy<0?'−':'')+'$'+fmtN(Math.abs(cashHoy));  pnCash.style.color  = cashHoy<0?'var(--red)':'var(--green)'; }
+  if (pnTdc)   { pnTdc.textContent   = '$'+fmtN(Math.abs(tdcHoy)); }
+
   // CASH y TDC — cash solo hasta hoy, TDC incluye gastos futuros (ya se gastó)
   const cashEl = document.getElementById('dash-cash');
   cashEl.textContent = (cashHoy < 0 ? '−' : '') + '$' + fmtN(Math.abs(cashHoy));
@@ -1287,15 +1350,27 @@ function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
   const today = new Date().toISOString().split('T')[0];
 
+  const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+
   let records = allRecords.filter(r => {
     if (currentFilter !== 'todos') {
       if (currentFilter === 'TRANSFERENCIA' && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'INGRESO POR TRANSFERENCIA') return false;
       if (currentFilter !== 'TRANSFERENCIA' && r.tipo !== currentFilter) return false;
     }
+    if (currentUserFilter !== 'todos' && r.usuario !== currentUserFilter) return false;
     if (listFilters.desde && r.fecha < listFilters.desde) return false;
     if (listFilters.hasta && r.fecha > listFilters.hasta) return false;
     if (listFilters.cartera && r.cartera !== listFilters.cartera) return false;
     if (listFilters.cat && r.categoria !== listFilters.cat) return false;
+    // Search filter
+    if (searchTerm) {
+      const haystack = [
+        r.categoria, r.nota, r.cartera, r.tipo,
+        r.fecha, String(Math.abs(parseFloat(r.monto)||0)),
+        r.usuario, r.carteraDestino
+      ].join(' ').toLowerCase();
+      if (!haystack.includes(searchTerm)) return false;
+    }
     return true;
   });
 
@@ -1625,7 +1700,30 @@ function renderDashboardAnalytics() {
 
   const recs = allRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hasta);
 
-  // KPIs
+  // Patrimonio Neto (igual que en el resumen)
+  const today = new Date().toISOString().split('T')[0];
+  let totalCash = 0, totalTdc = 0;
+  CARTERAS_CASH.forEach(c => {
+    let s = getSaldoInicial(c);
+    allRecords.forEach(r => { if (r.cartera===c && r.fecha<=today) s += parseFloat(r.monto)||0; });
+    totalCash += s;
+  });
+  CARTERAS_TDC.forEach(c => {
+    let s = getSaldoInicial(c);
+    allRecords.forEach(r => {
+      if (r.cartera===c && parseFloat(r.monto)<0 && r.tipo!=='TRANSFERENCIA') s += parseFloat(r.monto)||0;
+    });
+    totalTdc += s;
+  });
+  const patrimonioNeto = totalCash + totalTdc;
+  const pnEl = document.getElementById('an-pn-total');
+  const cashEl = document.getElementById('an-pn-cash');
+  const tdcEl = document.getElementById('an-pn-tdc');
+  if (pnEl) { pnEl.textContent = (patrimonioNeto>=0?'$':'−$') + fmtN(Math.abs(patrimonioNeto)); pnEl.style.color = patrimonioNeto>=0?'var(--green)':'var(--red)'; }
+  if (cashEl) cashEl.textContent = (totalCash>=0?'$':'−$') + fmtN(Math.abs(totalCash));
+  if (tdcEl) tdcEl.textContent = '−$' + fmtN(Math.abs(totalTdc));
+
+  // KPIs del período
   let ing = 0, gas = 0;
   recs.forEach(r => {
     const m = parseFloat(r.monto) || 0;
@@ -1812,12 +1910,58 @@ function renderPresupuestoChart(recs) {
   });
 }
 
+// ── PRIVACY MODE ──
+let privacyOn = false;
+function togglePrivacy() {
+  privacyOn = !privacyOn;
+  document.body.classList.toggle('privacy-on', privacyOn);
+  // Blur all money amounts
+  document.querySelectorAll('.privacy-num').forEach(el => {
+    el.style.filter = privacyOn ? 'blur(8px)' : 'none';
+  });
+  // Update button icon
+  const btns = ['privacy-btn','privacy-btn-desk'];
+  btns.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.textContent = privacyOn ? '🙈' : '👁'; el.style.opacity = privacyOn ? '1' : '0.5'; }
+  });
+  // Blur wallet amounts, KPIs, record amounts
+  const selectors = [
+    '.dash-networth', '.dash-split-val', '.dash-mes-val',
+    '.wallet-amount', '.record-amount', '.day-total',
+    '#an-ing','#an-gas','#an-bal',
+    '#dash-total','#dash-cash','#dash-tdc',
+    '#dash-ing','#dash-gas','#dash-bal'
+  ];
+  selectors.forEach(sel => {
+    document.querySelectorAll(sel).forEach(el => {
+      el.style.filter = privacyOn ? 'blur(8px)' : 'none';
+      el.style.userSelect = privacyOn ? 'none' : '';
+    });
+  });
+}
+
+// ── USER FILTER ──
+let currentUserFilter = 'todos';
+function setUserFilter(u, el) {
+  currentUserFilter = u;
+  document.querySelectorAll('[data-user]').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderRecords();
+}
+
 function showConfig() { showPage('cfg'); }
 
 // ══════════════════════════════════════════
 // CHAT IA — Claude consulta financiera
 // ══════════════════════════════════════════
 let chatHistory = [];
+
+function limpiarChat() {
+  chatHistory = [];
+  const msgs = document.getElementById('chat-messages');
+  if (msgs) msgs.innerHTML = '';
+}
 
 function enviarConsulta() {
   const input = document.getElementById('chat-input');
@@ -1878,9 +2022,10 @@ function enviarConsulta() {
 function buildContextoFinanciero() {
   const today = new Date().toISOString().split('T')[0];
   const now = new Date();
-  const mes = now.getMonth(), anio = now.getFullYear();
+  const mesActual = now.getMonth(), anioActual = now.getFullYear();
+  const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
-  // Saldos por cartera
+  // Saldos por cartera (todos los registros hasta hoy)
   const saldos = {};
   CARTERAS.forEach(c => saldos[c] = getSaldoInicial(c));
   allRecords.forEach(r => {
@@ -1888,42 +2033,88 @@ function buildContextoFinanciero() {
       saldos[r.cartera] += parseFloat(r.monto) || 0;
   });
 
-  // Gastos e ingresos del mes actual
-  const resMes = allRecords.filter(r => {
-    if (!r.fecha) return false;
-    const p = r.fecha.split('-');
-    return parseInt(p[0]) === anio && parseInt(p[1]) - 1 === mes && r.fecha <= today;
-  });
-  const bycat = {};
-  resMes.forEach(r => {
+  // Gastos e ingresos por categoría — POR AÑO (todos los registros del año actual)
+  const gastosPorCatAnio = {}, ingresosPorCatAnio = {};
+  allRecords.forEach(r => {
+    const p = r.fecha ? r.fecha.split('-') : [];
+    if (parseInt(p[0]) !== anioActual) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria)
-      bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
+      gastosPorCatAnio[r.categoria] = (gastosPorCatAnio[r.categoria] || 0) + Math.abs(m);
+    }
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
+      ingresosPorCatAnio[r.categoria] = (ingresosPorCatAnio[r.categoria] || 0) + m;
+    }
   });
 
-  // Resumen de todos los registros (últimos 500 para no exceder tokens)
-  const recsResumen = allRecords.slice(0, 500).map(r =>
-    `${r.fecha}|${r.cartera}|${r.tipo}|${r.categoria}|${r.monto}|${r.nota||''}`
-  ).join('\n');
+  // Gastos e ingresos por categoría — MES ACTUAL
+  const gastosPorCatMes = {}, ingresosPorCatMes = {};
+  allRecords.forEach(r => {
+    const p = r.fecha ? r.fecha.split('-') : [];
+    if (parseInt(p[0]) !== anioActual || parseInt(p[1]) - 1 !== mesActual) return;
+    if (r.fecha > today) return;
+    const m = parseFloat(r.monto) || 0;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
+      gastosPorCatMes[r.categoria] = (gastosPorCatMes[r.categoria] || 0) + Math.abs(m);
+    }
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
+      ingresosPorCatMes[r.categoria] = (ingresosPorCatMes[r.categoria] || 0) + m;
+    }
+  });
 
-  const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  // Resumen mensual (últimos 12 meses)
+  const resumenMensual = [];
+  for (let i = 11; i >= 0; i--) {
+    let m = mesActual - i, a = anioActual;
+    if (m < 0) { m += 12; a--; }
+    let ing = 0, gas = 0;
+    allRecords.forEach(r => {
+      const p = r.fecha ? r.fecha.split('-') : [];
+      if (parseInt(p[0]) !== a || parseInt(p[1]) - 1 !== m) return;
+      const mv = parseFloat(r.monto) || 0;
+      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += mv;
+      if (mv < 0 && r.tipo !== 'TRANSFERENCIA') gas += Math.abs(mv);
+    });
+    resumenMensual.push(`${mNames[m]} ${a}: Ingresos $${fmtN(ing)}, Gastos $${fmtN(gas)}, Balance ${ing-gas >= 0 ? '+' : ''}$${fmtN(ing-gas)}`);
+  }
 
-  return `Fecha hoy: ${today}
-Mes actual: ${mNames[mes]} ${anio}
+  // Totales globales
+  let totalGastadoHoy = 0, totalIngresadoHoy = 0;
+  allRecords.forEach(r => {
+    if (r.fecha > today) return;
+    const m = parseFloat(r.monto) || 0;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') totalGastadoHoy += Math.abs(m);
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') totalIngresadoHoy += m;
+  });
+
+  return `=== INFORMACIÓN GENERAL ===
+Fecha hoy: ${today}
+Mes actual: ${mNames[mesActual]} ${anioActual}
 Usuario activo: ${currentUser}
-Total registros: ${allRecords.length}
+Total registros en sistema: ${allRecords.length}
+Total histórico gastado: $${fmtN(totalGastadoHoy)}
+Total histórico ingresos: $${fmtN(totalIngresadoHoy)}
 
-SALDOS ACTUALES POR CARTERA:
+=== SALDOS ACTUALES POR CARTERA (al día de hoy) ===
 ${Object.entries(saldos).map(([c,s]) => `${c}: $${fmtN(s)}`).join('\n')}
 
-GASTOS ${mNames[mes].toUpperCase()} POR CATEGORÍA:
-${Object.entries(bycat).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: -$${fmtN(v)}`).join('\n') || 'Sin gastos este mes'}
+=== GASTOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO) ===
+${Object.entries(gastosPorCatAnio).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: -$${fmtN(v)}`).join('\n') || 'Sin gastos'}
 
-PRESUPUESTOS MENSUALES:
+=== INGRESOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO) ===
+${Object.entries(ingresosPorCatAnio).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: +$${fmtN(v)}`).join('\n') || 'Sin ingresos'}
+
+=== GASTOS POR CATEGORÍA — ${mNames[mesActual].toUpperCase()} ${anioActual} ===
+${Object.entries(gastosPorCatMes).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: -$${fmtN(v)}`).join('\n') || 'Sin gastos este mes'}
+
+=== INGRESOS POR CATEGORÍA — ${mNames[mesActual].toUpperCase()} ${anioActual} ===
+${Object.entries(ingresosPorCatMes).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: +$${fmtN(v)}`).join('\n') || 'Sin ingresos este mes'}
+
+=== PRESUPUESTOS MENSUALES ===
 ${metasConfig.map(m => `${m.categoria}: $${fmtN(Math.abs(m.presupuesto))}`).join('\n') || 'No configurados'}
 
-REGISTROS (fecha|cartera|tipo|categoria|monto|nota):
-${recsResumen}`;
+=== TENDENCIA ÚLTIMOS 12 MESES ===
+${resumenMensual.join('\n')}`;
 }
 
 function agregarMensaje(rol, texto) {

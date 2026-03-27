@@ -310,7 +310,7 @@ let allRecords = [], myRecords = [], editingId = null, currentFilter = 'todos';
 let currentType = 'GASTO', selectedCartera = '', selectedCarteraDest = '', selectedCategoria = '';
 
 document.addEventListener('DOMContentLoaded', () => {
-  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-fecha').value = hoy();
   renderChipsCartera(); renderChipsCategoria();
   loadRecords();
   startAutoRefresh();
@@ -337,14 +337,14 @@ let aTrendChart = null, aDonutChart = null;
 const PINK_COLORS = ['#f472b6','#a855f7','#4da6ff','#ffb547','#00e096','#ff5050','#06b6d4','#f97316'];
 
 function renderDash() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   const now = new Date(), mes = now.getMonth(), anio = now.getFullYear();
   const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
 
   const { desde, hasta, label } = getAndreaRango();
   const labelEl = document.getElementById('a-rng-label');
   if (labelEl) labelEl.textContent = label;
-  const today2 = new Date().toISOString().split('T')[0];
+  const today2 = hoy();
   const hastaReal = hasta > today2 ? today2 : hasta;
   const resMes = myRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hastaReal);
 
@@ -446,7 +446,7 @@ function setFilter(f, el) {
 
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   const search = (document.getElementById('a-search')?.value || '').toLowerCase().trim();
   let recs = myRecords.filter(r => r.fecha <= today);
   if (currentFilter !== 'todos') recs = recs.filter(r => r.tipo === currentFilter);
@@ -575,7 +575,7 @@ function guardarRegistro() {
   localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
   document.getElementById('f-monto').value='';
   document.getElementById('f-nota').value='';
-  document.getElementById('f-fecha').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-fecha').value=hoy();
   selectedCartera=''; selectedCarteraDest=''; selectedCategoria='';
   renderChipsCartera(); renderChipsCategoria();
   btn.classList.remove('loading'); btn.textContent='Guardar registro';
@@ -717,8 +717,8 @@ function getAndreaRango() {
     const day = d.getDay();
     const lun = new Date(d); lun.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
     const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
-    desde = lun.toISOString().split('T')[0];
-    hasta = dom.toISOString().split('T')[0];
+    desde = toLocalDate(lun);
+    hasta = toLocalDate(dom);
     label = formatDate(desde) + ' — ' + formatDate(hasta);
   } else if (aRango === 'mes') {
     desde = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
@@ -735,7 +735,7 @@ function getAndreaRango() {
     label = 'Año ' + d.getFullYear();
   } else {
     desde = document.getElementById('a-rng-desde')?.value || new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
-    hasta = document.getElementById('a-rng-hasta')?.value || new Date().toISOString().split('T')[0];
+    hasta = document.getElementById('a-rng-hasta')?.value || hoy();
     label = desde + ' — ' + hasta;
   }
   return { desde, hasta, label };
@@ -825,6 +825,8 @@ function startAutoRefresh() {
 
 // UTILS
 function generateId(){return Date.now().toString(36)+Math.random().toString(36).substr(2,5);}
+function hoy(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
+function toLocalDate(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');}
 function getHora(){return new Date().toTimeString().split(' ')[0];}
 function fmtN(n){return Math.abs(n).toLocaleString('es-MX',{minimumFractionDigits:2,maximumFractionDigits:2});}
 function formatDate(str){if(!str)return'';const d=new Date(str+'T12:00:00');return d.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short'});}

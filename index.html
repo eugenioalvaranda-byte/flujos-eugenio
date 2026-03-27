@@ -952,7 +952,7 @@ let allRecords = [], editingId = null, currentFilter = 'todos';
 let recurrentOn = false;
 let listAdvOpen = false, dashAdvOpen = false;
 let listFilters = {}, dashFilters = {};
-let dashCutoffDate = new Date().toISOString().split('T')[0];
+let dashCutoffDate = hoy();
 let collapsedRecGroups = {};
 let datePickerPreset = 'today';
 let carterasConfig = [];
@@ -960,7 +960,7 @@ let metasConfig = []; // {categoria, presupuesto}
 
 // INIT
 document.addEventListener('DOMContentLoaded', () => {
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   document.getElementById('f-fecha').value = today;
   document.getElementById('rec-inicio').value = today;
   document.getElementById('datepick-custom-date').value = today;
@@ -1151,7 +1151,7 @@ function enviarAlSheet(regs, btn) {
 function resetForm() {
   document.getElementById('f-monto').value = '';
   document.getElementById('f-nota').value = '';
-  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  document.getElementById('f-fecha').value = hoy();
   currentType = 'GASTO'; selectedCartera = ''; selectedCarteraDest = ''; selectedCategoria = '';
   recurrentOn = false;
   document.getElementById('rec-switch').classList.remove('on');
@@ -1170,7 +1170,7 @@ function getSaldoInicial(cartera) {
 }
 
 function calcPatrimonio() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   const saldos = {};
   CARTERAS.forEach(c => saldos[c] = getSaldoInicial(c));
   allRecords.forEach(r => {
@@ -1238,7 +1238,7 @@ function applyPrivacyToPage() {
 }
 
 function renderDashboard() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   const cutoff = dashCutoffDate;
   const nowCutoff = new Date(cutoff + 'T23:59:59');
   const month = nowCutoff.getMonth(), year = nowCutoff.getFullYear();
@@ -1428,7 +1428,7 @@ function setFilter(f, el) {
 
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
 
   const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
 
@@ -1750,6 +1750,20 @@ function autoSync() {
 
 // UTILS
 function generateId() { return Date.now().toString(36) + Math.random().toString(36).substr(2, 5); }
+function hoy() {
+  // Fecha local del dispositivo — evita el bug de UTC que cambia el día a partir de las 6pm en México
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
+function toLocalDate(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return y + '-' + m + '-' + day;
+}
 function getHora() { return new Date().toTimeString().split(' ')[0]; }
 function addMonths(d, n) { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; }
 function fmtN(n) { return Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -1817,8 +1831,8 @@ function getRangoFechas() {
     const day = d.getDay();
     const lun = new Date(d); lun.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
     const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
-    desde = lun.toISOString().split('T')[0];
-    hasta = dom.toISOString().split('T')[0];
+    desde = toLocalDate(lun);
+    hasta = toLocalDate(dom);
     label = formatDate(desde) + ' — ' + formatDate(hasta);
   } else if (anRango === 'mes') {
     desde = new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
@@ -1835,7 +1849,7 @@ function getRangoFechas() {
     label = 'Año ' + d.getFullYear();
   } else {
     desde = document.getElementById('rng-desde')?.value || new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
-    hasta = document.getElementById('rng-hasta')?.value || new Date().toISOString().split('T')[0];
+    hasta = document.getElementById('rng-hasta')?.value || hoy();
     label = formatDateShort(desde) + ' — ' + formatDateShort(hasta);
   }
   return { desde, hasta, label };
@@ -2157,7 +2171,7 @@ function enviarConsulta() {
 }
 
 function buildContextoFinanciero() {
-  const today = new Date().toISOString().split('T')[0];
+  const today = hoy();
   const now = new Date();
   const mesActual = now.getMonth(), anioActual = now.getFullYear();
   const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];

@@ -289,6 +289,18 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 select.field-input, select.rec-input, select.adv-input, select.datepick-input { cursor: pointer; }
 @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
 
+@media print {
+  body { background: #fff !important; color: #000 !important; max-width: 100% !important; padding: 0 !important; font-family: 'DM Sans', sans-serif; }
+  .nav, .sidebar, .topbar, #rng-nav-row, #rng-custom-row, [id^="rng-"], .filter-row, .modal-overlay, .toast, #pdf-modal { display: none !important; }
+  .page { display: none !important; }
+  #print-content { display: block !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+  .print-page { page-break-after: always; padding: 20px; }
+  .print-page:last-child { page-break-after: auto; }
+}
+
+#print-content { display: none; }
+
 /* ── RESPONSIVE LAYOUT ── */
 
 /* APP SHELL */
@@ -677,6 +689,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <div class="filter-pill" id="rng-tri" onclick="setRango('tri',this)">Trimestre</div>
       <div class="filter-pill" id="rng-ano" onclick="setRango('ano',this)">Año</div>
       <div class="filter-pill" id="rng-custom" onclick="setRango('custom',this)">Personalizado</div>
+      <div onclick="abrirModalPDF()" style="padding:9px 16px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:24px;font-size:13px;font-weight:600;color:var(--text2);cursor:pointer;white-space:nowrap;">📄 PDF</div>
     </div>
   </div>
 
@@ -851,6 +864,37 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 </div>
 
 </div><!-- end main-content -->
+
+<!-- PDF MODAL -->
+<div class="modal-overlay" id="pdf-modal" onclick="if(event.target===this)cerrarModalPDF()">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">Exportar PDF</div>
+    <div style="font-size:13px;color:var(--text2);margin-bottom:16px;line-height:1.6;">Selecciona el período que quieres incluir en el reporte.</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;">
+      <div class="filter-pill" id="pdf-rng-sem" onclick="setPDFRango('sem',this)">Semana</div>
+      <div class="filter-pill active" id="pdf-rng-mes" onclick="setPDFRango('mes',this)">Mes</div>
+      <div class="filter-pill" id="pdf-rng-tri" onclick="setPDFRango('tri',this)">Trimestre</div>
+      <div class="filter-pill" id="pdf-rng-ano" onclick="setPDFRango('ano',this)">Año</div>
+      <div class="filter-pill" id="pdf-rng-custom" onclick="setPDFRango('custom',this)">Personalizado</div>
+    </div>
+    <div id="pdf-custom-row" style="display:none;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text2);">Desde</span>
+        <input type="date" id="pdf-desde" class="field-input" style="padding:10px 12px;font-size:13px;">
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="font-size:11px;color:var(--text2);">Hasta</span>
+        <input type="date" id="pdf-hasta" class="field-input" style="padding:10px 12px;font-size:13px;">
+      </div>
+    </div>
+    <div id="pdf-periodo-label" style="background:var(--bg3);border-radius:var(--radius-sm);padding:12px 14px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:16px;text-align:center;">Marzo 2026</div>
+    <div class="modal-actions">
+      <div class="modal-btn cancel" onclick="cerrarModalPDF()">Cancelar</div>
+      <div class="modal-btn save" onclick="generarPDF()" style="background:var(--blue);">📄 Generar PDF</div>
+    </div>
+  </div>
+</div>
 
 <!-- NAV -->
 <div class="nav">
@@ -2447,5 +2491,235 @@ window.addEventListener('DOMContentLoaded', () => {
   });
 });
 </script>
+<!-- PRINT CONTENT — generado dinámicamente para PDF -->
+<div id="print-content"></div>
+
+<script>
+// ══════════════════════════════════════════
+// PDF EXPORT
+// ══════════════════════════════════════════
+let pdfRango = 'mes';
+let pdfRefDate = new Date();
+
+function abrirModalPDF() {
+  // Inicializar con el rango actual del dashboard
+  pdfRango = anRango;
+  pdfRefDate = new Date(anRefDate);
+  document.querySelectorAll('[id^="pdf-rng-"]').forEach(el => el.classList.remove('active'));
+  const activeEl = document.getElementById('pdf-rng-' + pdfRango);
+  if (activeEl) activeEl.classList.add('active');
+  actualizarLabelPDF();
+  document.getElementById('pdf-modal').classList.add('show');
+}
+
+function cerrarModalPDF() {
+  document.getElementById('pdf-modal').classList.remove('show');
+}
+
+function setPDFRango(r, el) {
+  pdfRango = r;
+  document.querySelectorAll('[id^="pdf-rng-"]').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const customRow = document.getElementById('pdf-custom-row');
+  if (customRow) customRow.style.display = r === 'custom' ? 'flex' : 'none';
+  actualizarLabelPDF();
+}
+
+function actualizarLabelPDF() {
+  const { label } = getPDFFechas();
+  const lbl = document.getElementById('pdf-periodo-label');
+  if (lbl) lbl.textContent = label;
+}
+
+function getPDFFechas() {
+  const d = new Date(pdfRefDate);
+  const mFull = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+  let desde, hasta, label;
+  if (pdfRango === 'sem') {
+    const day = d.getDay();
+    const lun = new Date(d); lun.setDate(d.getDate() - (day === 0 ? 6 : day - 1));
+    const dom = new Date(lun); dom.setDate(lun.getDate() + 6);
+    desde = toLocalDate(lun); hasta = toLocalDate(dom);
+    label = 'Semana ' + desde + ' al ' + hasta;
+  } else if (pdfRango === 'mes') {
+    desde = toLocalDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    hasta = toLocalDate(new Date(d.getFullYear(), d.getMonth() + 1, 0));
+    label = mFull[d.getMonth()] + ' ' + d.getFullYear();
+  } else if (pdfRango === 'tri') {
+    const q = Math.floor(d.getMonth() / 3);
+    desde = toLocalDate(new Date(d.getFullYear(), q * 3, 1));
+    hasta = toLocalDate(new Date(d.getFullYear(), q * 3 + 3, 0));
+    label = 'Q' + (q+1) + ' ' + d.getFullYear();
+  } else if (pdfRango === 'ano') {
+    desde = toLocalDate(new Date(d.getFullYear(), 0, 1));
+    hasta = toLocalDate(new Date(d.getFullYear(), 11, 31));
+    label = 'Año ' + d.getFullYear();
+  } else {
+    desde = document.getElementById('pdf-desde')?.value || toLocalDate(new Date(d.getFullYear(), d.getMonth(), 1));
+    hasta = document.getElementById('pdf-hasta')?.value || hoy();
+    label = desde + ' al ' + hasta;
+  }
+  return { desde, hasta, label };
+}
+
+function generarPDF() {
+  const { desde, hasta, label } = getPDFFechas();
+  cerrarModalPDF();
+
+  const recs = allRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hasta);
+  let ing = 0, gas = 0;
+  recs.forEach(r => {
+    const m = parseFloat(r.monto) || 0;
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+  });
+  const bal = ing + gas;
+
+  // Gastos por categoría
+  const gascat = {}, ingcat = {};
+  recs.forEach(r => {
+    const m = parseFloat(r.monto) || 0;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) gascat[r.categoria] = (gascat[r.categoria] || 0) + Math.abs(m);
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) ingcat[r.categoria] = (ingcat[r.categoria] || 0) + m;
+  });
+  const sortedGas = Object.entries(gascat).sort((a,b) => b[1]-a[1]);
+  const sortedIng = Object.entries(ingcat).sort((a,b) => b[1]-a[1]);
+
+  // Patrimonio neto
+  const { cash, tdc, neto } = calcPatrimonio();
+
+  // Presupuesto vs real
+  const presupRows = metasConfig.filter(x => Math.abs(x.presupuesto) > 0).map(x => ({
+    cat: x.categoria, presup: Math.abs(x.presupuesto), real: gascat[x.categoria] || 0
+  }));
+
+  const html = `
+    <div style="font-family:'DM Sans',Arial,sans-serif;color:#111;max-width:800px;margin:0 auto;padding:32px;">
+
+      <!-- HEADER -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:28px;padding-bottom:16px;border-bottom:2px solid #000;">
+        <div>
+          <div style="font-size:22px;font-weight:700;letter-spacing:-0.5px;">Flujos Eugenio</div>
+          <div style="font-size:13px;color:#555;margin-top:3px;">Reporte financiero · ${label}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:11px;color:#888;">Generado el</div>
+          <div style="font-size:13px;font-weight:600;">${new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'})}</div>
+        </div>
+      </div>
+
+      <!-- PATRIMONIO NETO -->
+      <div style="background:#f5f5f5;border-radius:12px;padding:20px;margin-bottom:20px;">
+        <div style="font-size:10px;color:#888;text-transform:uppercase;letter-spacing:1.5px;font-weight:700;margin-bottom:6px;">Patrimonio Neto</div>
+        <div style="font-size:36px;font-weight:700;color:${neto >= 0 ? '#008855' : '#cc2200'};letter-spacing:-1px;margin-bottom:12px;">${neto < 0 ? '−' : ''}$${fmtN(Math.abs(neto))}</div>
+        <div style="display:flex;gap:12px;">
+          <div style="flex:1;background:#fff;border-radius:8px;padding:12px;">
+            <div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">💵 Cash</div>
+            <div style="font-size:18px;font-weight:700;color:#008855;">$${fmtN(cash)}</div>
+          </div>
+          <div style="flex:1;background:#fff;border-radius:8px;padding:12px;">
+            <div style="font-size:10px;color:#888;font-weight:700;text-transform:uppercase;margin-bottom:4px;">💳 Deuda TDC</div>
+            <div style="font-size:18px;font-weight:700;color:#cc2200;">−$${fmtN(Math.abs(tdc))}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KPIs DEL PERÍODO -->
+      <div style="display:flex;gap:12px;margin-bottom:20px;">
+        <div style="flex:1;background:#f0faf5;border:1px solid #c3e6d8;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;color:#006644;font-weight:700;text-transform:uppercase;margin-bottom:6px;">↑ Ingresos</div>
+          <div style="font-size:22px;font-weight:700;color:#008855;">$${fmtN(ing)}</div>
+        </div>
+        <div style="flex:1;background:#fff5f5;border:1px solid #fcc;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;color:#cc2200;font-weight:700;text-transform:uppercase;margin-bottom:6px;">↓ Gastos</div>
+          <div style="font-size:22px;font-weight:700;color:#cc2200;">$${fmtN(Math.abs(gas))}</div>
+        </div>
+        <div style="flex:1;background:#f5f5ff;border:1px solid #c5c5f0;border-radius:10px;padding:16px;">
+          <div style="font-size:10px;color:#3333aa;font-weight:700;text-transform:uppercase;margin-bottom:6px;">= Balance</div>
+          <div style="font-size:22px;font-weight:700;color:${bal >= 0 ? '#008855' : '#cc2200'};">${bal >= 0 ? '+' : '−'}$${fmtN(Math.abs(bal))}</div>
+        </div>
+      </div>
+
+      <!-- TABLAS LADO A LADO -->
+      <div style="display:flex;gap:16px;margin-bottom:20px;">
+
+        <!-- GASTOS POR CATEGORÍA -->
+        <div style="flex:1;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;color:#cc2200;border-bottom:2px solid #cc2200;padding-bottom:4px;">Gastos por categoría</div>
+          ${sortedGas.map(([cat, val]) => `
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #eee;font-size:12px;">
+              <span style="color:#333;">${cat}</span>
+              <span style="font-weight:700;color:#cc2200;">−$${fmtN(val)}</span>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;border-top:2px solid #333;margin-top:4px;">
+            <span>Total gastos</span>
+            <span style="color:#cc2200;">−$${fmtN(Math.abs(gas))}</span>
+          </div>
+        </div>
+
+        <!-- INGRESOS POR CATEGORÍA -->
+        <div style="flex:1;">
+          <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;color:#008855;border-bottom:2px solid #008855;padding-bottom:4px;">Ingresos por categoría</div>
+          ${sortedIng.map(([cat, val]) => `
+            <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid #eee;font-size:12px;">
+              <span style="color:#333;">${cat}</span>
+              <span style="font-weight:700;color:#008855;">+$${fmtN(val)}</span>
+            </div>`).join('')}
+          <div style="display:flex;justify-content:space-between;padding:8px 0;font-size:13px;font-weight:700;border-top:2px solid #333;margin-top:4px;">
+            <span>Total ingresos</span>
+            <span style="color:#008855;">+$${fmtN(ing)}</span>
+          </div>
+        </div>
+      </div>
+
+      ${presupRows.length ? `
+      <!-- PRESUPUESTO VS REAL -->
+      <div style="margin-bottom:20px;">
+        <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:8px;border-bottom:2px solid #333;padding-bottom:4px;">Presupuesto vs real</div>
+        ${presupRows.map(row => {
+          const pct = row.presup > 0 ? Math.round(row.real / row.presup * 100) : 0;
+          const over = pct > 100;
+          const barW = Math.min(pct, 100);
+          return `<div style="margin-bottom:10px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;">
+              <span>${row.cat}</span>
+              <span style="color:${over ? '#cc2200' : '#008855'};font-weight:700;">${pct}% · $${fmtN(row.real)} / $${fmtN(row.presup)}</span>
+            </div>
+            <div style="height:6px;background:#eee;border-radius:3px;overflow:hidden;">
+              <div style="height:100%;width:${barW}%;background:${over ? '#cc2200' : '#008855'};border-radius:3px;"></div>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>` : ''}
+
+      <!-- FOOTER -->
+      <div style="text-align:center;font-size:10px;color:#aaa;margin-top:32px;padding-top:16px;border-top:1px solid #eee;">
+        Flujos Eugenio · Reporte generado automáticamente · ${new Date().toLocaleDateString('es-MX')}
+      </div>
+    </div>`;
+
+  // Inyectar en print-content y abrir diálogo de impresión
+  const printDiv = document.getElementById('print-content');
+  printDiv.innerHTML = html;
+  printDiv.style.display = 'block';
+
+  // Ocultar la app temporalmente
+  document.querySelector('.main-content').style.display = 'none';
+  document.querySelector('.sidebar') && (document.querySelector('.sidebar').style.display = 'none');
+  document.querySelector('.nav') && (document.querySelector('.nav').style.display = 'none');
+
+  window.print();
+
+  // Restaurar la app después de imprimir
+  setTimeout(() => {
+    document.querySelector('.main-content').style.display = '';
+    document.querySelector('.sidebar') && (document.querySelector('.sidebar').style.display = '');
+    document.querySelector('.nav') && (document.querySelector('.nav').style.display = '');
+    printDiv.style.display = 'none';
+    printDiv.innerHTML = '';
+  }, 100);
+}
+</script>
+
 </body>
 </html>

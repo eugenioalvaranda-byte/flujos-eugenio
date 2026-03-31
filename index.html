@@ -1222,11 +1222,21 @@ function enviarAlSheet(regs, btn) {
 // EJECUTAR RECURRENTES PENDIENTES DE CASH — corre al abrir la app y en cada sync
 function ejecutarRecurrentesPendientes() {
   const today = hoy();
-  // Buscar en allRecords los que tienen _pendiente y cuya fecha ya llegó
-  const aEjecutar = allRecords.filter(r => r._pendiente && r.fecha <= today);
+  const ahora = new Date();
+  const horaActual = ahora.getHours() * 60 + ahora.getMinutes(); // minutos desde medianoche
+  const seisAM = 6 * 60; // 360 minutos
+
+  // Solo ejecutar registros cuya fecha sea ANTERIOR a hoy,
+  // O que sean de hoy pero ya pasaron las 6am
+  const aEjecutar = allRecords.filter(r => {
+    if (!r._pendiente) return false;
+    if (r.fecha < today) return true; // días pasados → ejecutar siempre
+    if (r.fecha === today && horaActual >= seisAM) return true; // hoy después de 6am
+    return false;
+  });
+
   if (!aEjecutar.length) return;
 
-  // Actualizar en el Sheet — marcar como ejecutados (quitar _pendiente)
   aEjecutar.forEach(r => {
     const data = { ...r, _pendiente: false, nota: (r.nota || '').replace('[PENDIENTE]', '').trim() };
     fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data }) })

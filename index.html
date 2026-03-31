@@ -1610,7 +1610,7 @@ function renderRecords() {
         <div class="rec-group-header" onclick="toggleRecGroup('${key}','recgrp_${safeKey}',this)">
           <div><div class="rec-group-name">${label}</div><div class="rec-group-sub">${recs.length} movimientos · ${recs[0].cartera}</div></div>
           <div style="display:flex;align-items:center">
-            <div class="rec-group-total">${total >= 0 ? '+' : '−'}$${fmtN(Math.abs(total))}</div>
+            <div class="rec-group-total" style="color:${total >= 0 ? 'var(--green)' : 'var(--red)'}">${total >= 0 ? '+' : '−'}$${fmtN(Math.abs(total))}</div>
             <div class="rec-chevron ${collapsed ? '' : 'open'}">▾</div>
           </div>
         </div>
@@ -1746,11 +1746,13 @@ function eliminarRegistro() {
   const idTransferencia = r.idTransferencia;
   const parejo = idTransferencia ? allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia) : null;
 
+  // Detectar si es recurrente pendiente de cash (solo en localStorage, no en Sheet)
+  const esRecPendiente = r._recurrente === true;
+
   if (esTransferencia && parejo) {
     const id1 = r.id;
     const id2 = parejo.id;
     deletedIds.add(id1); deletedIds.add(id2);
-    // Borrar ambos localmente
     [id1, id2].forEach(id => {
       const i = allRecords.findIndex(x => x.id === id);
       if (i >= 0) allRecords.splice(i, 1);
@@ -1763,6 +1765,20 @@ function eliminarRegistro() {
     ])
     .then(() => { deletedIds.delete(id1); deletedIds.delete(id2); showToast('Transferencia eliminada ✓ (2 registros)', 'error'); })
     .catch(() => showToast('Error al eliminar', 'error'));
+
+  } else if (esRecPendiente) {
+    // Recurrente pendiente de cash — solo borrar de localStorage, no llamar al Sheet
+    const id = r.id;
+    allRecords.splice(idx, 1);
+    // Quitar también de flujos_rec_pendientes
+    try {
+      let pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+      pendientes = pendientes.filter(x => x.id !== id);
+      localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientes));
+    } catch(e) {}
+    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
+    showToast('Recurrente programado eliminado ✓', 'error');
+
   } else {
     const id = r.id;
     deletedIds.add(id);

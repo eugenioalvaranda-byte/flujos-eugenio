@@ -1029,6 +1029,7 @@ document.addEventListener('DOMContentLoaded', () => {
   CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; mc.appendChild(o); });
 
   renderChipsCartera(); renderChipsCategoria(); loadRecords();
+  ejecutarRecurrentesPendientes();
 
   // Auto-refresh cada 2 segundos con protección contra operaciones en curso
   setInterval(autoSync, 2000);
@@ -1167,15 +1168,15 @@ function buildRegistros(monto, fecha, nota, tipo, cartera, carteraDest, categori
 }
 
 function buildRecurrente(monto, fechaBase, nota) {
-  const freq  = document.getElementById('rec-freq').value;
-  const veces = parseInt(document.getElementById('rec-veces').value) || 12;
+  const freq   = document.getElementById('rec-freq').value;
+  const veces  = parseInt(document.getElementById('rec-veces').value) || 12;
   const inicio = document.getElementById('rec-inicio').value || fechaBase;
   const finStr = document.getElementById('rec-fin').value;
   const regs = []; let d = new Date(inicio + 'T12:00:00');
   const fin = finStr ? new Date(finStr + 'T23:59:59') : null;
   for (let i = 0; i < veces; i++) {
     if (fin && d > fin) break;
-    regs.push(...buildRegistros(monto, d.toISOString().split('T')[0], nota, currentType, selectedCartera, selectedCarteraDest, selectedCategoria));
+    regs.push(...buildRegistros(monto, toLocalDate(d), nota, currentType, selectedCartera, selectedCarteraDest, selectedCategoria));
     if (freq === 'mensual') d = addMonths(d, 1);
     else if (freq === 'quincenal') d = new Date(d.getTime() + 15 * 86400000);
     else d = new Date(d.getTime() + 7 * 86400000);
@@ -1184,16 +1185,80 @@ function buildRecurrente(monto, fechaBase, nota) {
 }
 
 function enviarAlSheet(regs, btn) {
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: regs }) })
-  .then(r => r.json())
+  const today = hoy();
+  const esCash = CARTERAS_CASH.includes(selectedCartera);
+
+  // Separar registros: los de hoy o pasado van al Sheet, los futuros de cash se guardan solo en localStorage
+  let paraSheet = regs;
+  let soloLocal = [];
+
+  if (esCash && recurrentOn) {
+    paraSheet = regs.filter(r => r.fecha <= today);
+    soloLocal = regs.filter(r => r.fecha > today);
+  }
+
+  // Guardar los futuros de cash en localStorage como "recurrentes pendientes"
+  if (soloLocal.length > 0) {
+    let pendientesRec = [];
+    try { pendientesRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
+    soloLocal.forEach(r => { r._recurrente = true; pendientesRec.push(r); });
+    localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientesRec));
+    // Agregar a allRecords para mostrarlos en la lista como futuros
+    soloLocal.forEach(r => allRecords.unshift(r));
+  }
+
+  const guardarEnSheet = (rows) => {
+    if (rows.length === 0) return Promise.resolve();
+    return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows }) }).then(r => r.json());
+  };
+
+  guardarEnSheet(paraSheet)
   .then(() => {
-    regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
+    paraSheet.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
     saveLocal(); resetForm();
     btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
-    showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
+    const total = regs.length;
+    const enSheet = paraSheet.length;
+    const programados = soloLocal.length;
+    if (programados > 0) {
+      showToast(`${enSheet} registrado${enSheet!==1?'s':''} + ${programados} programado${programados!==1?'s':''}`, 'success');
+    } else {
+      showToast(total > 2 ? `${total} registros guardados ✓` : 'Registro guardado ✓', 'success');
+    }
     showPage('list');
   })
   .catch(() => { btn.classList.remove('loading'); btn.textContent = 'Guardar registro'; showToast('Error al conectar con Sheets', 'error'); });
+}
+
+// EJECUTAR RECURRENTES PENDIENTES DE CASH — corre al abrir la app y en cada sync
+function ejecutarRecurrentesPendientes() {
+  const today = hoy();
+  let pendientes = [];
+  try { pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
+  if (!pendientes.length) return;
+
+  const ejecutar = pendientes.filter(r => r.fecha <= today);
+  const restantes = pendientes.filter(r => r.fecha > today);
+
+  if (!ejecutar.length) return;
+
+  // Guardar en Sheet los que ya llegaron su fecha
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: ejecutar }) })
+  .then(r => r.json())
+  .then(() => {
+    // Actualizar localStorage: quitar los ejecutados de pendientes
+    localStorage.setItem('flujos_rec_pendientes', JSON.stringify(restantes));
+    // Marcar como registros reales (quitar flag _recurrente)
+    ejecutar.forEach(r => {
+      const idx = allRecords.findIndex(x => x.id === r.id);
+      if (idx >= 0) { allRecords[idx]._recurrente = false; }
+      else { r._recurrente = false; allRecords.unshift(r); }
+    });
+    saveLocal();
+    showToast(`${ejecutar.length} recurrente${ejecutar.length!==1?'s':''} ejecutado${ejecutar.length!==1?'s':''}`, 'success');
+    renderDashboard();
+  })
+  .catch(() => {});
 }
 
 function resetForm() {
@@ -1729,6 +1794,11 @@ function openWalletDetail(cartera) {
 // STORAGE
 function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
+  // Cargar recurrentes pendientes de cash y mezclarlos con allRecords para mostrarlos como futuros
+  try {
+    const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+    pendRec.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+  } catch(e) {}
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
   renderDashboard();
@@ -1822,8 +1892,17 @@ function autoSync() {
       const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
 
       allRecords = [...localPending, ...sheetFiltered];
+
+      // Re-agregar recurrentes pendientes de cash (no están en el Sheet todavía)
+      try {
+        const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+        pendRec.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+      } catch(e) {}
+
       allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
       saveLocal();
+
+      ejecutarRecurrentesPendientes();
 
       const ap = document.querySelector('.page.active');
       if (!ap) return;

@@ -1188,29 +1188,39 @@ function enviarAlSheet(regs, btn) {
   const today = hoy();
   const esCash = CARTERAS_CASH.includes(selectedCartera);
 
-  // Marcar recurrentes futuros de cash como _pendiente para que no afecten patrimonio
-  // pero SÍ se guardan en el Sheet para sincronizar entre dispositivos
+  // Recurrentes futuros de cash: NO van al Sheet, solo a localStorage
+  let paraSheet = regs;
+  let soloLocal = [];
   if (esCash && recurrentOn) {
-    regs.forEach(r => {
-      if (r.fecha > today) r._pendiente = true;
-    });
+    paraSheet = regs.filter(r => r.fecha <= today);
+    soloLocal = regs.filter(r => r.fecha > today);
   }
 
-  // Encode _pendiente in nota field before sending to Sheet
-  const regsParaSheet = regs.map(r => ({
-    ...r,
-    nota: r._pendiente ? '[PENDIENTE]' + (r.nota || '') : (r.nota || '')
-  }));
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: regsParaSheet }) })
-  .then(r => r.json())
+  // Guardar futuros de cash en localStorage marcados como _pendiente
+  if (soloLocal.length > 0) {
+    soloLocal.forEach(r => { r._pendiente = true; });
+    let pendientesRec = [];
+    try { pendientesRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
+    soloLocal.forEach(r => {
+      if (!pendientesRec.find(x => x.id === r.id)) pendientesRec.push(r);
+    });
+    localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientesRec));
+    soloLocal.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+  }
+
+  const doFetch = paraSheet.length > 0
+    ? fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: paraSheet }) }).then(r => r.json())
+    : Promise.resolve({ ok: true });
+
+  doFetch
   .then(() => {
-    regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
+    paraSheet.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
     saveLocal(); resetForm();
     btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
-    const programados = regs.filter(r => r._pendiente).length;
-    const ejecutados  = regs.length - programados;
+    const programados = soloLocal.length;
+    const ejecutados  = paraSheet.length;
     if (programados > 0) {
-      showToast(`${ejecutados} registrado${ejecutados!==1?'s':''} + ${programados} programado${programados!==1?'s':''}`, 'success');
+      showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
     } else {
       showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
     }
@@ -1223,31 +1233,40 @@ function enviarAlSheet(regs, btn) {
 function ejecutarRecurrentesPendientes() {
   const today = hoy();
   const ahora = new Date();
-  const horaActual = ahora.getHours() * 60 + ahora.getMinutes(); // minutos desde medianoche
-  const seisAM = 6 * 60; // 360 minutos
+  const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
+  const seisAM = 6 * 60;
 
-  // Solo ejecutar registros cuya fecha sea ANTERIOR a hoy,
-  // O que sean de hoy pero ya pasaron las 6am
-  const aEjecutar = allRecords.filter(r => {
-    if (!r._pendiente) return false;
-    if (r.fecha < today) return true; // días pasados → ejecutar siempre
-    if (r.fecha === today && horaActual >= seisAM) return true; // hoy después de 6am
+  let pendientes = [];
+  try { pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
+  if (!pendientes.length) return;
+
+  // Ejecutar solo los que ya pasó su fecha (o son hoy después de 6am)
+  const aEjecutar = pendientes.filter(r => {
+    if (r.fecha < today) return true;
+    if (r.fecha === today && horaActual >= seisAM) return true;
     return false;
   });
+  const restantes = pendientes.filter(r => !aEjecutar.find(x => x.id === r.id));
 
   if (!aEjecutar.length) return;
 
-  aEjecutar.forEach(r => {
-    const data = { ...r, _pendiente: false, nota: (r.nota || '').replace('[PENDIENTE]', '').trim() };
-    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data }) })
-      .catch(() => {});
-    const idx = allRecords.findIndex(x => x.id === r.id);
-    if (idx >= 0) { allRecords[idx]._pendiente = false; allRecords[idx].nota = data.nota; }
-  });
-
-  saveLocal();
-  showToast(`${aEjecutar.length} recurrente${aEjecutar.length!==1?'s':''} ejecutado${aEjecutar.length!==1?'s':''}`, 'success');
-  setTimeout(() => { renderDashboard(); renderRecords && renderRecords(); }, 500);
+  // Quitar _pendiente y guardar en Sheet
+  aEjecutar.forEach(r => { r._pendiente = false; });
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: aEjecutar }) })
+    .then(r => r.json())
+    .then(() => {
+      localStorage.setItem('flujos_rec_pendientes', JSON.stringify(restantes));
+      // Actualizar en allRecords
+      aEjecutar.forEach(r => {
+        const idx = allRecords.findIndex(x => x.id === r.id);
+        if (idx >= 0) allRecords[idx]._pendiente = false;
+        else { allRecords.unshift(r); pendingIds.add(r.id); }
+      });
+      saveLocal();
+      showToast(`${aEjecutar.length} recurrente${aEjecutar.length!==1?'s':''} ejecutado${aEjecutar.length!==1?'s':''}`, 'success');
+      renderDashboard();
+    })
+    .catch(() => {});
 }
 
 function resetForm() {
@@ -1757,19 +1776,16 @@ function eliminarRegistro() {
     .catch(() => showToast('Error al eliminar', 'error'));
 
   } else if (esRecPendiente) {
-    // Recurrente pendiente de cash — está en Sheet, borrarlo normalmente
+    // Recurrente pendiente de cash — solo en localStorage, no llamar al Sheet
     const id = r.id;
-    deletedIds.add(id);
     allRecords.splice(idx, 1);
+    try {
+      let pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+      pendientes = pendientes.filter(x => x.id !== id);
+      localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientes));
+    } catch(e) {}
     saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-    showToast('Eliminando recurrente programado...', '');
-    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id }) })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) { deletedIds.delete(id); showToast('Recurrente eliminado ✓', 'error'); }
-        else { showToast('Error al eliminar', 'error'); }
-      })
-      .catch(() => showToast('Error de conexión', 'error'));
+    showToast('Recurrente programado eliminado ✓', 'error');
 
   } else {
     const id = r.id;
@@ -1802,7 +1818,11 @@ function openWalletDetail(cartera) {
 // STORAGE
 function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
-  // Los recurrentes pendientes vienen del Sheet directamente
+  // Cargar recurrentes pendientes de cash desde localStorage y mezclar con allRecords
+  try {
+    const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+    pendRec.forEach(r => { r._pendiente = true; if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+  } catch(e) {}
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
   renderDashboard();
@@ -1859,9 +1879,6 @@ const pendingIds = new Set(); // IDs recién agregados, esperando que lleguen al
 let syncBusy = false;
 
 function parseSheetRow(r) {
-  const notaRaw = String(r['NOTA'] || r['nota'] || '');
-  const esPendiente = notaRaw.startsWith('[PENDIENTE]');
-  const nota = esPendiente ? notaRaw.replace('[PENDIENTE]', '').trim() : notaRaw;
   return {
     id:             String(r['ID'] || r['id'] || ''),
     fecha:          formatSheetDate(r['FECHA OPERACIÓN'] || r['FECHA OPERACION'] || r['fecha'] || ''),
@@ -1871,10 +1888,9 @@ function parseSheetRow(r) {
     categoria:      String(r['CATEGORIA'] || r['categoría'] || r['CATEGORÍA'] || r['categoria'] || ''),
     monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
     fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
-    nota,
+    nota:           String(r['NOTA'] || r['nota'] || ''),
     usuario:        String(r['USUARIO'] || r['usuario'] || ''),
     carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
-    _pendiente:     esPendiente,
   };
 }
 
@@ -1900,6 +1916,12 @@ function autoSync() {
       const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
 
       allRecords = [...localPending, ...sheetFiltered];
+
+      // Re-agregar recurrentes pendientes de cash (no están en el Sheet)
+      try {
+        const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
+        pendRec.forEach(r => { r._pendiente = true; if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+      } catch(e) {}
 
       allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
       saveLocal();

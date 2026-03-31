@@ -1600,7 +1600,12 @@ function buildRecordItem(r, isFuture) {
   const monto = parseFloat(r.monto) || 0;
   const isTraOut = r.tipo === 'TRANSFERENCIA';
   const isTraIn  = r.tipo === 'INGRESO POR TRANSFERENCIA';
-  const amtClass = isTraOut ? 'tra-out' : isTraIn ? 'tra-in' : monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
+  const esCashFuturo = isFuture && CARTERAS_CASH.includes(r.cartera) && monto < 0 && r.tipo === 'GASTO';
+  const esIngresoFuturo = isFuture && monto > 0 && r.tipo === 'INGRESO';
+  // Cash futuro → gris (proyectado, no comprometido). Ingreso futuro → verde. TDC futuro → rojo (comprometido)
+  if (esCashFuturo) { iconClass = 'tra-out'; iconChar = '↓'; }
+  if (esIngresoFuturo) { iconClass = 'ing'; }
+  const amtClass = isTraOut ? 'tra-out' : isTraIn ? 'tra-in' : esCashFuturo ? 'tra-out' : monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
   const amtStr = (isTraOut ? '−' : isTraIn ? '+' : monto >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(monto));
   const usuarioDisplay = r.usuario ? (r.usuario.includes('@') ? r.usuario.split('@')[0] : r.usuario) : '';
   const meta = [r.cartera, r.carteraDestino ? '→ ' + r.carteraDestino : '', usuarioDisplay && usuarioDisplay.toLowerCase() !== 'eugenio' ? usuarioDisplay : ''].filter(Boolean).join(' · ');

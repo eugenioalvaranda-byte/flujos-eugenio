@@ -1624,6 +1624,11 @@ function openEditModal(r) {
   document.getElementById('m-nota').value = r.nota || '';
   document.getElementById('m-fecha').value = r.fecha;
 
+  // Si es transferencia, actualizar botón de eliminar
+  const esTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
+  const delBtn = document.querySelector('.modal-btn.delete');
+  if (delBtn) delBtn.textContent = esTransfer ? '🗑 Eliminar transferencia' : 'Eliminar';
+
   // Categoría — solo si no es transferencia
   const catField = document.getElementById('m-field-cat');
   const catSel   = document.getElementById('m-categoria');
@@ -1664,18 +1669,44 @@ function actualizarRegistro() {
 function eliminarRegistro() {
   if (!editingId) return;
   const idx = allRecords.findIndex(x => x.id === editingId); if (idx < 0) return;
-  const id = allRecords[idx].id;
-  deletedIds.add(id); // Marcar como borrado para que el sync no lo restaure
-  allRecords.splice(idx, 1);
-  saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-  showToast('Eliminando...', '');
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id }) })
-    .then(r => r.json())
-    .then(data => {
-      if (data.ok) { deletedIds.delete(id); showToast('Registro eliminado ✓', 'error'); }
-      else { showToast('Error al eliminar', 'error'); }
-    })
-    .catch(() => showToast('Error de conexión', 'error'));
+  const r = allRecords[idx];
+
+  // Detectar si es parte de una transferencia
+  const esTransferencia = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
+  const idTransferencia = r.idTransferencia;
+  const parejo = idTransferencia ? allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia) : null;
+
+  if (esTransferencia && parejo) {
+    const id1 = r.id;
+    const id2 = parejo.id;
+    deletedIds.add(id1); deletedIds.add(id2);
+    // Borrar ambos localmente
+    [id1, id2].forEach(id => {
+      const i = allRecords.findIndex(x => x.id === id);
+      if (i >= 0) allRecords.splice(i, 1);
+    });
+    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
+    showToast('Eliminando transferencia...', '');
+    Promise.all([
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id: id1 }) }).then(r => r.json()),
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id: id2 }) }).then(r => r.json())
+    ])
+    .then(() => { deletedIds.delete(id1); deletedIds.delete(id2); showToast('Transferencia eliminada ✓ (2 registros)', 'error'); })
+    .catch(() => showToast('Error al eliminar', 'error'));
+  } else {
+    const id = r.id;
+    deletedIds.add(id);
+    allRecords.splice(idx, 1);
+    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
+    showToast('Eliminando...', '');
+    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id }) })
+      .then(r => r.json())
+      .then(data => {
+        if (data.ok) { deletedIds.delete(id); showToast('Registro eliminado ✓', 'error'); }
+        else { showToast('Error al eliminar', 'error'); }
+      })
+      .catch(() => showToast('Error de conexión', 'error'));
+  }
 }
 
 // WALLET DETAIL — tap en cartera desde dashboard

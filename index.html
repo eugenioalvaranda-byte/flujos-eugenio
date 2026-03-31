@@ -178,6 +178,10 @@ body {
 .record-icon.ing { background: var(--green-dim); color: var(--green); }
 .record-icon.gas { background: var(--red-dim); color: var(--red); }
 .record-icon.tra { background: var(--blue-dim); color: var(--blue); }
+.record-icon.tra-out { background: rgba(255,255,255,0.05); color: #888; }
+.record-icon.tra-in  { background: var(--blue-dim); color: var(--blue); }
+.record-amount.tra-out { color: #888; }
+.record-amount.tra-in  { color: var(--blue); }
 .record-body { flex: 1; min-width: 0; }
 .record-cat { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--text); }
 .record-meta { font-size: 11px; color: var(--text2); margin-top: 2px; }
@@ -1153,8 +1157,8 @@ function buildRegistros(monto, fecha, nota, tipo, cartera, carteraDest, categori
   const regs = [];
   if (tipo === 'TRANSFERENCIA') {
     const idT = generateId();
-    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo: 'TRANSFERENCIA', categoria: '', monto: -Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: carteraDest, idTransferencia: idT, montoTransferencia: monto });
-    regs.push({ id: generateId(), fecha, hora: getHora(), cartera: carteraDest, tipo: 'INGRESO POR TRANSFERENCIA', categoria: '', monto: Math.abs(monto), nota, fechaFlujo: calcFechaFlujo(fecha, carteraDest), usuario: currentUser, carteraDestino: '', idTransferencia: idT, montoTransferencia: monto });
+    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo: 'TRANSFERENCIA', categoria: '', monto: -Math.abs(monto), nota, fechaFlujo: fecha, usuario: currentUser, carteraDestino: carteraDest, idTransferencia: idT, montoTransferencia: monto });
+    regs.push({ id: generateId(), fecha, hora: getHora(), cartera: carteraDest, tipo: 'INGRESO POR TRANSFERENCIA', categoria: '', monto: Math.abs(monto), nota, fechaFlujo: fecha, usuario: currentUser, carteraDestino: '', idTransferencia: idT, montoTransferencia: monto });
   } else {
     const m = tipo === 'INGRESO' ? Math.abs(monto) : -Math.abs(monto);
     regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo, categoria, monto: m, nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '' });
@@ -1590,11 +1594,14 @@ function buildRecordItem(r, isFuture) {
   const item = document.createElement('div');
   item.className = 'record-item' + (isFuture ? ' future' : '');
   let iconClass = 'gas', iconChar = '↓';
-  if (r.tipo === 'INGRESO' || r.tipo === 'INGRESO POR TRANSFERENCIA') { iconClass = 'ing'; iconChar = '↑'; }
-  if (r.tipo === 'TRANSFERENCIA') { iconClass = 'tra'; iconChar = '⇄'; }
+  if (r.tipo === 'INGRESO') { iconClass = 'ing'; iconChar = '↑'; }
+  if (r.tipo === 'TRANSFERENCIA') { iconClass = 'tra-out'; iconChar = '→'; }
+  if (r.tipo === 'INGRESO POR TRANSFERENCIA') { iconClass = 'tra-in'; iconChar = '→'; }
   const monto = parseFloat(r.monto) || 0;
-  const amtClass = monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
-  const amtStr = (monto >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(monto));
+  const isTraOut = r.tipo === 'TRANSFERENCIA';
+  const isTraIn  = r.tipo === 'INGRESO POR TRANSFERENCIA';
+  const amtClass = isTraOut ? 'tra-out' : isTraIn ? 'tra-in' : monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
+  const amtStr = (isTraOut ? '−' : isTraIn ? '+' : monto >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(monto));
   const usuarioDisplay = r.usuario ? (r.usuario.includes('@') ? r.usuario.split('@')[0] : r.usuario) : '';
   const meta = [r.cartera, r.carteraDestino ? '→ ' + r.carteraDestino : '', usuarioDisplay && usuarioDisplay.toLowerCase() !== 'eugenio' ? usuarioDisplay : ''].filter(Boolean).join(' · ');
   item.innerHTML = `
@@ -2309,7 +2316,16 @@ ${Object.entries(ingresosPorCatMes).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}:
 ${metasConfig.map(m => `${m.categoria}: $${fmtN(Math.abs(m.presupuesto))}`).join('\n') || 'No configurados'}
 
 === TENDENCIA ÚLTIMOS 12 MESES ===
-${resumenMensual.join('\n')}`;
+${resumenMensual.join('\n')}
+
+=== DÍA DE LA SEMANA HOY ===
+Hoy es ${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][now.getDay()]} ${today}
+El viernes pasado fue: ${(() => { const d = new Date(now); const diff = (now.getDay() + 2) % 7; d.setDate(d.getDate() - diff); return toLocalDate(d); })()}
+El lunes de esta semana fue: ${(() => { const d = new Date(now); const diff = now.getDay() === 0 ? 6 : now.getDay() - 1; d.setDate(d.getDate() - diff); return toLocalDate(d); })()}
+
+=== REGISTROS RECIENTES (últimos 90 días, con fecha individual) ===
+fecha|tipo|cartera|categoria|monto|nota|usuario
+${allRecords.filter(r => r.fecha && r.fecha >= (() => { const d = new Date(now); d.setDate(d.getDate()-90); return toLocalDate(d); })() && r.fecha <= today && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'INGRESO POR TRANSFERENCIA').map(r => `${r.fecha}|${r.tipo}|${r.cartera}|${r.categoria||''}|${r.monto}|${r.nota||''}|${r.usuario||''}`).join('\n') || 'Sin registros recientes'}`;
 }
 
 function agregarMensaje(rol, texto) {
@@ -2347,20 +2363,7 @@ function abrirProyeccion() {
   const sheetId = '1qkIds3D2Zo9Jv4m6XQNH0k7Qtq_l8_E2CW7jGnVXyCM';
   const gid = '518129246';
   const webUrl = 'https://docs.google.com/spreadsheets/d/' + sheetId + '/edit?gid=' + gid + '#gid=' + gid;
-  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
-  if (isIOS) {
-    // Intenta abrir app nativa via iframe invisible, fallback a Safari
-    const iframe = document.createElement('iframe');
-    iframe.style.display = 'none';
-    iframe.src = 'googledocs://spreadsheets/d/' + sheetId + '/edit?gid=' + gid;
-    document.body.appendChild(iframe);
-    setTimeout(() => {
-      document.body.removeChild(iframe);
-      window.open(webUrl, '_blank');
-    }, 1000);
-  } else {
-    window.open(webUrl, '_blank');
-  }
+  window.open(webUrl, '_blank');
 }
 
 function renderConfigPage() {

@@ -2341,6 +2341,8 @@ function copiarRegistro() {
     showToast('Movimiento copiado — modifica lo que necesites', 'success');
   }, 100);
 }
+
+function limpiarChat() {
   chatHistory = [];
   const msgs = document.getElementById('chat-messages');
   if (msgs) msgs.innerHTML = '';

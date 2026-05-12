@@ -149,6 +149,10 @@ select.field-input { cursor: pointer; }
 
   <!-- KPI gastos del mes -->
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 12px;">
+    <div class="an-kpi" style="grid-column:1/-1;background:var(--bg3);border:0.5px solid var(--pink-border);">
+      <div class="an-kpi-label" style="color:var(--pink);">💵 EFECTIVO ANDREA</div>
+      <div class="an-kpi-val" id="a-saldo" style="color:var(--green);">—</div>
+    </div>
     <div class="an-kpi" style="grid-column:1/-1;">
       <div class="an-kpi-label">↓ Gastos del mes</div>
       <div class="an-kpi-val neg" id="a-gas">—</div>
@@ -347,6 +351,27 @@ function renderDash() {
   const today2 = hoy();
   const hastaReal = hasta > today2 ? today2 : hasta;
   const resMes = myRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hastaReal);
+
+  // Saldo EFECTIVO ANDREA
+  const carteraAndrea = 'EFECTIVO ANDREA';
+  let saldoAndrea = 0;
+  // Buscar saldo inicial de carteras si está disponible
+  try {
+    const carteras = JSON.parse(localStorage.getItem('flujos_carteras') || '[]');
+    const cfg = carteras.find(x => x.cartera === carteraAndrea);
+    saldoAndrea = cfg ? (parseFloat(cfg.saldoInicial) || 0) : 0;
+  } catch(e) {}
+  // Sumar todos los movimientos de EFECTIVO ANDREA hasta hoy
+  allRecords.forEach(r => {
+    if (r.cartera === carteraAndrea && r.fecha <= today) {
+      saldoAndrea += parseFloat(r.monto) || 0;
+    }
+  });
+  const saldoEl = document.getElementById('a-saldo');
+  if (saldoEl) {
+    saldoEl.textContent = (saldoAndrea < 0 ? '−' : '') + '$' + fmtN(Math.abs(saldoAndrea));
+    saldoEl.style.color = saldoAndrea >= 0 ? 'var(--green)' : 'var(--red)';
+  }
 
   let gas = 0, maxGasto = 0;
   const bycat = {};
@@ -800,6 +825,9 @@ function autoSync(showMsg) {
     .then(r => r.json())
     .then(data => {
       if (!data.ok || !data.rows) return;
+      if (data.carteras && data.carteras.length) {
+        localStorage.setItem('flujos_carteras', JSON.stringify(data.carteras));
+      }
       const sheetRecs = data.rows.map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
       const sheetIds = new Set(sheetRecs.map(r => r.id));
       deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });

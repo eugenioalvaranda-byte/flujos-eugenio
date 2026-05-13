@@ -226,6 +226,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 
 .recurrent-toggle { display: flex; align-items: center; justify-content: space-between; background: var(--bg2); border: 0.5px solid var(--border2); border-radius: var(--radius-sm); padding: 16px; cursor: pointer; margin-bottom: 16px; }
 .toggle-label { font-size: 14px; font-weight: 600; color: var(--text); }
+/* Ocultar recurrente en móvil y tablet — solo desktop */
+.recurrent-toggle, .recurrent-options { display: none !important; }
+@media (min-width: 1024px) {
+  .recurrent-toggle { display: flex !important; }
+  .recurrent-options.show { display: block !important; }
+}
 .toggle-sub { font-size: 11px; color: var(--text2); margin-top: 3px; }
 .toggle-switch { width: 44px; height: 26px; border-radius: 13px; background: var(--bg4); position: relative; transition: background 0.2s; flex-shrink: 0; }
 .toggle-switch.on { background: var(--green); }

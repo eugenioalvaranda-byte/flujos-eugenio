@@ -482,6 +482,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="sidebar-nav-item" id="snav-chat" onclick="showPage('chat')">
     <span class="sidebar-nav-icon">🤖</span> Consultar IA
   </div>
+  <div class="sidebar-nav-item" id="snav-deu" onclick="showPage('deu')">
+    <span class="sidebar-nav-icon">💳</span> Deudas
+  </div>
   <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
     <span class="sidebar-nav-icon">⚙</span> Configuración
   </div>
@@ -579,6 +582,23 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="wallets-grid" id="wallets-cash"></div>
     <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
     <div class="wallets-grid" id="wallets-tdc"></div>
+
+    <!-- Patrimonio incluyendo créditos -->
+    <div style="margin-top:16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;" id="pn-deudas-section">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:10px;">Patrimonio neto incluyendo créditos</div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
+        <span style="font-size:13px;color:var(--text2);">Patrimonio sin créditos</span>
+        <span id="pn-sin-deudas" class="privacy-num" style="font-family:var(--display);font-size:13px;font-weight:700;">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
+        <span style="font-size:13px;color:var(--text2);">Total créditos</span>
+        <span id="pn-deudas-total" class="privacy-num" style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--red);">—</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:10px 0 0;">
+        <span style="font-size:14px;font-weight:700;">Patrimonio real</span>
+        <span id="pn-con-deudas" class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;">—</span>
+      </div>
+    </div>
   </div>
 
   <!-- Desktop: columna derecha (oculta en móvil via CSS) -->
@@ -615,6 +635,12 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="field" id="field-categoria">
       <div class="field-label">Categoría</div>
       <div class="chips-wrap" id="chips-categoria"></div>
+    </div>
+    <div class="field" id="field-deuda" style="display:none;">
+      <div class="field-label">¿A qué crédito corresponde?</div>
+      <select class="field-input" id="sel-deuda">
+        <option value="">Sin vincular</option>
+      </select>
     </div>
     <div class="field">
       <div class="field-label">Nota (opcional)</div>
@@ -795,10 +821,10 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
   </div>
 
-  <!-- Presupuesto vs real (gráfica de barras) -->
+  <!-- Presupuesto vs real (barras estilo semáforo) -->
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius);margin:0 16px 20px;padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:12px;">Presupuesto vs real</div>
-    <div style="position:relative;height:220px;"><canvas id="an-chart-presup"></canvas></div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:14px;">Presupuesto vs real</div>
+    <div id="an-chart-presup"></div>
   </div>
 </div>
 
@@ -834,6 +860,59 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
     </div>
     <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px;">Claude analiza tus registros reales</div>
+  </div>
+</div>
+
+<!-- DEUDAS -->
+<div id="page-deu" class="page">
+  <div class="topbar">
+    <div class="topbar-title">💳 Deudas</div>
+    <div onclick="abrirFormDeuda()" style="padding:8px 16px;background:var(--green);color:#000;border-radius:20px;font-size:13px;font-weight:700;cursor:pointer;">+ Registrar</div>
+  </div>
+
+  <!-- Resumen -->
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 14px;">
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Deuda total</div>
+      <div id="deu-total" class="privacy-num" style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--red);">$0.00</div>
+    </div>
+    <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;">
+      <div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Pago mensual</div>
+      <div id="deu-mensual" class="privacy-num" style="font-family:var(--display);font-size:20px;font-weight:700;color:var(--text);">$0.00</div>
+    </div>
+  </div>
+
+  <!-- Lista de deudas -->
+  <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin:0 16px 8px;">Deudas activas</div>
+  <div id="deu-lista" style="margin:0 16px 20px;"></div>
+
+  <!-- Form nueva deuda -->
+  <div id="deu-form" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);margin:0 16px 20px;padding:18px;">
+    <div style="font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:16px;" id="deu-form-title">Nueva Deuda</div>
+    <div class="field"><div class="field-label">Nombre</div>
+      <input class="field-input" id="deu-nombre" placeholder="Ej: Crédito AAC, Deuda Suegra..."></div>
+    <div class="field"><div class="field-label">Tipo</div>
+      <select class="field-input" id="deu-tipo">
+        <option>Crédito Personal</option><option>Crédito Hipotecario</option>
+        <option>Crédito Auto</option><option>Préstamo familiar</option>
+        <option>Crédito Nómina</option><option>Otro</option>
+      </select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field"><div class="field-label">Monto original</div>
+        <input class="field-input" id="deu-original" type="number" placeholder="0.00" inputmode="decimal"></div>
+      <div class="field"><div class="field-label">Saldo actual</div>
+        <input class="field-input" id="deu-saldo" type="number" placeholder="0.00" inputmode="decimal"></div>
+      <div class="field"><div class="field-label">Mensualidad</div>
+        <input class="field-input" id="deu-mensualidad" type="number" placeholder="0.00" inputmode="decimal"></div>
+      <div class="field"><div class="field-label">Tasa interés anual %</div>
+        <input class="field-input" id="deu-tasa" type="number" placeholder="0 si no aplica" inputmode="decimal"></div>
+    </div>
+    <div class="field"><div class="field-label">Fecha inicio</div>
+      <input class="field-input" id="deu-fecha" type="date"></div>
+    <div style="display:flex;gap:8px;margin-top:4px;">
+      <div onclick="cerrarFormDeuda()" style="flex:1;padding:14px;background:var(--bg3);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
+      <div onclick="guardarDeuda()" style="flex:1;padding:14px;background:var(--green);border-radius:var(--radius-sm);font-size:14px;font-weight:700;color:#000;text-align:center;cursor:pointer;">Guardar</div>
+    </div>
   </div>
 </div>
 
@@ -914,6 +993,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><div class="nav-icon">📊</div><span>Dashboard</span></div>
   <div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
   <div class="nav-item" id="nav-chat" onclick="showPage('chat')"><div class="nav-icon">🤖</div><span>IA</span></div>
+  <div class="nav-item" id="nav-deu" onclick="showPage('deu')"><div class="nav-icon">💳</div><span>Deudas</span></div>
   <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><div class="nav-icon">⚙</div><span>Config</span></div>
 </div>
 
@@ -1053,6 +1133,7 @@ function showPage(p) {
   if (p === 'cfg') renderConfigPage();
   if (p === 'proy') renderDashboardAnalytics();
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
+  if (p === 'deu') renderDeudas();
 }
 
 function setUser(u, el) {
@@ -1229,7 +1310,13 @@ function enviarAlSheet(regs, btn) {
     if (programados > 0) {
       showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
     } else {
-      showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
+      // Aplicar pago a deuda si se vinculó
+    const selDeu = document.getElementById('sel-deuda');
+    if (selDeu && selDeu.value) {
+      aplicarPagoADeuda(selDeu.value, monto);
+      if (document.querySelector('.page.active')?.id === 'page-deu') renderDeudas();
+    }
+    showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
     }
     showPage('list');
   })
@@ -1406,6 +1493,14 @@ function renderDashboard() {
   if (pnTotal) { pnTotal.textContent = (patrimonioNeto<0?'−':'')+'$'+fmtN(Math.abs(patrimonioNeto)); pnTotal.style.color = patrimonioNeto<0?'var(--red)':'var(--green)'; }
   if (pnCash)  { pnCash.textContent  = (cashHoy<0?'−':'')+'$'+fmtN(Math.abs(cashHoy));  pnCash.style.color  = cashHoy<0?'var(--red)':'var(--green)'; }
   if (pnTdc)   { pnTdc.textContent   = '$'+fmtN(Math.abs(tdcHoy)); }
+
+  // Patrimonio con deudas
+  const sinDeuEl = document.getElementById('pn-sin-deudas');
+  if (sinDeuEl) {
+    sinDeuEl.textContent = (patrimonioNeto < 0 ? '−' : '') + '$' + fmtN(Math.abs(patrimonioNeto));
+    sinDeuEl.style.color = patrimonioNeto >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  actualizarPatrimonioConDeudas();
 
   // CASH y TDC — cash solo hasta hoy, TDC incluye gastos futuros (ya se gastó)
   const cashEl = document.getElementById('dash-cash');
@@ -1832,6 +1927,7 @@ function loadRecords() {
   } catch(e) {}
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
+  loadDeudas();
   renderDashboard();
 
   showToast('Sincronizando...', '');
@@ -2161,10 +2257,12 @@ function renderDonutGas(recs) {
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '60%' }
   });
   const leg = document.getElementById('an-donut-gas-legend'); leg.innerHTML = '';
+  const totalGas = sorted.reduce((s,[,v]) => s+v, 0);
   sorted.forEach(([cat, val], i) => {
+    const pct = totalGas > 0 ? Math.round(val/totalGas*100) : 0;
     leg.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--text2);padding:2px 0;border-bottom:0.5px solid var(--border);">
       <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</span></div>
-      <span style="font-weight:700;color:var(--red);flex-shrink:0;">−$${fmtN(val)}</span></div>`;
+      <span style="font-weight:700;color:var(--red);flex-shrink:0;">${pct}% · −$${fmtN(val)}</span></div>`;
   });
 }
 
@@ -2183,10 +2281,12 @@ function renderDonutIng(recs) {
     options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '60%' }
   });
   const leg = document.getElementById('an-donut-ing-legend'); leg.innerHTML = '';
+  const totalIng = sorted.reduce((s,[,v]) => s+v, 0);
   sorted.forEach(([cat, val], i) => {
+    const pct = totalIng > 0 ? Math.round(val/totalIng*100) : 0;
     leg.innerHTML += `<div style="display:flex;align-items:center;justify-content:space-between;gap:6px;font-size:11px;color:var(--text2);padding:2px 0;border-bottom:0.5px solid var(--border);">
       <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${CHART_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</span></div>
-      <span style="font-weight:700;color:var(--green);flex-shrink:0;">+$${fmtN(val)}</span></div>`;
+      <span style="font-weight:700;color:var(--green);flex-shrink:0;">${pct}% · +$${fmtN(val)}</span></div>`;
   });
 }
 
@@ -2234,26 +2334,34 @@ function renderPresupuestoChart(recs) {
   }));
 
   const ctx = document.getElementById('an-chart-presup'); if (!ctx) return;
-  if (presupChart) presupChart.destroy();
-  presupChart = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: cats.map(x => x.cat.length > 12 ? x.cat.substring(0,12)+'…' : x.cat),
-      datasets: [
-        { label: 'Real',        data: cats.map(x => Math.round(x.real)),   backgroundColor: cats.map(x => x.real > x.presup ? 'rgba(255,80,80,0.8)' : 'rgba(77,166,255,0.8)'), borderRadius: 4 },
-        { label: 'Presupuesto', data: cats.map(x => Math.round(x.presup)), backgroundColor: 'rgba(0,224,150,0.35)', borderRadius: 4 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: true, labels: { color: '#7e7e94', font: { size: 11 }, boxWidth: 12 } }, tooltip: { callbacks: { label: c => ' $' + (c.raw/1000).toFixed(1) + 'k' } } },
-      scales: {
-        x: { ticks: { color: '#7e7e94', font: { size: 10 }, maxRotation: 30 }, grid: { display: false } },
-        y: { ticks: { color: '#7e7e94', font: { size: 10 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 5 }, grid: { color: 'rgba(255,255,255,0.04)' } }
-      },
-      interaction: { intersect: false, mode: 'index' }
-    }
-  });
+  if (presupChart) { presupChart.destroy(); presupChart = null; }
+
+  // Render as styled HTML bars (estilo hermano)
+  const container = ctx.parentElement;
+  container.style.height = 'auto';
+  container.innerHTML = cats.map(row => {
+    const pct = row.presup > 0 ? (row.real / row.presup * 100) : 0;
+    const over = pct > 100;
+    const warn = pct >= 50 && pct < 100;
+    const done = pct >= 100 && !over;
+    const barColor = over ? '#ff5050' : done ? '#00e096' : warn ? '#ffb547' : '#00e096';
+    const barW = Math.min(pct, 100);
+    const label = over ? '🔴 SOBREPASADO' : done ? '✓ Completado' : pct > 0 ? `· ${Math.round(pct)}%` : 'FUO';
+    const labelColor = over ? 'var(--red)' : done ? 'var(--green)' : warn ? '#ffb547' : 'var(--text3)';
+    const stripes = over ? 'background:repeating-linear-gradient(45deg,#ff5050,#ff5050 4px,#cc2200 4px,#cc2200 8px);' : '';
+    return `<div style="margin-bottom:14px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;gap:8px;">
+        <div style="display:flex;align-items:center;gap:8px;min-width:0;flex:1;">
+          <span style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${row.cat}</span>
+          <span style="font-size:10px;font-weight:700;color:${labelColor};white-space:nowrap;flex-shrink:0;">${label}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text2);flex-shrink:0;">$${fmtN(row.real)} / $${fmtN(row.presup)}</span>
+      </div>
+      <div style="height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;">
+        <div style="height:100%;width:${barW}%;border-radius:4px;${stripes || 'background:'+barColor+';'}"></div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 // ── PRIVACY MODE ──
@@ -2299,6 +2407,160 @@ function setUserFilter(u, el) {
 }
 
 function showConfig() { showPage('cfg'); }
+
+// ══════════════════════════════════════════
+// MÓDULO DE DEUDAS
+// ══════════════════════════════════════════
+let deudas = [];
+let editingDeudaId = null;
+
+function loadDeudas() {
+  try { deudas = JSON.parse(localStorage.getItem('flujos_deudas') || '[]'); } catch(e) { deudas = []; }
+}
+
+function saveDeudas() {
+  localStorage.setItem('flujos_deudas', JSON.stringify(deudas));
+}
+
+function renderDeudas() {
+  loadDeudas();
+  const total = deudas.reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
+  const mensual = deudas.reduce((s, d) => s + (parseFloat(d.mensualidad) || 0), 0);
+  const totalEl = document.getElementById('deu-total');
+  const mensualEl = document.getElementById('deu-mensual');
+  if (totalEl) totalEl.textContent = '$' + fmtN(total);
+  if (mensualEl) mensualEl.textContent = '$' + fmtN(mensual);
+
+  const lista = document.getElementById('deu-lista');
+  if (!lista) return;
+
+  if (!deudas.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">Sin deudas activas 🎉</div>';
+    return;
+  }
+
+  lista.innerHTML = deudas.map(d => {
+    const saldo = parseFloat(d.saldo) || 0;
+    const original = parseFloat(d.original) || 0;
+    const pagado = original > 0 ? Math.round((original - saldo) / original * 100) : 0;
+    const barW = Math.min(pagado, 100);
+    const tasa = parseFloat(d.tasa) || 0;
+    return `<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+        <div>
+          <div style="font-size:14px;font-weight:700;">${d.nombre}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.tipo}${tasa > 0 ? ' · ' + tasa + '% anual' : ''}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--red);">$${fmtN(saldo)}</div>
+          <div style="font-size:11px;color:var(--text3);">de $${fmtN(original)}</div>
+        </div>
+      </div>
+      ${original > 0 ? `<div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:8px;">
+        <div style="height:100%;width:${barW}%;background:var(--green);border-radius:3px;"></div>
+      </div>
+      <div style="font-size:11px;color:var(--text3);">${pagado}% pagado</div>` : ''}
+      <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
+        <div style="font-size:12px;color:var(--text2);">Mensualidad: <span class="privacy-num" style="font-weight:700;color:var(--text);">$${fmtN(d.mensualidad)}</span></div>
+        <div style="display:flex;gap:8px;">
+          <div onclick="editarDeuda('${d.id}')" style="font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;">Editar</div>
+          <div onclick="eliminarDeuda('${d.id}')" style="font-size:12px;color:var(--red);cursor:pointer;font-weight:600;">Eliminar</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Actualizar patrimonio neto con deudas en el resumen
+  actualizarPatrimonioConDeudas();
+}
+
+function actualizarPatrimonioConDeudas() {
+  const totalDeudas = deudas.reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
+  const elConDeu = document.getElementById('pn-con-deudas');
+  const elTotalDeu = document.getElementById('pn-deudas-total');
+  if (elConDeu) {
+    const { neto } = calcPatrimonio();
+    const netoConDeu = neto - totalDeudas;
+    elConDeu.textContent = (netoConDeu < 0 ? '−' : '') + '$' + fmtN(Math.abs(netoConDeu));
+    elConDeu.style.color = netoConDeu >= 0 ? 'var(--green)' : 'var(--red)';
+  }
+  if (elTotalDeu) elTotalDeu.textContent = '−$' + fmtN(totalDeudas);
+}
+
+function abrirFormDeuda(id) {
+  editingDeudaId = id || null;
+  const title = document.getElementById('deu-form-title');
+  if (id) {
+    const d = deudas.find(x => x.id === id);
+    if (!d) return;
+    if (title) title.textContent = 'Editar Deuda';
+    document.getElementById('deu-nombre').value = d.nombre || '';
+    document.getElementById('deu-tipo').value = d.tipo || 'Crédito Personal';
+    document.getElementById('deu-original').value = d.original || '';
+    document.getElementById('deu-saldo').value = d.saldo || '';
+    document.getElementById('deu-mensualidad').value = d.mensualidad || '';
+    document.getElementById('deu-tasa').value = d.tasa || '';
+    document.getElementById('deu-fecha').value = d.fecha || '';
+  } else {
+    if (title) title.textContent = 'Nueva Deuda';
+    document.getElementById('deu-nombre').value = '';
+    document.getElementById('deu-tipo').value = 'Crédito Personal';
+    document.getElementById('deu-original').value = '';
+    document.getElementById('deu-saldo').value = '';
+    document.getElementById('deu-mensualidad').value = '';
+    document.getElementById('deu-tasa').value = '';
+    document.getElementById('deu-fecha').value = hoy();
+  }
+  document.getElementById('deu-form').style.display = 'block';
+  document.getElementById('deu-form').scrollIntoView({ behavior: 'smooth' });
+}
+
+function cerrarFormDeuda() {
+  document.getElementById('deu-form').style.display = 'none';
+  editingDeudaId = null;
+}
+
+function guardarDeuda() {
+  const nombre = document.getElementById('deu-nombre').value.trim();
+  if (!nombre) return showToast('Ingresa un nombre', 'error');
+  const deuda = {
+    id: editingDeudaId || generateId(),
+    nombre,
+    tipo: document.getElementById('deu-tipo').value,
+    original: parseFloat(document.getElementById('deu-original').value) || 0,
+    saldo: parseFloat(document.getElementById('deu-saldo').value) || 0,
+    mensualidad: parseFloat(document.getElementById('deu-mensualidad').value) || 0,
+    tasa: parseFloat(document.getElementById('deu-tasa').value) || 0,
+    fecha: document.getElementById('deu-fecha').value,
+  };
+  if (editingDeudaId) {
+    const idx = deudas.findIndex(x => x.id === editingDeudaId);
+    if (idx >= 0) deudas[idx] = deuda;
+  } else {
+    deudas.push(deuda);
+  }
+  saveDeudas();
+  cerrarFormDeuda();
+  renderDeudas();
+  showToast('Deuda guardada ✓', 'success');
+}
+
+function editarDeuda(id) { abrirFormDeuda(id); }
+
+function eliminarDeuda(id) {
+  deudas = deudas.filter(x => x.id !== id);
+  saveDeudas();
+  renderDeudas();
+  showToast('Deuda eliminada', 'error');
+}
+
+// Actualizar saldo de deuda cuando se registra un pago
+function aplicarPagoADeuda(deudaId, monto) {
+  const idx = deudas.findIndex(x => x.id === deudaId);
+  if (idx < 0) return;
+  deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - Math.abs(monto));
+  saveDeudas();
+}
 
 // ══════════════════════════════════════════
 // CHAT IA — Claude consulta financiera

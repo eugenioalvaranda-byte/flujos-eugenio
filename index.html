@@ -928,14 +928,20 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
         <span style="color:var(--text2);">IVA sobre intereses (16%)</span>
         <span id="calc-iva" style="font-weight:600;">$0.00</span>
       </div>
+      <div id="calc-comisiones-row" style="display:none;justify-content:space-between;padding:4px 0;font-size:12px;">
+        <span style="color:var(--text2);">Comisiones fijas</span>
+        <span id="calc-comisiones" style="font-weight:600;">$0.00</span>
+      </div>
       <div style="display:flex;justify-content:space-between;padding:6px 0 0;font-size:13px;font-weight:700;border-top:0.5px solid var(--border);margin-top:4px;">
-        <span>Solo intereses + IVA</span>
+        <span>Costo financiero total</span>
         <span id="calc-total-int" style="color:var(--red);">$0.00</span>
       </div>
       <div style="font-size:10px;color:var(--text3);margin-top:6px;">👆 Esto es solo el costo financiero. El capital que registres como mensualidad se resta directamente al saldo.</div>
     </div>
     <div class="field"><div class="field-label">Mensualidad de capital (lo que abona al saldo)</div>
       <input class="field-input" id="deu-mensualidad" type="number" placeholder="0.00" inputmode="decimal"></div>
+    <div class="field"><div class="field-label">Comisiones fijas mensuales (disponible, anualidad, etc.)</div>
+      <input class="field-input" id="deu-comisiones" type="number" placeholder="0.00 si no aplica" inputmode="decimal" oninput="calcularPagoEstimado()"></div>
     <div class="field"><div class="field-label">Fecha inicio</div>
       <input class="field-input" id="deu-fecha" type="date"></div>
     <div class="field"><div class="field-label">Notas (opcional)</div>
@@ -1221,9 +1227,25 @@ function renderChipsCategoria() {
     const el = document.createElement('div');
     el.className = 'chip' + (selectedCategoria === c ? ' active ' + cls : '');
     el.textContent = c;
-    el.onclick = () => { selectedCategoria = c; renderChipsCategoria(); };
+    el.onclick = () => {
+      selectedCategoria = c;
+      renderChipsCategoria();
+      // Mostrar selector de crédito si es categoría de pago
+      const fieldDeuda = document.getElementById('field-deuda');
+      const selDeuda = document.getElementById('sel-deuda');
+      const esPago = CAT_PAGO_CREDITO.includes(c);
+      if (fieldDeuda) fieldDeuda.style.display = esPago ? 'block' : 'none';
+      if (selDeuda && esPago) {
+        const activas = deudas.filter(d => !d.liquidado);
+        selDeuda.innerHTML = '<option value="">Sin vincular</option>' +
+          activas.map(d => `<option value="${d.id}">${d.nombre} — $${fmtN(d.saldo)}</option>`).join('');
+      }
+    };
     wrap.appendChild(el);
   });
+  // Si la categoría actual ya no es de pago, ocultar el selector
+  const fieldDeuda = document.getElementById('field-deuda');
+  if (fieldDeuda && !CAT_PAGO_CREDITO.includes(selectedCategoria)) fieldDeuda.style.display = 'none';
 }
 
 // FECHA FLUJO — sin objeto Date para evitar bug de offset UTC
@@ -2467,18 +2489,23 @@ function calcularPagoEstimado() {
   const saldo = parseFloat(document.getElementById('deu-saldo')?.value) || 0;
   const tasa = parseFloat(document.getElementById('deu-tasa')?.value) || 0;
   const tieneIva = document.getElementById('deu-iva')?.value === '1';
+  const comisiones = parseFloat(document.getElementById('deu-comisiones')?.value) || 0;
   const calcDiv = document.getElementById('deu-calculo');
   if (!calcDiv) return;
-  if (saldo <= 0 || tasa <= 0) { calcDiv.style.display = 'none'; return; }
+  if (saldo <= 0 || (tasa <= 0 && comisiones <= 0)) { calcDiv.style.display = 'none'; return; }
   calcDiv.style.display = 'block';
-  const intMes = saldo * (tasa / 100 / 12);
+  const intMes = saldo > 0 && tasa > 0 ? saldo * (tasa / 100 / 12) : 0;
   const ivaMes = tieneIva ? intMes * 0.16 : 0;
-  const totalInt = intMes + ivaMes;
+  const totalInt = intMes + ivaMes + comisiones;
   document.getElementById('calc-intereses').textContent = '$' + fmtN(intMes);
   document.getElementById('calc-iva').textContent = '$' + fmtN(ivaMes);
   document.getElementById('calc-total-int').textContent = '$' + fmtN(totalInt);
   const ivaRow = document.getElementById('calc-iva-row');
   if (ivaRow) ivaRow.style.display = tieneIva ? 'flex' : 'none';
+  const comRow = document.getElementById('calc-comisiones-row');
+  const comEl = document.getElementById('calc-comisiones');
+  if (comRow) comRow.style.display = comisiones > 0 ? 'flex' : 'none';
+  if (comEl) comEl.textContent = '$' + fmtN(comisiones);
 }
 
 function renderDeudas() {
@@ -2502,7 +2529,8 @@ function renderDeudas() {
     const barW = Math.min(Math.max(pagado, 0), 100);
     const intMes = saldo > 0 && tasa > 0 ? saldo * (tasa / 100 / 12) : 0;
     const ivaMes = tieneIva ? intMes * 0.16 : 0;
-    const totalPago = intMes + ivaMes + (parseFloat(d.mensualidad) || 0);
+    const comisionesCard = parseFloat(d.comisiones) || 0;
+    const totalPago = intMes + ivaMes + comisionesCard + (parseFloat(d.mensualidad) || 0);
     return `<div style="background:var(--bg2);border:0.5px solid ${esArchivada ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius);padding:16px;margin-bottom:10px;${esArchivada ? 'opacity:0.7;' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
@@ -2523,6 +2551,7 @@ function renderDeudas() {
         <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Capital (abono a saldo)</span><span class="privacy-num" style="font-weight:600;">$${fmtN(d.mensualidad||0)}</span></div>
         ${intMes > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Intereses del mes</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(intMes)}</span></div>` : ''}
         ${ivaMes > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">IVA sobre intereses</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(ivaMes)}</span></div>` : ''}
+        ${comisionesCard > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Comisiones fijas</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(comisionesCard)}</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0 0;border-top:0.5px solid var(--border);margin-top:4px;"><span>Pago total estimado</span><span class="privacy-num" style="color:var(--red);">$${fmtN(totalPago)}</span></div>
       </div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:0.5px solid var(--border);">
@@ -2582,9 +2611,10 @@ function abrirFormDeuda(id) {
     document.getElementById('deu-iva').value = d.iva || '1';
     document.getElementById('deu-fecha').value = d.fecha || '';
     document.getElementById('deu-notas').value = d.notas || '';
+    document.getElementById('deu-comisiones').value = d.comisiones || '';
   } else {
     if (title) title.textContent = 'Nueva Deuda';
-    ['deu-nombre','deu-original','deu-saldo','deu-mensualidad','deu-tasa','deu-notas'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+    ['deu-nombre','deu-original','deu-saldo','deu-mensualidad','deu-tasa','deu-notas','deu-comisiones'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.getElementById('deu-tipo').value = 'Crédito Personal';
     document.getElementById('deu-iva').value = '1';
     document.getElementById('deu-fecha').value = hoy();

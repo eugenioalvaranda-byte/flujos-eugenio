@@ -618,7 +618,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
     <div class="field">
       <div class="field-label">Monto</div>
-      <input class="field-input amount-input" type="number" id="f-monto" placeholder="0.00" min="0" step="0.01" inputmode="decimal">
+      <input class="field-input amount-input" type="number" id="f-monto" placeholder="0.00" min="0" step="0.01" inputmode="decimal" oninput="actualizarCapitalSugerido()">
     </div>
     <div class="field">
       <div class="field-label">Fecha</div>
@@ -638,9 +638,14 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     </div>
     <div class="field" id="field-deuda" style="display:none;">
       <div class="field-label">¿A qué crédito corresponde?</div>
-      <select class="field-input" id="sel-deuda">
+      <select class="field-input" id="sel-deuda" onchange="actualizarCapitalSugerido()">
         <option value="">Sin vincular</option>
       </select>
+      <div id="field-capital-sugerido" style="display:none;margin-top:10px;">
+        <div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px;font-size:11px;color:var(--text2);" id="capital-desglose"></div>
+        <div class="field-label" style="margin-top:8px;">Capital que abona al saldo (editable)</div>
+        <input class="field-input" id="input-capital" type="number" placeholder="0.00" inputmode="decimal" style="margin-top:6px;">
+      </div>
     </div>
     <div class="field">
       <div class="field-label">Nota (opcional)</div>
@@ -1239,6 +1244,7 @@ function renderChipsCategoria() {
         const activas = deudas.filter(d => !d.liquidado);
         selDeuda.innerHTML = '<option value="">Sin vincular</option>' +
           activas.map(d => `<option value="${d.id}">${d.nombre} — $${fmtN(d.saldo)}</option>`).join('');
+        actualizarCapitalSugerido();
       }
     };
     wrap.appendChild(el);
@@ -2683,10 +2689,50 @@ function eliminarDeuda(id) {
   showToast('Crédito eliminado', 'error');
 }
 
-function aplicarPagoADeuda(deudaId, monto) {
+function actualizarCapitalSugerido() {
+  const selDeu = document.getElementById('sel-deuda');
+  const fieldCap = document.getElementById('field-capital-sugerido');
+  const desglose = document.getElementById('capital-desglose');
+  const inputCap = document.getElementById('input-capital');
+  if (!selDeu || !fieldCap) return;
+
+  const deudaId = selDeu.value;
+  if (!deudaId) { fieldCap.style.display = 'none'; return; }
+
+  const d = deudas.find(x => x.id === deudaId);
+  if (!d) { fieldCap.style.display = 'none'; return; }
+
+  const saldo = parseFloat(d.saldo) || 0;
+  const tasa = parseFloat(d.tasa) || 0;
+  const tieneIva = d.iva === '1';
+  const comisiones = parseFloat(d.comisiones) || 0;
+  const intMes = saldo > 0 && tasa > 0 ? saldo * (tasa / 100 / 12) : 0;
+  const ivaMes = tieneIva ? intMes * 0.16 : 0;
+  const costoFinanciero = intMes + ivaMes + comisiones;
+
+  // Leer monto del formulario
+  const montoTotal = parseFloat(document.getElementById('f-monto')?.value) || 0;
+  const capitalSugerido = Math.max(0, montoTotal - costoFinanciero);
+
+  fieldCap.style.display = 'block';
+  if (desglose) {
+    let txt = `Saldo actual: $${fmtN(saldo)}`;
+    if (intMes > 0) txt += ` · Intereses: $${fmtN(intMes)}`;
+    if (ivaMes > 0) txt += ` · IVA: $${fmtN(ivaMes)}`;
+    if (comisiones > 0) txt += ` · Comisiones: $${fmtN(comisiones)}`;
+    if (costoFinanciero > 0) txt += `\nCosto financiero estimado: $${fmtN(costoFinanciero)}`;
+    desglose.textContent = txt;
+  }
+  if (inputCap) inputCap.value = capitalSugerido > 0 ? capitalSugerido.toFixed(2) : '';
+}
+
+function aplicarPagoADeuda(deudaId, montoTotal) {
   const idx = deudas.findIndex(x => x.id === deudaId);
   if (idx < 0) return;
-  deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - Math.abs(monto));
+  // Usar el capital editado por el usuario, no el monto total
+  const inputCap = document.getElementById('input-capital');
+  const capital = inputCap ? (parseFloat(inputCap.value) || 0) : Math.abs(montoTotal);
+  deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - capital);
   if (deudas[idx].saldo === 0) { deudas[idx].liquidado = true; showToast('🎉 Crédito liquidado automáticamente', 'success'); }
   saveDeudas();
 }

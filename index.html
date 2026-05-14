@@ -886,29 +886,60 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div style="font-size:11px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;margin:0 16px 8px;">Deudas activas</div>
   <div id="deu-lista" style="margin:0 16px 20px;"></div>
 
-  <!-- Form nueva deuda -->
+  <!-- Tabs activas/archivadas -->
+  <div style="display:flex;gap:6px;margin:0 16px 12px;">
+    <div class="filter-pill active" id="deu-tab-act" onclick="setDeuTab('activas',this)">Activas</div>
+    <div class="filter-pill" id="deu-tab-arch" onclick="setDeuTab('archivadas',this)">Archivadas</div>
+  </div>
+  <div id="deu-lista-archivadas" style="margin:0 16px 20px;display:none;"></div>
+
+  <!-- Form nueva/editar deuda -->
   <div id="deu-form" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);margin:0 16px 20px;padding:18px;">
     <div style="font-family:var(--display);font-size:16px;font-weight:700;margin-bottom:16px;" id="deu-form-title">Nueva Deuda</div>
-    <div class="field"><div class="field-label">Nombre</div>
-      <input class="field-input" id="deu-nombre" placeholder="Ej: Crédito AAC, Deuda Suegra..."></div>
-    <div class="field"><div class="field-label">Tipo</div>
+    <div class="field"><div class="field-label">Nombre del crédito</div>
+      <input class="field-input" id="deu-nombre" placeholder="Ej: Crédito Banamex, Préstamo familiar..."></div>
+    <div class="field"><div class="field-label">Tipo de crédito</div>
       <select class="field-input" id="deu-tipo">
         <option>Crédito Personal</option><option>Crédito Hipotecario</option>
         <option>Crédito Auto</option><option>Préstamo familiar</option>
-        <option>Crédito Nómina</option><option>Otro</option>
+        <option>Crédito Nómina</option><option>Tarjeta de crédito</option><option>Otro</option>
       </select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
       <div class="field"><div class="field-label">Monto original</div>
-        <input class="field-input" id="deu-original" type="number" placeholder="0.00" inputmode="decimal"></div>
+        <input class="field-input" id="deu-original" type="number" placeholder="0.00" inputmode="decimal" oninput="calcularPagoEstimado()"></div>
       <div class="field"><div class="field-label">Saldo actual</div>
-        <input class="field-input" id="deu-saldo" type="number" placeholder="0.00" inputmode="decimal"></div>
-      <div class="field"><div class="field-label">Mensualidad</div>
-        <input class="field-input" id="deu-mensualidad" type="number" placeholder="0.00" inputmode="decimal"></div>
+        <input class="field-input" id="deu-saldo" type="number" placeholder="0.00" inputmode="decimal" oninput="calcularPagoEstimado()"></div>
       <div class="field"><div class="field-label">Tasa interés anual %</div>
-        <input class="field-input" id="deu-tasa" type="number" placeholder="0 si no aplica" inputmode="decimal"></div>
+        <input class="field-input" id="deu-tasa" type="number" placeholder="0 si no aplica" inputmode="decimal" oninput="calcularPagoEstimado()"></div>
+      <div class="field"><div class="field-label">¿Cobra IVA sobre intereses?</div>
+        <select class="field-input" id="deu-iva" onchange="calcularPagoEstimado()">
+          <option value="1">Sí cobra IVA (16%)</option>
+          <option value="0">No cobra IVA</option>
+        </select></div>
     </div>
+    <!-- Cálculo automático -->
+    <div id="deu-calculo" style="display:none;background:var(--bg3);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;border:0.5px solid var(--border2);">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">Pago mensual estimado</div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;">
+        <span style="color:var(--text2);">Intereses del mes</span>
+        <span id="calc-intereses" style="font-weight:600;">$0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:4px 0;font-size:12px;" id="calc-iva-row">
+        <span style="color:var(--text2);">IVA sobre intereses (16%)</span>
+        <span id="calc-iva" style="font-weight:600;">$0.00</span>
+      </div>
+      <div style="display:flex;justify-content:space-between;padding:6px 0 0;font-size:13px;font-weight:700;border-top:0.5px solid var(--border);margin-top:4px;">
+        <span>Solo intereses + IVA</span>
+        <span id="calc-total-int" style="color:var(--red);">$0.00</span>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:6px;">👆 Esto es solo el costo financiero. El capital que registres como mensualidad se resta directamente al saldo.</div>
+    </div>
+    <div class="field"><div class="field-label">Mensualidad de capital (lo que abona al saldo)</div>
+      <input class="field-input" id="deu-mensualidad" type="number" placeholder="0.00" inputmode="decimal"></div>
     <div class="field"><div class="field-label">Fecha inicio</div>
       <input class="field-input" id="deu-fecha" type="date"></div>
+    <div class="field"><div class="field-label">Notas (opcional)</div>
+      <input class="field-input" id="deu-notas" placeholder="Ej: Vence en dic 2027..."></div>
     <div style="display:flex;gap:8px;margin-top:4px;">
       <div onclick="cerrarFormDeuda()" style="flex:1;padding:14px;background:var(--bg3);border-radius:var(--radius-sm);font-size:14px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Cancelar</div>
       <div onclick="guardarDeuda()" style="flex:1;padding:14px;background:var(--green);border-radius:var(--radius-sm);font-size:14px;font-weight:700;color:#000;text-align:center;cursor:pointer;">Guardar</div>
@@ -1077,7 +1108,8 @@ const TDC_CORTE = {
 };
 const DIA_PAGO = 24;
 
-const CAT_GASTO   = ['SUPER','VIAJES','RENTA','GASOLINA','TRANSPORTE / MOVILIDAD','SALUD / DEPORTE','ROPA / ACCESORIOS','FIESTA / COMIDA / RECREACIÓN','DIGITALES','REGALOS','GAS','GASTOS DEPARTAMENTO','COLEGIO','CLASES EXTRACURRICULARES','UBER','ENFERMERA / MUCHACHA','SEGURO COCHES','SEGURO GASTOS MEDICOS','IMPUESTOS','INVERSIÓN','AHORRO GNP','AHORRO HIPERPACK','CRYPTOS','PAGO CREDITO BANCOS','PAGO CREDITO GENERAL','PAGO CREDITO HIPOTECARIO','PRÉSTAMOS'];
+const CAT_GASTO   = ['SUPER','VIAJES','RENTA','GASOLINA','TRANSPORTE / MOVILIDAD','SALUD / DEPORTE','ROPA / ACCESORIOS','FIESTA / COMIDA / RECREACIÓN','DIGITALES','REGALOS','GAS','GASTOS DEPARTAMENTO','COLEGIO','CLASES EXTRACURRICULARES','UBER','ENFERMERA / MUCHACHA','SEGURO COCHES','SEGURO GASTOS MEDICOS','IMPUESTOS','INVERSIÓN','AHORRO GNP','AHORRO HIPERPACK','CRYPTOS','PAGO CREDITO','PAGO CREDITO BANCOS','PAGO CREDITO GENERAL','PAGO CREDITO HIPOTECARIO','PRÉSTAMOS'];
+const CAT_PAGO_CREDITO = ['PAGO CREDITO','PAGO CREDITO BANCOS','PAGO CREDITO GENERAL','PAGO CREDITO HIPOTECARIO'];
 const CAT_INGRESO = ['NOMINA HIPERPACK','KUBEL','COMISIÓN FACT','PAGO DE PRÉSTAMOS','PEDI PRESTADO','BONOS / COMISIONES HIPERPACK','UTILIDADES DE INVERSIÓN','UTILIDADES HIPERPACK','FILTROS','OTROS'];
 
 // STATE
@@ -2413,69 +2445,116 @@ function showConfig() { showPage('cfg'); }
 // ══════════════════════════════════════════
 let deudas = [];
 let editingDeudaId = null;
+let deuTab = 'activas';
 
 function loadDeudas() {
   try { deudas = JSON.parse(localStorage.getItem('flujos_deudas') || '[]'); } catch(e) { deudas = []; }
 }
+function saveDeudas() { localStorage.setItem('flujos_deudas', JSON.stringify(deudas)); }
 
-function saveDeudas() {
-  localStorage.setItem('flujos_deudas', JSON.stringify(deudas));
+function setDeuTab(tab, el) {
+  deuTab = tab;
+  document.querySelectorAll('[id^="deu-tab-"]').forEach(x => x.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const listaArch = document.getElementById('deu-lista-archivadas');
+  const listaAct = document.getElementById('deu-lista');
+  if (listaArch) listaArch.style.display = tab === 'archivadas' ? 'block' : 'none';
+  if (listaAct) listaAct.style.display = tab === 'activas' ? 'block' : 'none';
+  renderDeudas();
+}
+
+function calcularPagoEstimado() {
+  const saldo = parseFloat(document.getElementById('deu-saldo')?.value) || 0;
+  const tasa = parseFloat(document.getElementById('deu-tasa')?.value) || 0;
+  const tieneIva = document.getElementById('deu-iva')?.value === '1';
+  const calcDiv = document.getElementById('deu-calculo');
+  if (!calcDiv) return;
+  if (saldo <= 0 || tasa <= 0) { calcDiv.style.display = 'none'; return; }
+  calcDiv.style.display = 'block';
+  const intMes = saldo * (tasa / 100 / 12);
+  const ivaMes = tieneIva ? intMes * 0.16 : 0;
+  const totalInt = intMes + ivaMes;
+  document.getElementById('calc-intereses').textContent = '$' + fmtN(intMes);
+  document.getElementById('calc-iva').textContent = '$' + fmtN(ivaMes);
+  document.getElementById('calc-total-int').textContent = '$' + fmtN(totalInt);
+  const ivaRow = document.getElementById('calc-iva-row');
+  if (ivaRow) ivaRow.style.display = tieneIva ? 'flex' : 'none';
 }
 
 function renderDeudas() {
   loadDeudas();
-  const total = deudas.reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
-  const mensual = deudas.reduce((s, d) => s + (parseFloat(d.mensualidad) || 0), 0);
+  const activas = deudas.filter(d => !d.liquidado);
+  const archivadas = deudas.filter(d => d.liquidado);
+
+  const total = activas.reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
+  const mensual = activas.reduce((s, d) => s + (parseFloat(d.mensualidad) || 0), 0);
   const totalEl = document.getElementById('deu-total');
   const mensualEl = document.getElementById('deu-mensual');
   if (totalEl) totalEl.textContent = '$' + fmtN(total);
   if (mensualEl) mensualEl.textContent = '$' + fmtN(mensual);
 
-  const lista = document.getElementById('deu-lista');
-  if (!lista) return;
-
-  if (!deudas.length) {
-    lista.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">Sin deudas activas 🎉</div>';
-    return;
-  }
-
-  lista.innerHTML = deudas.map(d => {
+  const renderCard = (d, esArchivada) => {
     const saldo = parseFloat(d.saldo) || 0;
     const original = parseFloat(d.original) || 0;
-    const pagado = original > 0 ? Math.round((original - saldo) / original * 100) : 0;
-    const barW = Math.min(pagado, 100);
     const tasa = parseFloat(d.tasa) || 0;
-    return `<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;margin-bottom:10px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px;">
+    const tieneIva = d.iva === '1';
+    const pagado = original > 0 ? Math.round((original - saldo) / original * 100) : 0;
+    const barW = Math.min(Math.max(pagado, 0), 100);
+    const intMes = saldo > 0 && tasa > 0 ? saldo * (tasa / 100 / 12) : 0;
+    const ivaMes = tieneIva ? intMes * 0.16 : 0;
+    const totalPago = intMes + ivaMes + (parseFloat(d.mensualidad) || 0);
+    return `<div style="background:var(--bg2);border:0.5px solid ${esArchivada ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius);padding:16px;margin-bottom:10px;${esArchivada ? 'opacity:0.7;' : ''}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
           <div style="font-size:14px;font-weight:700;">${d.nombre}</div>
-          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.tipo}${tasa > 0 ? ' · ' + tasa + '% anual' : ''}</div>
+          <div style="font-size:11px;color:var(--text3);margin-top:2px;">${d.tipo}${tasa > 0 ? ' · ' + tasa + '%' + (tieneIva ? ' + IVA' : '') : ''}${d.notas ? ' · ' + d.notas : ''}</div>
         </div>
         <div style="text-align:right;">
-          <div class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;color:var(--red);">$${fmtN(saldo)}</div>
+          <div class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;color:${esArchivada ? 'var(--green)' : 'var(--red)'};">$${fmtN(saldo)}</div>
           <div style="font-size:11px;color:var(--text3);">de $${fmtN(original)}</div>
         </div>
       </div>
-      ${original > 0 ? `<div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:8px;">
+      ${original > 0 ? `<div style="height:5px;background:rgba(255,255,255,0.06);border-radius:3px;overflow:hidden;margin-bottom:6px;">
         <div style="height:100%;width:${barW}%;background:var(--green);border-radius:3px;"></div>
       </div>
-      <div style="font-size:11px;color:var(--text3);">${pagado}% pagado</div>` : ''}
-      <div style="display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:0.5px solid var(--border);">
-        <div style="font-size:12px;color:var(--text2);">Mensualidad: <span class="privacy-num" style="font-weight:700;color:var(--text);">$${fmtN(d.mensualidad)}</span></div>
-        <div style="display:flex;gap:8px;">
+      <div style="font-size:11px;color:var(--text3);margin-bottom:8px;">${pagado}% pagado</div>` : ''}
+      ${totalPago > 0 ? `<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Desglose pago mensual estimado</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Capital (abono a saldo)</span><span class="privacy-num" style="font-weight:600;">$${fmtN(d.mensualidad||0)}</span></div>
+        ${intMes > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Intereses del mes</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(intMes)}</span></div>` : ''}
+        ${ivaMes > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">IVA sobre intereses</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(ivaMes)}</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0 0;border-top:0.5px solid var(--border);margin-top:4px;"><span>Pago total estimado</span><span class="privacy-num" style="color:var(--red);">$${fmtN(totalPago)}</span></div>
+      </div>` : ''}
+      <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:0.5px solid var(--border);">
+        <div style="font-size:11px;color:var(--text3);">Iniciado: ${d.fecha || '—'}</div>
+        <div style="display:flex;gap:12px;">
+          ${!esArchivada ? `<div onclick="liquidarDeuda('${d.id}')" style="font-size:12px;color:var(--green);cursor:pointer;font-weight:600;">✓ Liquidar</div>` : `<div onclick="reactivarDeuda('${d.id}')" style="font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;">Reactivar</div>`}
           <div onclick="editarDeuda('${d.id}')" style="font-size:12px;color:var(--blue);cursor:pointer;font-weight:600;">Editar</div>
           <div onclick="eliminarDeuda('${d.id}')" style="font-size:12px;color:var(--red);cursor:pointer;font-weight:600;">Eliminar</div>
         </div>
       </div>
     </div>`;
-  }).join('');
+  };
 
-  // Actualizar patrimonio neto con deudas en el resumen
+  const lista = document.getElementById('deu-lista');
+  if (lista) {
+    lista.innerHTML = activas.length
+      ? activas.map(d => renderCard(d, false)).join('')
+      : '<div style="text-align:center;padding:40px;color:var(--text3);font-size:14px;">Sin deudas activas 🎉</div>';
+  }
+
+  const listaArch = document.getElementById('deu-lista-archivadas');
+  if (listaArch) {
+    listaArch.innerHTML = archivadas.length
+      ? archivadas.map(d => renderCard(d, true)).join('')
+      : '<div style="text-align:center;padding:20px;color:var(--text3);font-size:14px;">Sin créditos archivados</div>';
+  }
+
   actualizarPatrimonioConDeudas();
 }
 
 function actualizarPatrimonioConDeudas() {
-  const totalDeudas = deudas.reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
+  const totalDeudas = deudas.filter(d => !d.liquidado).reduce((s, d) => s + (parseFloat(d.saldo) || 0), 0);
   const elConDeu = document.getElementById('pn-con-deudas');
   const elTotalDeu = document.getElementById('pn-deudas-total');
   if (elConDeu) {
@@ -2493,32 +2572,29 @@ function abrirFormDeuda(id) {
   if (id) {
     const d = deudas.find(x => x.id === id);
     if (!d) return;
-    if (title) title.textContent = 'Editar Deuda';
+    if (title) title.textContent = 'Editar Crédito';
     document.getElementById('deu-nombre').value = d.nombre || '';
     document.getElementById('deu-tipo').value = d.tipo || 'Crédito Personal';
     document.getElementById('deu-original').value = d.original || '';
     document.getElementById('deu-saldo').value = d.saldo || '';
     document.getElementById('deu-mensualidad').value = d.mensualidad || '';
     document.getElementById('deu-tasa').value = d.tasa || '';
+    document.getElementById('deu-iva').value = d.iva || '1';
     document.getElementById('deu-fecha').value = d.fecha || '';
+    document.getElementById('deu-notas').value = d.notas || '';
   } else {
     if (title) title.textContent = 'Nueva Deuda';
-    document.getElementById('deu-nombre').value = '';
+    ['deu-nombre','deu-original','deu-saldo','deu-mensualidad','deu-tasa','deu-notas'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
     document.getElementById('deu-tipo').value = 'Crédito Personal';
-    document.getElementById('deu-original').value = '';
-    document.getElementById('deu-saldo').value = '';
-    document.getElementById('deu-mensualidad').value = '';
-    document.getElementById('deu-tasa').value = '';
+    document.getElementById('deu-iva').value = '1';
     document.getElementById('deu-fecha').value = hoy();
   }
+  calcularPagoEstimado();
   document.getElementById('deu-form').style.display = 'block';
   document.getElementById('deu-form').scrollIntoView({ behavior: 'smooth' });
 }
 
-function cerrarFormDeuda() {
-  document.getElementById('deu-form').style.display = 'none';
-  editingDeudaId = null;
-}
+function cerrarFormDeuda() { document.getElementById('deu-form').style.display = 'none'; editingDeudaId = null; }
 
 function guardarDeuda() {
   const nombre = document.getElementById('deu-nombre').value.trim();
@@ -2531,10 +2607,14 @@ function guardarDeuda() {
     saldo: parseFloat(document.getElementById('deu-saldo').value) || 0,
     mensualidad: parseFloat(document.getElementById('deu-mensualidad').value) || 0,
     tasa: parseFloat(document.getElementById('deu-tasa').value) || 0,
+    iva: document.getElementById('deu-iva').value,
     fecha: document.getElementById('deu-fecha').value,
+    notas: document.getElementById('deu-notas').value.trim(),
+    liquidado: false,
   };
   if (editingDeudaId) {
     const idx = deudas.findIndex(x => x.id === editingDeudaId);
+    if (idx >= 0) deuda.liquidado = deudas[idx].liquidado; // preserve liquidado status
     if (idx >= 0) deudas[idx] = deuda;
   } else {
     deudas.push(deuda);
@@ -2542,25 +2622,45 @@ function guardarDeuda() {
   saveDeudas();
   cerrarFormDeuda();
   renderDeudas();
-  showToast('Deuda guardada ✓', 'success');
+  showToast('Crédito guardado ✓', 'success');
 }
 
 function editarDeuda(id) { abrirFormDeuda(id); }
+
+function liquidarDeuda(id) {
+  const idx = deudas.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  deudas[idx].liquidado = true;
+  deudas[idx].saldo = 0;
+  saveDeudas();
+  renderDeudas();
+  showToast('Crédito liquidado ✓ — archivado', 'success');
+}
+
+function reactivarDeuda(id) {
+  const idx = deudas.findIndex(x => x.id === id);
+  if (idx < 0) return;
+  deudas[idx].liquidado = false;
+  saveDeudas();
+  renderDeudas();
+  showToast('Crédito reactivado', 'success');
+}
 
 function eliminarDeuda(id) {
   deudas = deudas.filter(x => x.id !== id);
   saveDeudas();
   renderDeudas();
-  showToast('Deuda eliminada', 'error');
+  showToast('Crédito eliminado', 'error');
 }
 
-// Actualizar saldo de deuda cuando se registra un pago
 function aplicarPagoADeuda(deudaId, monto) {
   const idx = deudas.findIndex(x => x.id === deudaId);
   if (idx < 0) return;
   deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - Math.abs(monto));
+  if (deudas[idx].saldo === 0) { deudas[idx].liquidado = true; showToast('🎉 Crédito liquidado automáticamente', 'success'); }
   saveDeudas();
 }
+
 
 // ══════════════════════════════════════════
 // CHAT IA — Claude consulta financiera

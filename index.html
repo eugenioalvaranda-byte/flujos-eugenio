@@ -1367,18 +1367,19 @@ function enviarAlSheet(regs, btn) {
     btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
     const programados = soloLocal.length;
     const ejecutados  = paraSheet.length;
-    if (programados > 0) {
-      showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
-    } else {
-      // Aplicar pago a deuda si se vinculó
+    // Aplicar pago a deuda si se vinculó — ANTES de cambiar página
     const selDeu = document.getElementById('sel-deuda');
     if (selDeu && selDeu.value) {
       aplicarPagoADeuda(selDeu.value, monto);
-      if (document.querySelector('.page.active')?.id === 'page-deu') renderDeudas();
     }
-    showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
+
+    if (programados > 0) {
+      showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
+    } else {
+      showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
     }
     showPage('list');
+    renderDeudas();
   })
   .catch(() => { btn.classList.remove('loading'); btn.textContent = 'Guardar registro'; showToast('Error al conectar con Sheets', 'error'); });
 }
@@ -2729,9 +2730,10 @@ function actualizarCapitalSugerido() {
 function aplicarPagoADeuda(deudaId, montoTotal) {
   const idx = deudas.findIndex(x => x.id === deudaId);
   if (idx < 0) return;
-  // Usar el capital editado por el usuario, no el monto total
+  // Usar el capital editado por el usuario; si está vacío usar monto total
   const inputCap = document.getElementById('input-capital');
-  const capital = inputCap ? (parseFloat(inputCap.value) || 0) : Math.abs(montoTotal);
+  const capital = (inputCap && inputCap.value !== '') ? (parseFloat(inputCap.value) || 0) : Math.abs(montoTotal);
+  if (capital <= 0) return;
   deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - capital);
   if (deudas[idx].saldo === 0) { deudas[idx].liquidado = true; showToast('🎉 Crédito liquidado automáticamente', 'success'); }
   saveDeudas();

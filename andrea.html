@@ -121,7 +121,7 @@ select.field-input { cursor: pointer; }
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
   <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div class="topbar-title">Hola Andrea 👩</div>
+    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.1</span></div>
   </div>
   <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
     <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
@@ -302,7 +302,7 @@ select.field-input { cursor: pointer; }
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyOVj4HuMjDbCpRWaiTXI5ZsnDM2RuPL9RSGtG8V4628eV0IQSis6FPQ6wNKE52L_GriQ/exec';
 const USUARIO = 'Andrea';
 
-const CARTERAS_CASH = ['EFECTIVO','EFECTIVO ANDREA','BANAMEX','BAJÍO','SANTANDER','CAJA FUERTE'];
+const CARTERAS_CASH = ['EFECTIVO','EFECTIVO ANDREA','BANAMEX','BAJIO','SANTANDER','CAJA FUERTE'];
 const CARTERAS_TDC  = ['TDC AMEX PLATINO','TDC LIKE U','TDC AMEX ORO','TDC INVEX VOLARIS','TDC CITI','TDC TARJETA PALACIO'];
 const CARTERAS = [...CARTERAS_CASH, ...CARTERAS_TDC];
 const TDC_CORTE = {'TDC AMEX PLATINO':11,'TDC LIKE U':12,'TDC AMEX ORO':13,'TDC INVEX VOLARIS':12,'TDC CITI':5,'TDC TARJETA PALACIO':8};
@@ -587,8 +587,8 @@ function guardarRegistro() {
   const regs=[];
   if (currentType==='TRANSFERENCIA') {
     const idT=generateId();
-    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:'TRANSFERENCIA',categoria:'',monto:-Math.abs(monto),nota,fechaFlujo:calcFechaFlujo(fecha,selectedCartera),usuario:USUARIO,carteraDestino:selectedCarteraDest,idTransferencia:idT,montoTransferencia:monto});
-    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCarteraDest,tipo:'INGRESO POR TRANSFERENCIA',categoria:'',monto:Math.abs(monto),nota,fechaFlujo:calcFechaFlujo(fecha,selectedCarteraDest),usuario:USUARIO,carteraDestino:'',idTransferencia:idT,montoTransferencia:monto});
+    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:'TRANSFERENCIA',categoria:'',monto:-Math.abs(monto),nota,fechaFlujo:fecha,usuario:USUARIO,carteraDestino:selectedCarteraDest,idTransferencia:idT,montoTransferencia:monto});
+    regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCarteraDest,tipo:'INGRESO POR TRANSFERENCIA',categoria:'',monto:Math.abs(monto),nota,fechaFlujo:fecha,usuario:USUARIO,carteraDestino:'',idTransferencia:idT,montoTransferencia:monto});
   } else {
     const m=currentType==='INGRESO'?Math.abs(monto):-Math.abs(monto);
     regs.push({id:generateId(),fecha,hora:getHora(),cartera:selectedCartera,tipo:currentType,categoria:selectedCategoria,monto:m,nota,fechaFlujo:calcFechaFlujo(fecha,selectedCartera),usuario:USUARIO,carteraDestino:'',idTransferencia:'',montoTransferencia:''});
@@ -681,7 +681,7 @@ function actualizarRegistro() {
   r.monto=r.monto<0?-Math.abs(nm):Math.abs(nm);
   r.cartera=mSelectedCartera||r.cartera;
   r.categoria=mSelectedCat||r.categoria;
-  r.fechaFlujo=calcFechaFlujo(r.fecha,r.cartera);
+  r.fechaFlujo=(r.tipo==='TRANSFERENCIA'||r.tipo==='INGRESO POR TRANSFERENCIA')?r.fecha:calcFechaFlujo(r.fecha,r.cartera);
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
@@ -848,7 +848,7 @@ function autoSync(showMsg) {
 }
 
 function startAutoRefresh() {
-  setInterval(() => autoSync(false), 2000);
+  setInterval(() => autoSync(false), 10000); // 2s saturaba Apps Script y causaba fallas de sync
 }
 
 // UTILS

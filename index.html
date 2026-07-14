@@ -896,6 +896,18 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tarjeta</div>
     <div class="chips-wrap" id="conc-chips"></div>
   </div>
+  <!-- Conciliación automática con PDF (v3.4) -->
+  <div style="margin:0 16px 12px;background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--radius);padding:14px;">
+    <div style="font-weight:700;font-size:13px;margin-bottom:3px;">📄 Conciliación automática con PDF</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Sube el estado de cuenta de la tarjeta seleccionada. La IA extrae los movimientos y los compara contra tus registros.</div>
+    <input type="file" id="pdf-file" accept="application/pdf,.pdf" style="display:none;" onchange="procesarPDFEstado(this)">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;">
+      <div id="pdf-btn" onclick="document.getElementById('pdf-file').click()" style="flex:1;min-width:130px;text-align:center;padding:10px;background:var(--blue);border-radius:var(--radius-sm);font-weight:700;font-size:13px;color:#fff;cursor:pointer;">📎 Subir PDF</div>
+      <div id="pdf-retomar" onclick="retomarPDF()" style="display:none;flex:1;min-width:130px;text-align:center;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-weight:700;font-size:13px;color:var(--text2);cursor:pointer;">↺ Retomar última</div>
+    </div>
+    <div id="pdf-status" style="margin-top:8px;font-size:11px;color:var(--text3);"></div>
+  </div>
+  <div id="pdf-resultados" style="margin:0 16px 14px;display:none;"></div>
   <div style="padding:0 16px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
     <div><div class="adv-label">Ciclo</div><select class="adv-input" id="conc-ciclo" onchange="renderConciliacion()"></select></div>
     <div><div class="adv-label">Total del estado de cuenta</div><input class="adv-input" type="number" id="conc-ec" placeholder="0.00" inputmode="decimal" oninput="guardarECyCalcular()"></div>
@@ -1029,7 +1041,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v3.3</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v3.4</span>
       </div>
     </div>
 
@@ -3386,13 +3398,21 @@ function initConciliacion() {
   renderConcChips();
   poblarCiclos(true);
   renderConciliacion();
+  actualizarBotonRetomar();
 }
 
 function setConcCartera(c) {
   concCartera = c;
+  if (pdfConc && pdfConc.cartera !== c) {
+    pdfConc = null;
+    const box = document.getElementById('pdf-resultados');
+    if (box) box.style.display = 'none';
+    pdfStatus('');
+  }
   renderConcChips();
   poblarCiclos(false);
   renderConciliacion();
+  actualizarBotonRetomar();
 }
 
 function renderConcChips() {
@@ -3525,6 +3545,362 @@ function marcarTodosConc(valor) {
       .then(r => r.json()).catch(() => {});
   }
   renderConciliacion();
+}
+
+// ══════════════════════════════════════════
+// CONCILIACIÓN AUTOMÁTICA CON PDF (v3.4)
+// La IA lee el estado de cuenta, se compara contra los registros,
+// todo es editable y lo faltante se importa con un clic.
+// ══════════════════════════════════════════
+let pdfConc = null;
+
+function escAttr(s) {
+  return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+function pdfStatus(msg, esError) {
+  const el = document.getElementById('pdf-status');
+  if (el) { el.textContent = msg || ''; el.style.color = esError ? 'var(--red)' : 'var(--text3)'; }
+}
+
+function procesarPDFEstado(input) {
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  if (file.size > 10 * 1024 * 1024) {
+    pdfStatus('El PDF pesa más de 10 MB. Usa la versión digital que descarga el banco (no una escaneada).', true);
+    return;
+  }
+  const btn = document.getElementById('pdf-btn');
+  btn.style.opacity = '0.5'; btn.style.pointerEvents = 'none';
+  pdfStatus('📖 Leyendo "' + file.name + '" con IA… tarda hasta 1 minuto, no cierres la app.');
+  const reader = new FileReader();
+  reader.onerror = () => { pdfStatus('No se pudo leer el archivo.', true); btn.style.opacity = ''; btn.style.pointerEvents = ''; };
+  reader.onload = () => {
+    const base64 = String(reader.result).split(',')[1];
+    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'extraerEstadoCuenta', pdfBase64: base64, categorias: CAT_GASTO }) })
+      .then(r => r.json())
+      .then(d => {
+        if (!d.ok || !d.estado) throw new Error(d.error || 'La IA no regresó datos');
+        construirPDFConc(d.estado);
+        pdfStatus('');
+      })
+      .catch(err => {
+        pdfStatus('Error al leer el PDF: ' + String(err.message || err) + '. Si el PDF tiene contraseña, quítasela primero (ábrelo con la contraseña e imprímelo como PDF) y vuelve a intentar.', true);
+      })
+      .finally(() => { btn.style.opacity = ''; btn.style.pointerEvents = ''; });
+  };
+  reader.readAsDataURL(file);
+}
+
+function construirPDFConc(estado) {
+  const movs = (estado.movs || []).map((a, i) => ({
+    k: i,
+    fecha: formatSheetDate(a[0]) || hoy(),
+    desc: String(a[1] || '').substring(0, 60),
+    monto: Math.abs(parseFloat(a[2]) || 0),
+    tipo: a[3] === 'A' ? 'A' : 'C',
+    titular: String(a[4] || ''),
+    cat: (typeof a[5] === 'number' && a[5] >= 0 && a[5] < CAT_GASTO.length) ? CAT_GASTO[a[5]] : '',
+    usuario: /andrea/i.test(String(a[4] || '')) ? 'Andrea' : 'Eugenio',
+    incluir: true,
+    linkId: null
+  })).filter(m => m.monto > 0 && m.fecha);
+  pdfConc = {
+    cartera: concCartera,
+    banco: String(estado.banco || ''),
+    tarjeta: String(estado.tarjeta || ''),
+    periodo: {
+      desde: formatSheetDate(estado.periodo && estado.periodo.desde) || '',
+      hasta: formatSheetDate(estado.periodo && estado.periodo.hasta) || ''
+    },
+    totalCargos: parseFloat(estado.totalCargos) || 0,
+    totalAbonos: parseFloat(estado.totalAbonos) || 0,
+    movs: movs,
+    broken: [],
+    ts: Date.now()
+  };
+  guardarPDFConc();
+  renderPDFConc();
+}
+
+function guardarPDFConc() {
+  if (!pdfConc) return;
+  try { localStorage.setItem('flujos_pdfconc_' + pdfConc.cartera, JSON.stringify(pdfConc)); } catch (e) {}
+}
+
+function retomarPDF() {
+  try {
+    const raw = localStorage.getItem('flujos_pdfconc_' + concCartera);
+    if (!raw) { pdfStatus('No hay una conciliación guardada para esta tarjeta.'); return; }
+    pdfConc = JSON.parse(raw);
+    renderPDFConc();
+    actualizarBotonRetomar();
+  } catch (e) { pdfStatus('No se pudo retomar la conciliación guardada.', true); }
+}
+
+function descartarPDF() {
+  if (pdfConc) { try { localStorage.removeItem('flujos_pdfconc_' + pdfConc.cartera); } catch (e) {} }
+  pdfConc = null;
+  const box = document.getElementById('pdf-resultados');
+  if (box) { box.style.display = 'none'; box.innerHTML = ''; }
+  actualizarBotonRetomar();
+}
+
+function actualizarBotonRetomar() {
+  const b = document.getElementById('pdf-retomar');
+  if (!b) return;
+  let hay = false;
+  try { hay = !!localStorage.getItem('flujos_pdfconc_' + concCartera); } catch (e) {}
+  b.style.display = (hay && !pdfConc) ? 'block' : 'none';
+}
+
+// ── Motor de matching: monto exacto (±$0.02) y fecha cercana (±4 días) ──
+function sumarDias(iso, n) {
+  if (!iso) return '';
+  const p = iso.split('-');
+  const d = new Date(parseInt(p[0]), parseInt(p[1]) - 1, parseInt(p[2]));
+  d.setDate(d.getDate() + n);
+  return toLocalDate(d);
+}
+function diasEntre(a, b) {
+  const pa = a.split('-'), pb = b.split('-');
+  const da = new Date(parseInt(pa[0]), parseInt(pa[1]) - 1, parseInt(pa[2]));
+  const db = new Date(parseInt(pb[0]), parseInt(pb[1]) - 1, parseInt(pb[2]));
+  return Math.round(Math.abs(da - db) / 86400000);
+}
+
+function registrosVentanaPDF() {
+  if (!pdfConc) return [];
+  const d0 = pdfConc.periodo.desde ? sumarDias(pdfConc.periodo.desde, -5) : '';
+  const d1 = pdfConc.periodo.hasta ? sumarDias(pdfConc.periodo.hasta, 5) : '';
+  return allRecords.filter(r => {
+    if (r.cartera !== pdfConc.cartera || r._pendiente || !r.fecha) return false;
+    if (d0 && r.fecha < d0) return false;
+    if (d1 && r.fecha > d1) return false;
+    return true;
+  });
+}
+
+function calcularMatchPDF() {
+  const regs = registrosVentanaPDF();
+  const usados = new Set();
+  const matches = [], faltantes = [];
+
+  // 1) Vínculos manuales primero
+  pdfConc.movs.forEach(m => {
+    if (!m.linkId) return;
+    const r = regs.find(x => x.id === m.linkId);
+    if (r && !usados.has(r.id)) { usados.add(r.id); matches.push({ m: m, r: r, manual: true }); }
+    else m.linkId = null;
+  });
+
+  // 2) Matching automático
+  pdfConc.movs.forEach(m => {
+    if (m.linkId) return;
+    if (pdfConc.broken.indexOf(m.k) !== -1) { faltantes.push(m); return; }
+    const buscaNeg = m.tipo === 'C';
+    let mejor = null, mejorDias = 99;
+    regs.forEach(r => {
+      if (usados.has(r.id)) return;
+      const rm = parseFloat(r.monto) || 0;
+      if (buscaNeg && rm >= 0) return;
+      if (!buscaNeg && rm <= 0) return;
+      if (Math.abs(Math.abs(rm) - m.monto) > 0.02) return;
+      const dd = diasEntre(r.fecha, m.fecha);
+      if (dd <= 4 && dd < mejorDias) { mejor = r; mejorDias = dd; }
+    });
+    if (mejor) { usados.add(mejor.id); matches.push({ m: m, r: mejor, manual: false }); }
+    else faltantes.push(m);
+  });
+
+  const soloSistema = regs.filter(r => !usados.has(r.id));
+  return { matches: matches, faltantes: faltantes, soloSistema: soloSistema, regs: regs };
+}
+
+// ── Edición de los movimientos extraídos ──
+function pdfEdit(k, campo, valor) {
+  if (!pdfConc) return;
+  const m = pdfConc.movs.find(x => x.k === k);
+  if (!m) return;
+  if (campo === 'monto') m.monto = Math.abs(parseFloat(valor) || 0);
+  else if (campo === 'incluir') m.incluir = !!valor;
+  else m[campo] = valor;
+  guardarPDFConc();
+}
+function pdfEditYRecalcular(k, campo, valor) {
+  pdfEdit(k, campo, valor);
+  renderPDFConc();
+}
+function pdfVincular(k, regId) {
+  if (!pdfConc) return;
+  const m = pdfConc.movs.find(x => x.k === k);
+  if (!m) return;
+  m.linkId = regId || null;
+  const bi = pdfConc.broken.indexOf(k);
+  if (regId && bi !== -1) pdfConc.broken.splice(bi, 1);
+  guardarPDFConc();
+  renderPDFConc();
+}
+function pdfDesvincular(k) {
+  if (!pdfConc) return;
+  const m = pdfConc.movs.find(x => x.k === k);
+  if (!m) return;
+  m.linkId = null;
+  if (pdfConc.broken.indexOf(k) === -1) pdfConc.broken.push(k);
+  guardarPDFConc();
+  renderPDFConc();
+}
+
+// ── Importar al sistema lo que falta ──
+function importarFaltantesPDF() {
+  if (!pdfConc) return;
+  const res = calcularMatchPDF();
+  const aImportar = res.faltantes.filter(m => m.incluir && m.tipo === 'C');
+  if (!aImportar.length) { showToast('No hay cargos palomeados para importar', 'error'); return; }
+  const regs = aImportar.map(m => ({
+    id: generateId(),
+    fecha: m.fecha,
+    hora: '12:00:00',
+    cartera: pdfConc.cartera,
+    tipo: 'GASTO',
+    categoria: m.cat || 'FIESTA / COMIDA / RECREACIÓN',
+    monto: -Math.abs(m.monto),
+    nota: (m.desc || 'Cargo del estado de cuenta') + ' · EC',
+    fechaFlujo: calcFechaFlujo(m.fecha, pdfConc.cartera),
+    usuario: m.usuario === 'Andrea' ? 'Andrea' : 'Eugenio',
+    carteraDestino: '', idTransferencia: '', montoTransferencia: '',
+    agrupador: '', _pendiente: false
+  }));
+  regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
+  saveLocal();
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: regs }) })
+    .then(r => r.json())
+    .then(d => { if (d.ok) showToast('✓ ' + regs.length + ' registros importados', 'success'); else showToast('Error al guardar en Sheet', 'error'); })
+    .catch(() => showToast('Sin conexión — se reintentará al sincronizar', 'error'));
+  renderPDFConc();
+  renderConciliacion();
+}
+
+// ── Palomear en el sistema (columna CONCILIADO) todo lo que coincidió ──
+function palomearMatchesPDF() {
+  if (!pdfConc) return;
+  const res = calcularMatchPDF();
+  const ids = [];
+  res.matches.forEach(x => {
+    if (!x.r.conciliado) { x.r.conciliado = true; pendingConc.set(x.r.id, true); ids.push(x.r.id); }
+  });
+  if (!ids.length) { showToast('Esas coincidencias ya estaban palomeadas', ''); return; }
+  saveLocal();
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'setConciliado', ids: ids, valor: true }) })
+    .then(r => r.json()).catch(() => {});
+  showToast('✓ ' + ids.length + ' registros palomeados', 'success');
+  renderPDFConc();
+  renderConciliacion();
+}
+
+// ── Render de resultados ──
+function renderPDFConc() {
+  const box = document.getElementById('pdf-resultados');
+  if (!box || !pdfConc) return;
+  const res = calcularMatchPDF();
+  const matches = res.matches, faltantes = res.faltantes, soloSistema = res.soloSistema;
+  const cargosFalt = faltantes.filter(m => m.tipo === 'C');
+  const abonosFalt = faltantes.filter(m => m.tipo === 'A');
+  const sumaEC = pdfConc.movs.filter(m => m.tipo === 'C').reduce((s, m) => s + m.monto, 0);
+  const aImportar = cargosFalt.filter(m => m.incluir).length;
+
+  let h = '';
+
+  // Encabezado / resumen
+  h += '<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">'
+    + '<div style="font-weight:700;font-size:13px;">📄 ' + escAttr(pdfConc.banco || 'Estado de cuenta') + (pdfConc.tarjeta ? ' •••• ' + escAttr(pdfConc.tarjeta) : '') + '</div>'
+    + '<div onclick="descartarPDF()" style="font-size:11px;color:var(--text3);cursor:pointer;padding:4px;">✕ Descartar</div></div>'
+    + '<div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Periodo ' + formatDateShort(pdfConc.periodo.desde) + ' – ' + formatDateShort(pdfConc.periodo.hasta)
+    + ' · ' + pdfConc.movs.length + ' movimientos · Cargos extraídos: <span class="privacy-num" style="font-weight:700;color:var(--text2);">$' + fmtN(sumaEC) + '</span></div>'
+    + '<div style="display:flex;gap:10px;text-align:center;">'
+    + '<div style="flex:1;background:var(--bg3);border-radius:8px;padding:8px 4px;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">✓ Coinciden</div><div style="font-family:var(--display);font-weight:700;font-size:16px;color:var(--green);">' + matches.length + '</div></div>'
+    + '<div style="flex:1;background:var(--bg3);border-radius:8px;padding:8px 4px;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">⚠ Te faltan</div><div style="font-family:var(--display);font-weight:700;font-size:16px;color:' + (faltantes.length ? 'var(--red)' : 'var(--text3)') + ';">' + faltantes.length + '</div></div>'
+    + '<div style="flex:1;background:var(--bg3);border-radius:8px;padding:8px 4px;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;font-weight:700;">❓ Solo en app</div><div style="font-family:var(--display);font-weight:700;font-size:16px;color:var(--text2);">' + soloSistema.length + '</div></div>'
+    + '</div></div>';
+
+  // ⚠ Faltantes (cargos) — editables e importables
+  if (cargosFalt.length) {
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:12px 2px 6px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--red);">⚠ Cargos que te faltan (' + cargosFalt.length + ')</div>'
+      + '<div onclick="importarFaltantesPDF()" style="padding:7px 12px;background:var(--green);border-radius:8px;font-size:11px;font-weight:700;color:#000;cursor:pointer;">＋ Importar (' + aImportar + ')</div></div>';
+    h += '<div style="font-size:10px;color:var(--text3);margin:0 2px 8px;">Edita lo que necesites antes de importar. Si en realidad sí lo tienes con otro monto/fecha, usa "vincular con…".</div>';
+    cargosFalt.forEach(m => {
+      const cands = soloSistema.filter(r => (parseFloat(r.monto) || 0) < 0);
+      const opciones = '<option value="">— importar como nuevo —</option>' + cands.map(r =>
+        '<option value="' + escAttr(r.id) + '">' + formatDateShort(r.fecha) + ' · $' + fmtN(Math.abs(r.monto)) + ' · ' + escAttr(String(r.nota || r.categoria || '').substring(0, 16)) + '</option>').join('');
+      h += '<div style="background:var(--bg2);border:0.5px solid rgba(255,80,80,0.25);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;">'
+        + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+        + '<input type="checkbox" ' + (m.incluir ? 'checked' : '') + ' onchange="pdfEditYRecalcular(' + m.k + ',\'incluir\',this.checked)" style="width:17px;height:17px;accent-color:var(--green);flex-shrink:0;">'
+        + '<input type="text" value="' + escAttr(m.desc) + '" oninput="pdfEdit(' + m.k + ',\'desc\',this.value)" style="flex:1;min-width:0;background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text);font-family:var(--font);">'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
+        + '<input type="date" value="' + escAttr(m.fecha) + '" onchange="pdfEditYRecalcular(' + m.k + ',\'fecha\',this.value)" style="background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--text);font-family:var(--font);">'
+        + '<input type="number" step="0.01" value="' + m.monto.toFixed(2) + '" onchange="pdfEditYRecalcular(' + m.k + ',\'monto\',this.value)" style="background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:12px;color:var(--red);font-weight:700;font-family:var(--font);">'
+        + '</div>'
+        + '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:6px;">'
+        + '<select onchange="pdfEdit(' + m.k + ',\'cat\',this.value)" style="background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text);font-family:var(--font);">'
+        + CAT_GASTO.map(c => '<option value="' + escAttr(c) + '"' + (m.cat === c ? ' selected' : '') + '>' + escAttr(c) + '</option>').join('') + '</select>'
+        + '<select onchange="pdfEdit(' + m.k + ',\'usuario\',this.value)" style="background:var(--bg3);border:0.5px solid var(--border);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text);font-family:var(--font);">'
+        + '<option value="Eugenio"' + (m.usuario !== 'Andrea' ? ' selected' : '') + '>👨 Eugenio</option>'
+        + '<option value="Andrea"' + (m.usuario === 'Andrea' ? ' selected' : '') + '>👩 Andrea</option></select>'
+        + '</div>'
+        + '<select onchange="pdfVincular(' + m.k + ',this.value)" style="width:100%;background:var(--bg3);border:0.5px dashed var(--border2);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text3);font-family:var(--font);">' + opciones + '</select>'
+        + (m.titular ? '<div style="font-size:10px;color:var(--text3);margin-top:5px;">Titular en el EC: ' + escAttr(m.titular) + '</div>' : '')
+        + '</div>';
+    });
+  }
+
+  // ⚠ Faltantes (abonos) — solo aviso
+  if (abonosFalt.length) {
+    h += '<div style="font-size:12px;font-weight:700;color:var(--blue);margin:12px 2px 6px;">💰 Pagos/abonos del EC que no encontré (' + abonosFalt.length + ')</div>';
+    abonosFalt.forEach(m => {
+      h += '<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;display:flex;justify-content:space-between;gap:8px;align-items:center;">'
+        + '<div style="min-width:0;"><div style="font-size:12px;font-weight:600;">' + escAttr(m.desc) + '</div>'
+        + '<div style="font-size:10px;color:var(--text3);">' + formatDateShort(m.fecha) + ' · Regístralo como Transferencia (pago de tarjeta) desde ➕ para que también descuente tu cuenta de origen</div></div>'
+        + '<div class="privacy-num" style="font-family:var(--display);font-weight:700;color:var(--green);flex-shrink:0;">$' + fmtN(m.monto) + '</div></div>';
+    });
+  }
+
+  // ✓ Coincidencias
+  if (matches.length) {
+    h += '<div style="display:flex;justify-content:space-between;align-items:center;margin:12px 2px 6px;">'
+      + '<div style="font-size:12px;font-weight:700;color:var(--green);">✓ Coinciden (' + matches.length + ')</div>'
+      + '<div onclick="palomearMatchesPDF()" style="padding:7px 12px;background:var(--bg3);border:0.5px solid var(--green-border);border-radius:8px;font-size:11px;font-weight:700;color:var(--green);cursor:pointer;">✓ Palomear todas</div></div>';
+    matches.forEach(x => {
+      h += '<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:5px;opacity:' + (x.r.conciliado ? '0.55' : '1') + ';">'
+        + '<span style="color:var(--green);font-weight:700;flex-shrink:0;">✓</span>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escAttr(x.m.desc) + '</div>'
+        + '<div style="font-size:10px;color:var(--text3);">EC ' + formatDateShort(x.m.fecha) + ' ↔ App ' + formatDateShort(x.r.fecha) + ' · ' + (x.r.usuario === 'Andrea' ? '👩' : '👨') + ' ' + escAttr(String(x.r.nota || x.r.categoria || '').substring(0, 22)) + (x.manual ? ' · vínculo manual' : '') + (x.r.conciliado ? ' · palomeado ✓' : '') + '</div></div>'
+        + '<div class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:13px;flex-shrink:0;">$' + fmtN(x.m.monto) + '</div>'
+        + '<div onclick="pdfDesvincular(' + x.m.k + ')" title="Quitar vínculo" style="color:var(--text3);cursor:pointer;padding:4px;flex-shrink:0;">✕</div></div>';
+    });
+  }
+
+  // ❓ Solo en tu sistema
+  if (soloSistema.length) {
+    h += '<div style="font-size:12px;font-weight:700;color:var(--text2);margin:12px 2px 6px;">❓ En tu app pero no en este estado (' + soloSistema.length + ')</div>'
+      + '<div style="font-size:10px;color:var(--text3);margin:0 2px 8px;">Normalmente son compras que caerán en el siguiente corte, o posibles duplicados que vale la pena revisar.</div>';
+    soloSistema.forEach(r => {
+      const rm = parseFloat(r.monto) || 0;
+      h += '<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;margin-bottom:5px;">'
+        + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escAttr(r.nota || r.categoria || r.tipo) + '</div>'
+        + '<div style="font-size:10px;color:var(--text3);">' + (r.usuario === 'Andrea' ? '👩' : '👨') + ' ' + formatDateShort(r.fecha) + ' · ' + escAttr(r.categoria || r.tipo) + '</div></div>'
+        + '<div class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:13px;color:' + (rm < 0 ? 'var(--red)' : 'var(--green)') + ';flex-shrink:0;">' + (rm < 0 ? '−' : '+') + '$' + fmtN(Math.abs(rm)) + '</div></div>';
+    });
+  }
+
+  box.innerHTML = h;
+  box.style.display = 'block';
+  actualizarBotonRetomar();
+  if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 </script>
 <!-- PRINT CONTENT — generado dinámicamente para PDF -->

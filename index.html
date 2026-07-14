@@ -581,6 +581,23 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="wallets-group-title">💵 Carteras Cash</div>
     <div class="wallets-grid" id="wallets-cash"></div>
     <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
+    <div id="tdc-summary" style="margin:0 16px 10px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;display:none;">
+      <div style="display:flex;gap:12px;">
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Deuda total</div>
+          <div id="tdc-sum-total" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">—</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;" id="tdc-sum-pago-label">Pago del 24</div>
+          <div id="tdc-sum-pago" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);">—</div>
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Diferido / MSI</div>
+          <div id="tdc-sum-dif" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text2);">—</div>
+        </div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-top:8px;">Pago del 24 = cargos ya cortados o por cortar de este ciclo · Diferido = MSI y cargos de ciclos siguientes</div>
+    </div>
     <div class="wallets-grid" id="wallets-tdc"></div>
 
     <!-- Patrimonio incluyendo créditos -->
@@ -717,6 +734,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="filter-pill" data-user="Eugenio" onclick="setUserFilter('Eugenio',this)">👨 Eugenio</div>
     <div class="filter-pill" data-user="Andrea" onclick="setUserFilter('Andrea',this)">👩 Andrea</div>
   </div>
+  <div id="list-saldo-bar" style="margin:0 16px 10px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;display:none;"></div>
   <div class="records-list" id="records-list"></div>
 </div>
 
@@ -868,6 +886,30 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   </div>
 </div>
 
+<!-- CONCILIACIÓN TDC -->
+<div id="page-conc" class="page">
+  <div class="topbar">
+    <div class="topbar-title">🧾 Conciliación TDC</div>
+    <div onclick="showPage('dash')" style="padding:8px 14px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">← Resumen</div>
+  </div>
+  <div style="padding:0 16px 10px;">
+    <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tarjeta</div>
+    <div class="chips-wrap" id="conc-chips"></div>
+  </div>
+  <div style="padding:0 16px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+    <div><div class="adv-label">Ciclo</div><select class="adv-input" id="conc-ciclo" onchange="renderConciliacion()"></select></div>
+    <div><div class="adv-label">Total del estado de cuenta</div><input class="adv-input" type="number" id="conc-ec" placeholder="0.00" inputmode="decimal" oninput="guardarECyCalcular()"></div>
+  </div>
+  <div id="conc-resumen" style="margin:0 16px 12px;"></div>
+  <div style="display:flex;gap:6px;margin:0 16px 10px;flex-wrap:wrap;">
+    <div class="filter-pill active" id="conc-f-todos" onclick="setConcFiltro('todos',this)">Todos</div>
+    <div class="filter-pill" id="conc-f-pend" onclick="setConcFiltro('pendientes',this)">Sin conciliar</div>
+    <div class="filter-pill" onclick="marcarTodosConc(true)">✓ Marcar todo</div>
+    <div class="filter-pill" onclick="marcarTodosConc(false)">Desmarcar todo</div>
+  </div>
+  <div id="conc-lista" style="margin:0 16px 24px;"></div>
+</div>
+
 <!-- DEUDAS -->
 <div id="page-deu" class="page">
   <div class="topbar">
@@ -987,7 +1029,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v3.2</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v3.3</span>
       </div>
     </div>
 
@@ -1161,8 +1203,9 @@ document.addEventListener('DOMContentLoaded', () => {
   renderChipsCartera(); renderChipsCategoria(); loadRecords();
   ejecutarRecurrentesPendientes();
 
-  // Auto-refresh cada 2 segundos con protección contra operaciones en curso
-  setInterval(autoSync, 2000);
+  // Auto-refresh cada 10 segundos con protección contra operaciones en curso
+  // (2s saturaba las cuotas de Apps Script y provocaba fallas de sync)
+  setInterval(autoSync, 10000);
 });
 
 // NAV
@@ -1177,6 +1220,7 @@ function showPage(p) {
   if (p === 'proy') renderDashboardAnalytics();
   if (p === 'chat') { document.getElementById('chat-input')?.focus(); }
   if (p === 'deu') renderDeudas();
+  if (p === 'conc') initConciliacion();
 }
 
 function setUser(u, el) {
@@ -1310,7 +1354,17 @@ function buildRegistros(monto, fecha, nota, tipo, cartera, carteraDest, categori
     regs.push({ id: generateId(), fecha, hora: getHora(), cartera: carteraDest, tipo: 'INGRESO POR TRANSFERENCIA', categoria: '', monto: Math.abs(monto), nota, fechaFlujo: fecha, usuario: currentUser, carteraDestino: '', idTransferencia: idT, montoTransferencia: monto });
   } else {
     const m = tipo === 'INGRESO' ? Math.abs(monto) : -Math.abs(monto);
-    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo, categoria, monto: m, nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '', _pendiente: false });
+    // Vínculo persistente a crédito (columna K AGRUPADOR en el Sheet)
+    let agrupador = '', _capital = null;
+    if (tipo === 'GASTO' && CAT_PAGO_CREDITO.includes(categoria)) {
+      const selDeu = document.getElementById('sel-deuda');
+      if (selDeu && selDeu.value) {
+        agrupador = 'DEUDA:' + selDeu.value;
+        const inputCap = document.getElementById('input-capital');
+        if (inputCap && inputCap.value !== '') _capital = parseFloat(inputCap.value) || 0;
+      }
+    }
+    regs.push({ id: generateId(), fecha, hora: getHora(), cartera, tipo, categoria, monto: m, nota, fechaFlujo: calcFechaFlujo(fecha, cartera), usuario: currentUser, carteraDestino: '', idTransferencia: '', montoTransferencia: '', agrupador, _capital, _pendiente: false });
   }
   return regs;
 }
@@ -1367,11 +1421,15 @@ function enviarAlSheet(regs, btn) {
     btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
     const programados = soloLocal.length;
     const ejecutados  = paraSheet.length;
-    // Aplicar pago a deuda si se vinculó — ANTES de cambiar página
-    const selDeu = document.getElementById('sel-deuda');
-    if (selDeu && selDeu.value) {
-      aplicarPagoADeuda(selDeu.value, monto);
-    }
+    // Aplicar pago a deuda si se vinculó (por registro, solo los ya operados)
+    // FIX v3.3: antes esto tronaba con "monto is not defined" y el saldo de la
+    // deuda nunca bajaba, mostrando "Error al conectar con Sheets" por error.
+    const todayPago = hoy();
+    regs.forEach(r => {
+      if (r.agrupador && String(r.agrupador).indexOf('DEUDA:') === 0 && r.fecha <= todayPago) {
+        aplicarPagoADeuda(String(r.agrupador).slice(6), Math.abs(parseFloat(r.monto) || 0), r);
+      }
+    });
 
     if (programados > 0) {
       showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
@@ -1436,6 +1494,11 @@ function resetForm() {
   document.getElementById('field-cartera-dest').style.display = 'none';
   document.getElementById('field-categoria').style.display = 'block';
   document.getElementById('label-cartera').textContent = 'Cartera';
+  // Limpiar vínculo a crédito (evita aplicar pagos a la deuda equivocada)
+  const fd = document.getElementById('field-deuda'); if (fd) fd.style.display = 'none';
+  const sd = document.getElementById('sel-deuda'); if (sd) sd.value = '';
+  const fcs = document.getElementById('field-capital-sugerido'); if (fcs) fcs.style.display = 'none';
+  const ic = document.getElementById('input-capital'); if (ic) ic.value = '';
   renderChipsCartera(); renderChipsCategoria(); renderChipsCarteraDest();
 }
 
@@ -1629,14 +1692,34 @@ function renderDashboard() {
     gc.appendChild(card);
   });
   const gt = document.getElementById('wallets-tdc'); gt.innerHTML = '';
+  const pagoProx = proximoPago24();
+  let sumPago24 = 0, sumDiferido = 0;
   CARTERAS_TDC.forEach(c => {
     const s = saldosTdcTotal[c] || 0;
+    const st = statsTDC(c, pagoProx);
+    sumPago24 += st.pagoMonto; sumDiferido += st.diferido;
     const card = document.createElement('div'); card.className = 'wallet-card tdc-card';
     card.style.cursor = 'pointer';
-    card.innerHTML = `<div class="wallet-name">💳 ${c}</div><div class="wallet-amount ${s < 0 ? 'neg' : 'pos'}">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>`;
+    card.innerHTML = `<div class="wallet-name">💳 ${c}</div>
+      <div class="wallet-amount ${s < 0 ? 'neg' : 'pos'}">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>
+      <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);font-size:11px;">
+        <div style="display:flex;justify-content:space-between;padding:1px 0;"><span style="color:var(--text3);">Pago ${formatDateShort(pagoProx)}</span><span class="privacy-num" style="font-weight:700;color:${st.pagoMonto > 0 ? 'var(--red)' : 'var(--text3)'};">$${fmtN(st.pagoMonto)}</span></div>
+        <div style="display:flex;justify-content:space-between;padding:1px 0;"><span style="color:var(--text3);">Diferido/MSI</span><span class="privacy-num" style="font-weight:700;color:var(--text2);">$${fmtN(st.diferido)}</span></div>
+        <div onclick="event.stopPropagation();abrirConciliacion('${c}')" style="margin-top:6px;text-align:center;padding:6px;background:var(--bg3);border-radius:6px;color:var(--blue);font-weight:700;">🧾 Conciliar</div>
+      </div>`;
     card.onclick = () => openWalletDetail(c);
     gt.appendChild(card);
   });
+
+  // Franja de totales TDC: deuda total, pago del 24 y diferido a meses
+  const tdcSum = document.getElementById('tdc-summary');
+  if (tdcSum) {
+    tdcSum.style.display = 'block';
+    document.getElementById('tdc-sum-total').textContent = '$' + fmtN(Math.abs(tdcTotalCompleto));
+    document.getElementById('tdc-sum-pago-label').textContent = 'Pago ' + formatDateShort(pagoProx);
+    document.getElementById('tdc-sum-pago').textContent = '$' + fmtN(sumPago24);
+    document.getElementById('tdc-sum-dif').textContent = '$' + fmtN(sumDiferido);
+  }
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 
@@ -1714,6 +1797,7 @@ function setFilter(f, el) {
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
   const today = hoy();
+  actualizarSaldoBar();
 
   const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
 
@@ -2008,6 +2092,17 @@ function loadRecords() {
         localStorage.setItem('flujos_metas', JSON.stringify(metasConfig));
       }
 
+      // Deudas desde el Sheet (v3.3: fuente de verdad multi-dispositivo)
+      if (Array.isArray(data.deudas)) {
+        if (data.deudas.length > 0) {
+          deudas = data.deudas;
+          saveDeudas(false); // solo cache local, sin re-subir
+        } else if (deudas.length > 0) {
+          // El Sheet aún no tiene deudas: primera migración desde este dispositivo
+          pushDeudasAlSheet();
+        }
+      }
+
       // Cargar registros — merge con locales pendientes
       if (data.rows) {
         const sheetRecs = data.rows.map(r => ({
@@ -2022,6 +2117,8 @@ function loadRecords() {
           nota:           String(r['NOTA'] || r['nota'] || ''),
           usuario:        String(r['USUARIO'] || r['usuario'] || ''),
           carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+          agrupador:      String(r['AGRUPADOR'] || r['agrupador'] || ''),
+          conciliado:     String(r['CONCILIADO'] || r['conciliado'] || '').toUpperCase() === 'X',
         })).filter(r => r.fecha && r.cartera);
         const sheetIds = new Set(sheetRecs.map(r => r.id));
         const pending = allRecords.filter(r => !sheetIds.has(r.id));
@@ -2040,6 +2137,7 @@ function saveLocal() { localStorage.setItem('flujos_records', JSON.stringify(all
 // SYNC STATE
 const deletedIds = new Set(); // IDs borrados localmente, esperando confirmación del Sheet
 const pendingIds = new Set(); // IDs recién agregados, esperando que lleguen al Sheet
+const pendingConc = new Map(); // id → true/false de conciliado, esperando confirmación del Sheet
 let syncBusy = false;
 
 function parseSheetRow(r) {
@@ -2055,6 +2153,8 @@ function parseSheetRow(r) {
     nota:           String(r['NOTA'] || r['nota'] || ''),
     usuario:        String(r['USUARIO'] || r['usuario'] || ''),
     carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+    agrupador:      String(r['AGRUPADOR'] || r['agrupador'] || ''),
+    conciliado:     String(r['CONCILIADO'] || r['conciliado'] || '').toUpperCase() === 'X',
   };
 }
 
@@ -2088,7 +2188,26 @@ function autoSync() {
       } catch(e) {}
 
       allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+
+      // Reaplicar conciliaciones que aún no confirma el Sheet
+      pendingConc.forEach((val, id) => {
+        const rec = allRecords.find(x => x.id === id);
+        if (!rec) { pendingConc.delete(id); return; }
+        if (rec.conciliado === val) pendingConc.delete(id);
+        else rec.conciliado = val;
+      });
+
       saveLocal();
+
+      // Deudas: aceptar la versión del Sheet si no hay cambios locales sin subir
+      let deudasCambiaron = false;
+      if (Array.isArray(data.deudas) && !deudasDirty && data.deudas.length > 0) {
+        if (JSON.stringify(data.deudas) !== JSON.stringify(deudas)) {
+          deudas = data.deudas;
+          saveDeudas(false);
+          deudasCambiaron = true;
+        }
+      }
 
       ejecutarRecurrentesPendientes();
 
@@ -2097,6 +2216,8 @@ function autoSync() {
       if (ap.id === 'page-dash') renderDashboard();
       else if (ap.id === 'page-list') renderRecords();
       else if (ap.id === 'page-proy') renderDashboardAnalytics();
+      else if (ap.id === 'page-conc') renderConciliacion();
+      else if (ap.id === 'page-deu' && deudasCambiaron) renderDeudas();
     })
     .catch(() => {})
     .finally(() => { syncBusy = false; });
@@ -2479,7 +2600,22 @@ let deuTab = 'activas';
 function loadDeudas() {
   try { deudas = JSON.parse(localStorage.getItem('flujos_deudas') || '[]'); } catch(e) { deudas = []; }
 }
-function saveDeudas() { localStorage.setItem('flujos_deudas', JSON.stringify(deudas)); }
+// v3.3: las deudas ahora viven en el Sheet (hoja DEUDAS) para que se vean
+// igual en todos los dispositivos. localStorage queda solo como cache.
+let deudasDirty = false; // hay cambios locales que aún no llegan al Sheet
+function saveDeudas(pushSheet) {
+  localStorage.setItem('flujos_deudas', JSON.stringify(deudas));
+  if (pushSheet !== false) pushDeudasAlSheet();
+}
+function pushDeudasAlSheet(force) {
+  deudasDirty = true;
+  // force automático cuando el usuario borró la última deuda a propósito
+  const esForce = !!force || deudas.length === 0;
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'saveDeudas', deudas: deudas, force: esForce }) })
+    .then(r => r.json())
+    .then(d => { if (d && d.ok) deudasDirty = false; })
+    .catch(() => {});
+}
 
 function setDeuTab(tab, el) {
   deuTab = tab;
@@ -2538,6 +2674,9 @@ function renderDeudas() {
     const ivaMes = tieneIva ? intMes * 0.16 : 0;
     const comisionesCard = parseFloat(d.comisiones) || 0;
     const totalPago = intMes + ivaMes + comisionesCard + (parseFloat(d.mensualidad) || 0);
+    const abonos = Array.isArray(d.abonos) ? d.abonos.slice() : [];
+    const capAbonado = abonos.reduce((s, a) => s + (parseFloat(a.capital) || 0), 0);
+    const ultimosAbonos = abonos.slice(-5).reverse();
     return `<div style="background:var(--bg2);border:0.5px solid ${esArchivada ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius);padding:16px;margin-bottom:10px;${esArchivada ? 'opacity:0.7;' : ''}">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
         <div>
@@ -2560,6 +2699,11 @@ function renderDeudas() {
         ${ivaMes > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">IVA sobre intereses</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(ivaMes)}</span></div>` : ''}
         ${comisionesCard > 0 ? `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">Comisiones fijas</span><span class="privacy-num" style="font-weight:600;color:var(--red);">$${fmtN(comisionesCard)}</span></div>` : ''}
         <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;padding:6px 0 0;border-top:0.5px solid var(--border);margin-top:4px;"><span>Pago total estimado</span><span class="privacy-num" style="color:var(--red);">$${fmtN(totalPago)}</span></div>
+      </div>` : ''}
+      ${ultimosAbonos.length ? `<div style="background:var(--bg3);border-radius:var(--radius-sm);padding:10px;margin-bottom:10px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:6px;">Historial de abonos (${abonos.length}) · Capital abonado: <span class='privacy-num'>$${fmtN(capAbonado)}</span></div>
+        ${ultimosAbonos.map(a => `<div style="display:flex;justify-content:space-between;font-size:11px;padding:2px 0;"><span style="color:var(--text2);">${formatDateShort(a.fecha)}</span><span class="privacy-num" style="font-weight:600;color:var(--green);">−$${fmtN(a.capital)}${(a.monto && Math.abs(a.monto - a.capital) > 0.005) ? ` <span style="color:var(--text3);font-weight:400;">(pago $${fmtN(a.monto)})</span>` : ''}</span></div>`).join('')}
+        ${abonos.length > 5 ? `<div style="font-size:10px;color:var(--text3);margin-top:4px;">+ ${abonos.length - 5} abonos anteriores</div>` : ''}
       </div>` : ''}
       <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:0.5px solid var(--border);">
         <div style="font-size:11px;color:var(--text3);">Iniciado: ${d.fecha || '—'}</div>
@@ -2652,8 +2796,10 @@ function guardarDeuda() {
   if (editingDeudaId) {
     const idx = deudas.findIndex(x => x.id === editingDeudaId);
     if (idx >= 0) deuda.liquidado = deudas[idx].liquidado; // preserve liquidado status
+    if (idx >= 0) deuda.abonos = deudas[idx].abonos || []; // preserve historial de abonos
     if (idx >= 0) deudas[idx] = deuda;
   } else {
+    deuda.abonos = [];
     deudas.push(deuda);
   }
   saveDeudas();
@@ -2727,15 +2873,28 @@ function actualizarCapitalSugerido() {
   if (inputCap) inputCap.value = capitalSugerido > 0 ? capitalSugerido.toFixed(2) : '';
 }
 
-function aplicarPagoADeuda(deudaId, montoTotal) {
+function aplicarPagoADeuda(deudaId, montoTotal, reg) {
   const idx = deudas.findIndex(x => x.id === deudaId);
   if (idx < 0) return;
-  // Usar el capital editado por el usuario; si está vacío usar monto total
-  const inputCap = document.getElementById('input-capital');
-  const capital = (inputCap && inputCap.value !== '') ? (parseFloat(inputCap.value) || 0) : Math.abs(montoTotal);
+  // Capital: el capturado al guardar el registro; si no, el monto total
+  let capital;
+  if (reg && reg._capital !== undefined && reg._capital !== null) capital = parseFloat(reg._capital) || 0;
+  else {
+    const inputCap = document.getElementById('input-capital');
+    capital = (inputCap && inputCap.value !== '') ? (parseFloat(inputCap.value) || 0) : Math.abs(montoTotal);
+  }
   if (capital <= 0) return;
-  deudas[idx].saldo = Math.max(0, (parseFloat(deudas[idx].saldo) || 0) - capital);
-  if (deudas[idx].saldo === 0) { deudas[idx].liquidado = true; showToast('🎉 Crédito liquidado automáticamente', 'success'); }
+  const d = deudas[idx];
+  d.saldo = Math.max(0, (parseFloat(d.saldo) || 0) - capital);
+  // Historial de abonos (v3.3): queda registro de cada pago aplicado
+  if (!Array.isArray(d.abonos)) d.abonos = [];
+  d.abonos.push({
+    fecha: (reg && reg.fecha) || hoy(),
+    monto: Math.abs(montoTotal) || capital,
+    capital: capital,
+    registroId: (reg && reg.id) || ''
+  });
+  if (d.saldo === 0) { d.liquidado = true; showToast('🎉 Crédito liquidado automáticamente', 'success'); }
   saveDeudas();
 }
 
@@ -3122,6 +3281,251 @@ window.addEventListener('DOMContentLoaded', () => {
     };
   });
 });
+
+// ══════════════════════════════════════════
+// TDC: PAGO DEL 24, DIFERIDO/MSI Y CONCILIACIÓN (v3.3)
+// ══════════════════════════════════════════
+
+// Normaliza la fecha flujo de cualquier registro a YYYY-MM-DD
+function normFF(r) { return formatSheetDate(r.fechaFlujo || r.fecha); }
+
+// Próxima fecha de pago (día 24): si hoy ya pasó el 24, el del mes siguiente
+function proximoPago24() {
+  const p = hoy().split('-');
+  let y = parseInt(p[0]), m = parseInt(p[1]);
+  if (parseInt(p[2]) > DIA_PAGO) { m++; if (m > 12) { m = 1; y++; } }
+  return y + '-' + String(m).padStart(2, '0') + '-' + String(DIA_PAGO).padStart(2, '0');
+}
+function pagoAnterior(pagoISO) {
+  const p = pagoISO.split('-');
+  let y = parseInt(p[0]), m = parseInt(p[1]) - 1;
+  if (m < 1) { m = 12; y--; }
+  return y + '-' + String(m).padStart(2, '0') + '-' + String(DIA_PAGO).padStart(2, '0');
+}
+// Rango de fechas de operación que caen en un pago dado, según el corte de la tarjeta
+function rangoCiclo(cartera, pagoISO) {
+  const corte = TDC_CORTE[cartera] || 1;
+  const p = pagoISO.split('-');
+  const y = parseInt(p[0]), m = parseInt(p[1]);
+  const hasta = new Date(y, m - 1, corte);
+  const desde = new Date(y, m - 2, corte + 1);
+  return { desde: toLocalDate(desde), hasta: toLocalDate(hasta) };
+}
+// Por tarjeta: cuánto se debe en el próximo 24 y cuánto está diferido a futuro
+function statsTDC(cartera, pagoISO) {
+  const pago = pagoISO || proximoPago24();
+  let pagoMonto = 0, diferido = 0;
+  allRecords.forEach(r => {
+    if (r.cartera !== cartera || r._pendiente) return;
+    const m = parseFloat(r.monto) || 0;
+    if (m >= 0 || r.tipo !== 'GASTO') return;
+    const ff = normFF(r);
+    if (!ff) return;
+    if (ff === pago) pagoMonto += -m;
+    else if (ff > pago) diferido += -m;
+  });
+  return { pago, pagoMonto, diferido };
+}
+
+// ── Barra de saldo en Registros ──
+function actualizarSaldoBar() {
+  const bar = document.getElementById('list-saldo-bar');
+  if (!bar) return;
+  const today = hoy();
+  const calcSaldo = (c) => {
+    let s = getSaldoInicial(c);
+    const esTdc = CARTERAS_TDC.includes(c);
+    allRecords.forEach(r => {
+      if (r.cartera !== c || r._pendiente) return;
+      const m = parseFloat(r.monto) || 0;
+      if (r.fecha <= today) s += m;
+      else if (esTdc && m < 0 && r.tipo === 'GASTO') s += m; // TDC: gasto futuro ya comprometido
+    });
+    return s;
+  };
+  const cartera = listFilters.cartera || '';
+  bar.style.display = 'block';
+  if (cartera) {
+    const s = calcSaldo(cartera);
+    const esTdc = CARTERAS_TDC.includes(cartera);
+    const sub = esTdc ? 'Incluye gastos futuros comprometidos' : 'Saldo al día de hoy';
+    let extra = '';
+    if (esTdc) {
+      const st = statsTDC(cartera);
+      extra = `<div style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--text3);">
+        <span>Pago ${formatDateShort(st.pago)}: <span class="privacy-num" style="font-weight:700;color:var(--red);">$${fmtN(st.pagoMonto)}</span></span>
+        <span>Diferido: <span class="privacy-num" style="font-weight:700;color:var(--text2);">$${fmtN(st.diferido)}</span></span>
+      </div>`;
+    }
+    bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
+      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${esTdc ? '💳' : '💵'} ${cartera}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">${sub}</div></div>
+      <div class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;color:${s < 0 ? 'var(--red)' : 'var(--green)'};">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>
+    </div>${extra}`;
+  } else {
+    const cash = CARTERAS_CASH.reduce((s, c) => s + calcSaldo(c), 0);
+    const tdc  = CARTERAS_TDC.reduce((s, c) => s + calcSaldo(c), 0);
+    bar.innerHTML = `<div style="display:flex;gap:16px;">
+      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">💵 Cash total</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:${cash < 0 ? 'var(--red)' : 'var(--green)'};">${cash < 0 ? '−' : ''}$${fmtN(Math.abs(cash))}</div></div>
+      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">💳 Deuda TDC</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">$${fmtN(Math.abs(tdc))}</div></div>
+      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Neto</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:${(cash + tdc) < 0 ? 'var(--red)' : 'var(--green)'};">${(cash + tdc) < 0 ? '−' : ''}$${fmtN(Math.abs(cash + tdc))}</div></div>
+    </div>`;
+  }
+}
+
+// ── Conciliación TDC ──
+let concCartera = '';
+let concFiltro = 'todos';
+
+function abrirConciliacion(cartera) {
+  if (cartera) concCartera = cartera;
+  showPage('conc');
+}
+
+function initConciliacion() {
+  if (!concCartera) concCartera = CARTERAS_TDC[0];
+  renderConcChips();
+  poblarCiclos(true);
+  renderConciliacion();
+}
+
+function setConcCartera(c) {
+  concCartera = c;
+  renderConcChips();
+  poblarCiclos(false);
+  renderConciliacion();
+}
+
+function renderConcChips() {
+  const wrap = document.getElementById('conc-chips');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  CARTERAS_TDC.forEach(c => {
+    const el = document.createElement('div');
+    el.className = 'chip' + (concCartera === c ? ' active gas' : '');
+    el.textContent = c.replace('TDC ', '');
+    el.onclick = () => setConcCartera(c);
+    wrap.appendChild(el);
+  });
+}
+
+function poblarCiclos(mantener) {
+  const sel = document.getElementById('conc-ciclo');
+  if (!sel) return;
+  const prev = mantener ? sel.value : '';
+  const ciclos = [];
+  let p = proximoPago24();
+  for (let i = 0; i < 13; i++) { ciclos.push(p); p = pagoAnterior(p); }
+  sel.innerHTML = ciclos.map(pg => {
+    const rg = rangoCiclo(concCartera, pg);
+    return `<option value="${pg}">Pago ${formatDateShort(pg)} · ${formatDateShort(rg.desde)} – ${formatDateShort(rg.hasta)}</option>`;
+  }).join('');
+  if (prev && ciclos.indexOf(prev) !== -1) sel.value = prev;
+}
+
+function registrosDelCiclo() {
+  const sel = document.getElementById('conc-ciclo');
+  const pago = sel ? sel.value : proximoPago24();
+  return allRecords.filter(r => {
+    if (r.cartera !== concCartera || r._pendiente) return false;
+    const m = parseFloat(r.monto) || 0;
+    if (m >= 0 || r.tipo !== 'GASTO') return false;
+    return normFF(r) === pago;
+  }).sort((a, b) => a.fecha.localeCompare(b.fecha) || String(a.hora || '').localeCompare(String(b.hora || '')));
+}
+
+function renderConciliacion() {
+  const lista = document.getElementById('conc-lista');
+  if (!lista) return;
+  const sel = document.getElementById('conc-ciclo');
+  if (sel && !sel.options.length) poblarCiclos(false);
+  const pago = sel ? sel.value : proximoPago24();
+
+  // Total del estado de cuenta guardado para este ciclo/tarjeta
+  const ecInput = document.getElementById('conc-ec');
+  if (ecInput && document.activeElement !== ecInput) {
+    ecInput.value = localStorage.getItem('flujos_ec_' + concCartera + '_' + pago) || '';
+  }
+
+  const recs = registrosDelCiclo();
+  const visibles = concFiltro === 'pendientes' ? recs.filter(r => !r.conciliado) : recs;
+  lista.innerHTML = visibles.length
+    ? visibles.map(r => filaConc(r)).join('')
+    : `<div style="text-align:center;padding:34px;color:var(--text3);font-size:13px;">${recs.length ? 'Todo conciliado en este ciclo ✓' : 'Sin cargos en este ciclo'}</div>`;
+  actualizarTotalesConc();
+  if (privacyOn) setTimeout(applyPrivacyToPage, 10);
+}
+
+function filaConc(r) {
+  const m = Math.abs(parseFloat(r.monto) || 0);
+  const uIcon = r.usuario === 'Andrea' ? '👩' : '👨';
+  const desc = r.nota || r.categoria || r.tipo;
+  return `<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:0.5px solid ${r.conciliado ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;${r.conciliado ? 'opacity:0.55;' : ''}">
+    <input type="checkbox" ${r.conciliado ? 'checked' : ''} onchange="toggleConciliado('${r.id}', this.checked)" style="width:19px;height:19px;accent-color:var(--green);flex-shrink:0;cursor:pointer;">
+    <div style="flex:1;min-width:0;">
+      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${desc}</div>
+      <div style="font-size:11px;color:var(--text3);">${uIcon} ${formatDateShort(r.fecha)}${r.categoria && r.nota ? ' · ' + r.categoria : ''}</div>
+    </div>
+    <div class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:14px;">$${fmtN(m)}</div>
+  </div>`;
+}
+
+function actualizarTotalesConc() {
+  const box = document.getElementById('conc-resumen');
+  if (!box) return;
+  const recs = registrosDelCiclo();
+  const total = recs.reduce((s, r) => s + Math.abs(parseFloat(r.monto) || 0), 0);
+  const nConc = recs.filter(r => r.conciliado).length;
+  const ec = parseFloat(document.getElementById('conc-ec')?.value) || 0;
+  let difHtml = '<span style="color:var(--text3);">Captura el total del EC</span>';
+  if (ec > 0) {
+    const dif = ec - total;
+    if (Math.abs(dif) < 1) difHtml = '<span style="color:var(--green);font-weight:700;">✓ Cuadra</span>';
+    else difHtml = `<span class="privacy-num" style="color:var(--red);font-weight:700;">${dif > 0 ? 'Faltan' : 'Sobran'} $${fmtN(Math.abs(dif))}</span>`;
+  }
+  box.innerHTML = `<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;display:flex;gap:12px;">
+    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Registrado (${recs.length})</div><div class="privacy-num" style="font-family:var(--display);font-size:15px;font-weight:700;">$${fmtN(total)}</div></div>
+    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Conciliados</div><div style="font-family:var(--display);font-size:15px;font-weight:700;color:${nConc === recs.length && recs.length ? 'var(--green)' : 'var(--text)'};">${nConc}/${recs.length}</div></div>
+    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Vs. estado de cuenta</div><div style="font-size:13px;margin-top:2px;">${difHtml}</div></div>
+  </div>`;
+}
+
+function guardarECyCalcular() {
+  const sel = document.getElementById('conc-ciclo');
+  const pago = sel ? sel.value : proximoPago24();
+  localStorage.setItem('flujos_ec_' + concCartera + '_' + pago, document.getElementById('conc-ec').value);
+  actualizarTotalesConc();
+}
+
+function setConcFiltro(f, el) {
+  concFiltro = f;
+  document.getElementById('conc-f-todos')?.classList.toggle('active', f === 'todos');
+  document.getElementById('conc-f-pend')?.classList.toggle('active', f === 'pendientes');
+  renderConciliacion();
+}
+
+function toggleConciliado(id, checked) {
+  const rec = allRecords.find(x => x.id === id);
+  if (rec) rec.conciliado = checked;
+  pendingConc.set(id, checked);
+  saveLocal();
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'setConciliado', ids: [id], valor: checked }) })
+    .then(r => r.json()).catch(() => {});
+  renderConciliacion();
+}
+
+function marcarTodosConc(valor) {
+  const recs = registrosDelCiclo();
+  const ids = [];
+  recs.forEach(r => {
+    if (!!r.conciliado !== valor) { r.conciliado = valor; pendingConc.set(r.id, valor); ids.push(r.id); }
+  });
+  if (ids.length) {
+    saveLocal();
+    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'setConciliado', ids: ids, valor: valor }) })
+      .then(r => r.json()).catch(() => {});
+  }
+  renderConciliacion();
+}
 </script>
 <!-- PRINT CONTENT — generado dinámicamente para PDF -->
 <div id="print-content"></div>

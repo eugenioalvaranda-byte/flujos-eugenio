@@ -1098,13 +1098,20 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="modal">
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-title">Editar</div>
+    <div id="m-transfer-banner" style="display:none;background:var(--blue-dim);border:0.5px solid var(--blue-border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--blue);">
+      🔄 <b>Transferencia entre cuentas.</b> Editas las dos partes a la vez: sale de una cuenta y entra en la otra. Se guardan sincronizadas.
+    </div>
     <div class="field">
       <div class="field-label">Monto</div>
       <input class="field-input amount-input" type="number" id="m-monto" step="0.01" inputmode="decimal">
     </div>
     <div class="field">
-      <div class="field-label">Cartera</div>
+      <div class="field-label" id="m-cartera-label">Cartera</div>
       <select class="field-input" id="m-cartera"></select>
+    </div>
+    <div class="field" id="m-field-dest" style="display:none;">
+      <div class="field-label">A (cuenta destino)</div>
+      <select class="field-input" id="m-cartera-dest"></select>
     </div>
     <div class="field" id="m-field-cat">
       <div class="field-label">Categoría</div>
@@ -1121,7 +1128,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="modal-actions">
       <div class="modal-btn cancel" onclick="closeModalDirect()">Cancelar</div>
       <div class="modal-btn delete" onclick="eliminarRegistro()">Eliminar</div>
-      <div class="modal-btn" onclick="copiarRegistro()" style="background:var(--blue-dim);color:var(--blue);border:0.5px solid var(--blue-border);">📋 Copiar</div>
+      <div class="modal-btn" id="m-btn-copiar" onclick="copiarRegistro()" style="background:var(--blue-dim);color:var(--blue);border:0.5px solid var(--blue-border);">📋 Copiar</div>
       <div class="modal-btn save" onclick="actualizarRegistro()">Guardar</div>
     </div>
   </div>
@@ -1694,9 +1701,13 @@ function renderDashboard() {
   be.className = 'dash-mes-val ' + (bal >= 0 ? 'pos' : 'neg');
 
   // WALLETS con saldo inicial
+  // FIX v3.4: las tarjetas de EFECTIVO/BANCOS muestran el saldo REAL a hoy.
+  // Antes usaban 'saldosCorte' (hasta la fecha de corte del balance), así que
+  // una transferencia programada a futuro —p.ej. mañana— ya restaba y el saldo
+  // no cuadraba con la barra de Registros. El dinero futuro en cash aún no se mueve.
   const gc = document.getElementById('wallets-cash'); gc.innerHTML = '';
   CARTERAS_CASH.forEach(c => {
-    const s = saldosCorte[c] || 0;
+    const s = saldosHoy[c] || 0;
     const card = document.createElement('div'); card.className = 'wallet-card';
     card.style.cursor = 'pointer';
     card.innerHTML = `<div class="wallet-name">${c}</div><div class="wallet-amount ${s < 0 ? 'neg' : 'pos'}">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>`;
@@ -1955,25 +1966,56 @@ function buildRecordItem(r, isFuture) {
 
 // EDIT MODAL
 function openEditModal(r) {
+  const esTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
+
+  // En transferencias, editar SIEMPRE desde la mitad de salida (la que resta),
+  // aunque el usuario haya tocado la mitad de entrada. Así "origen" y "destino"
+  // nunca se invierten y las dos mitades quedan claras.
+  if (esTransfer && r.idTransferencia) {
+    const salida = allRecords.find(x => x.idTransferencia === r.idTransferencia && (parseFloat(x.monto) || 0) < 0);
+    if (salida) r = salida;
+  }
+
   editingId = r.id;
-  document.getElementById('modal-title').textContent = r.categoria || r.tipo;
+  const banner = document.getElementById('m-transfer-banner');
+  const destField = document.getElementById('m-field-dest');
+  const catField = document.getElementById('m-field-cat');
+  const carteraLabel = document.getElementById('m-cartera-label');
+  const delBtn = document.querySelector('.modal-btn.delete');
+  const btnCopiar = document.getElementById('m-btn-copiar');
+  if (btnCopiar) btnCopiar.style.display = esTransfer ? 'none' : '';
+
+  document.getElementById('modal-title').textContent = esTransfer ? 'Editar transferencia' : (r.categoria || r.tipo);
   document.getElementById('m-monto').value = Math.abs(parseFloat(r.monto) || 0);
-  document.getElementById('m-cartera').value = r.cartera;
   document.getElementById('m-nota').value = r.nota || '';
   document.getElementById('m-fecha').value = r.fecha;
 
-  // Si es transferencia, actualizar botón de eliminar
-  const esTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
-  const delBtn = document.querySelector('.modal-btn.delete');
-  if (delBtn) delBtn.textContent = esTransfer ? '🗑 Eliminar transferencia' : 'Eliminar';
+  // Selector de cartera (origen). Lo llenamos por si aún no está poblado.
+  const selCart = document.getElementById('m-cartera');
+  if (!selCart.options.length) {
+    CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selCart.appendChild(o); });
+  }
+  selCart.value = r.cartera;
 
-  // Categoría — solo si no es transferencia
-  const catField = document.getElementById('m-field-cat');
-  const catSel   = document.getElementById('m-categoria');
-  const isTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
-  catField.style.display = isTransfer ? 'none' : 'block';
-  catSel.innerHTML = '';
-  if (!isTransfer) {
+  if (esTransfer) {
+    banner.style.display = 'block';
+    carteraLabel.textContent = 'De (cuenta origen)';
+    catField.style.display = 'none';
+    if (delBtn) delBtn.textContent = '🗑 Eliminar transferencia';
+    // Poblar destino y seleccionar la cuenta que recibe
+    const selDest = document.getElementById('m-cartera-dest');
+    selDest.innerHTML = '';
+    CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; selDest.appendChild(o); });
+    selDest.value = r.carteraDestino || '';
+    destField.style.display = 'block';
+  } else {
+    banner.style.display = 'none';
+    carteraLabel.textContent = 'Cartera';
+    destField.style.display = 'none';
+    if (delBtn) delBtn.textContent = 'Eliminar';
+    catField.style.display = 'block';
+    const catSel = document.getElementById('m-categoria');
+    catSel.innerHTML = '';
     const cats = r.tipo === 'INGRESO' ? CAT_INGRESO : CAT_GASTO;
     cats.forEach(c => {
       const o = document.createElement('option'); o.value = c; o.textContent = c;
@@ -1991,14 +2033,57 @@ function actualizarRegistro() {
   if (!editingId) return;
   const idx = allRecords.findIndex(x => x.id === editingId); if (idx < 0) return;
   const r = allRecords[idx];
-  const nm = parseFloat(document.getElementById('m-monto').value);
-  r.cartera   = document.getElementById('m-cartera').value;
-  r.nota      = document.getElementById('m-nota').value.trim();
-  r.fecha     = document.getElementById('m-fecha').value;
-  r.fechaFlujo = calcFechaFlujo(r.fecha, r.cartera);
-  r.monto     = r.monto < 0 ? -Math.abs(nm) : Math.abs(nm);
+  const nm = Math.abs(parseFloat(document.getElementById('m-monto').value) || 0);
+  const nuevaNota = document.getElementById('m-nota').value.trim();
+  const nuevaFecha = document.getElementById('m-fecha').value;
   const isTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
-  if (!isTransfer) r.categoria = document.getElementById('m-categoria').value;
+
+  if (isTransfer && r.idTransferencia) {
+    // Localizar las dos mitades por su ID de transferencia
+    const salida  = allRecords.find(x => x.idTransferencia === r.idTransferencia && (parseFloat(x.monto) || 0) < 0);
+    const entrada = allRecords.find(x => x.idTransferencia === r.idTransferencia && (parseFloat(x.monto) || 0) > 0);
+    const origen  = document.getElementById('m-cartera').value;
+    const destino = document.getElementById('m-cartera-dest').value;
+
+    if (!salida || !entrada) { showToast('No encontré la otra mitad de la transferencia', 'error'); return; }
+    if (origen === destino) { showToast('Origen y destino no pueden ser la misma cuenta', 'error'); return; }
+
+    // Mitad de salida (resta en el origen)
+    salida.cartera = origen;
+    salida.carteraDestino = destino;
+    salida.monto = -nm;
+    salida.montoTransferencia = nm;
+    salida.nota = nuevaNota;
+    salida.fecha = nuevaFecha;
+    salida.fechaFlujo = nuevaFecha; // transferencias: fecha real, no corte TDC
+
+    // Mitad de entrada (suma en el destino)
+    entrada.cartera = destino;
+    entrada.carteraDestino = '';
+    entrada.monto = nm;
+    entrada.montoTransferencia = nm;
+    entrada.nota = nuevaNota;
+    entrada.fecha = nuevaFecha;
+    entrada.fechaFlujo = nuevaFecha;
+
+    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
+    showToast('Actualizando transferencia...', '');
+    Promise.all([
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: salida.id, data: salida }) }).then(x => x.json()),
+      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: entrada.id, data: entrada }) }).then(x => x.json())
+    ])
+      .then(() => showToast('Transferencia actualizada ✓ (2 registros)', 'success'))
+      .catch(() => showToast('Error de conexión al actualizar', 'error'));
+    return;
+  }
+
+  // Registro normal
+  r.cartera    = document.getElementById('m-cartera').value;
+  r.nota       = nuevaNota;
+  r.fecha      = nuevaFecha;
+  r.fechaFlujo = calcFechaFlujo(r.fecha, r.cartera);
+  r.monto      = r.monto < 0 ? -nm : nm;
+  r.categoria  = document.getElementById('m-categoria').value;
   fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data: r }) }).catch(() => {});
   saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
   showToast('Registro actualizado ✓', 'success');

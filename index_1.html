@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Embarque MID — Amazon Mérida</title>
+<meta name="description" content="Especificación y planificador del embarque de corrugado a Amazon MID, Mérida.">
+<style>*{margin:0;padding:0;}</style>
+</head>
+<body>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --ground:#F2F5F6; --surface:#FFFFFF; --surface-2:#E7ECEE; --surface-3:#DAE2E5;
+    --ink:#151A1F; --muted:#5A6873; --line:#CBD5DA; --line-hard:#98A9B2;
+    --k1:#A8642B; --k2:#C98F4A; --k3:#DDB077; --k4:#8A5B2E; --k5:#EDD6B2;
+    --steel:#2F6B8A; --alert:#AE4136; --alert-soft:#F6DFDC;
+    --go:#357B58; --go-soft:#DDEEE3; --warn:#9A6B14; --deck:#E0E7E9;
+    --shadow:0 1px 2px rgba(21,26,31,.07), 0 6px 18px rgba(21,26,31,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#13181C; --surface:#1B2127; --surface-2:#242C33; --surface-3:#2D373E;
+      --ink:#E6ECEF; --muted:#93A3AE; --line:#2E3941; --line-hard:#46555F;
+      --k1:#C87F3E; --k2:#DDA25B; --k3:#E7BC85; --k4:#A87346; --k5:#F0DCBC;
+      --steel:#4E9BC0; --alert:#DE7C71; --alert-soft:#3A1F1B;
+      --go:#5FB287; --go-soft:#17301F; --warn:#E0AC55; --deck:#222A30;
+      --shadow:0 1px 2px rgba(0,0,0,.45), 0 6px 20px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#13181C; --surface:#1B2127; --surface-2:#242C33; --surface-3:#2D373E;
+    --ink:#E6ECEF; --muted:#93A3AE; --line:#2E3941; --line-hard:#46555F;
+    --k1:#C87F3E; --k2:#DDA25B; --k3:#E7BC85; --k4:#A87346; --k5:#F0DCBC;
+    --steel:#4E9BC0; --alert:#DE7C71; --alert-soft:#3A1F1B;
+    --go:#5FB287; --go-soft:#17301F; --warn:#E0AC55; --deck:#222A30;
+    --shadow:0 1px 2px rgba(0,0,0,.45), 0 6px 20px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--ground);color:var(--ink);
+    font-family:"IBM Plex Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+    line-height:1.5;padding:30px 16px 80px;-webkit-font-smoothing:antialiased;}
+  .wrap{max-width:1040px;margin:0 auto;display:flex;flex-direction:column;gap:26px;}
+
+  header{border-bottom:3px solid var(--ink);padding-bottom:15px;}
+  .kicker{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+          text-transform:uppercase;color:var(--steel);font-weight:600;}
+  h1{font-family:"Barlow Condensed","Arial Narrow",sans-serif;font-weight:700;
+     font-size:clamp(32px,5.5vw,50px);line-height:1;margin:6px 0 0;text-transform:uppercase;}
+  .lede{color:var(--muted);font-size:14.5px;max-width:66ch;margin-top:9px;}
+  .facts{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);
+         border:1px solid var(--line);margin-top:18px;}
+  @media (max-width:700px){.facts{grid-template-columns:repeat(2,1fr);}}
+  .fact{background:var(--surface);padding:12px 15px;display:flex;flex-direction:column;gap:2px;}
+  .fact .l{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  .fact .v{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:29px;line-height:1;}
+  .fact .v small{font-size:13px;color:var(--muted);font-weight:500;}
+
+  .tabs{display:flex;gap:0;border-bottom:2px solid var(--line-hard);}
+  .tabs button{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:19px;
+    text-transform:uppercase;letter-spacing:.03em;background:none;border:none;
+    padding:9px 20px;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;
+    margin-bottom:-2px;}
+  .tabs button:hover{color:var(--ink);}
+  .tabs button.on{color:var(--ink);border-bottom-color:var(--steel);}
+  .tabs button:focus-visible{outline:2px solid var(--steel);outline-offset:-2px;}
+
+  h2{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:25px;
+     text-transform:uppercase;letter-spacing:.02em;margin:0;padding-bottom:7px;
+     border-bottom:2px solid var(--line-hard);}
+  .sec{display:flex;flex-direction:column;gap:15px;}
+  .sechead{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap;}
+  .sechead p{margin:0;color:var(--muted);font-size:13px;max-width:58ch;}
+  .pane{display:flex;flex-direction:column;gap:26px;}
+
+  .note{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;
+        background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--steel);}
+  .note.ok{border-left-color:var(--go);background:var(--go-soft);}
+  .note .tag{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:15px;
+             text-transform:uppercase;letter-spacing:.05em;flex:0 0 auto;color:var(--steel);}
+  .note.ok .tag{color:var(--go);}
+  .note p{margin:0;font-size:13.5px;}
+
+  .unit{display:grid;grid-template-columns:130px 1fr;gap:22px;align-items:center;
+        background:var(--surface);border:1px solid var(--line);padding:18px 20px;box-shadow:var(--shadow);}
+  @media (max-width:600px){.unit{grid-template-columns:1fr;}}
+  .ustep{display:flex;gap:12px;align-items:baseline;font-size:13.5px;margin-bottom:8px;}
+  .ustep:last-child{margin-bottom:0;}
+  .ustep .un{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:18px;
+             color:var(--steel);width:76px;flex:0 0 auto;}
+  .ustep b{font-family:"IBM Plex Mono",monospace;}
+
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);background:var(--surface);}
+  table{border-collapse:collapse;width:100%;font-size:13px;min-width:600px;}
+  thead th{text-align:left;font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+           color:var(--muted);font-weight:600;padding:10px;background:var(--surface-2);
+           border-bottom:1px solid var(--line-hard);white-space:nowrap;}
+  thead th.r{text-align:right;}
+  tbody td{padding:8px 10px;border-bottom:1px solid var(--line);}
+  tbody td.r{text-align:right;font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;}
+  tbody tr:last-child td{border-bottom:none;}
+  tr.tot td{border-top:2px solid var(--line-hard);font-weight:700;background:var(--surface-2);}
+  .cd{font-family:"IBM Plex Mono",monospace;font-weight:600;}
+  .chip{display:inline-block;width:11px;height:11px;margin-right:6px;vertical-align:-1px;}
+
+  /* camión */
+  .tk{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);margin-bottom:12px;}
+  .tk.bad{border-color:var(--alert);}
+  .tkh{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line);flex-wrap:wrap;}
+  .tkn{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:24px;line-height:1;
+       background:var(--surface-2);padding:3px 11px;}
+  .tkm{display:flex;gap:14px;flex-wrap:wrap;flex:1;}
+  .m{display:flex;flex-direction:column;}
+  .m .ml{font-size:9px;letter-spacing:.09em;text-transform:uppercase;color:var(--muted);font-weight:600;}
+  .m .mv{font-family:"IBM Plex Mono",monospace;font-size:13.5px;font-weight:600;}
+  .m .mv.hot{color:var(--alert);} .m .mv.warn{color:var(--warn);}
+  svg.floor{display:block;width:100%;height:auto;background:var(--deck);
+            border-top:1px solid var(--line);border-bottom:1px solid var(--line);}
+  .flab{display:flex;justify-content:space-between;font-family:"IBM Plex Mono",monospace;
+        font-size:9.5px;color:var(--muted);padding:5px 14px 4px;}
+  .zl{display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px 12px;}
+  .zz{font-size:11.5px;background:var(--surface-2);padding:5px 9px;border-left:3px solid var(--k1);}
+  .zz b{font-family:"IBM Plex Mono",monospace;} .zz span{color:var(--muted);}
+
+  /* edición */
+  button{font-family:inherit;font-size:13px;cursor:pointer;border:1px solid var(--line-hard);
+         background:var(--surface);color:var(--ink);padding:7px 13px;border-radius:2px;}
+  button:hover{background:var(--surface-2);}
+  button:focus-visible{outline:2px solid var(--steel);outline-offset:2px;}
+  button.pri{background:var(--steel);border-color:var(--steel);color:#fff;font-weight:600;}
+  button.pri:hover{filter:brightness(1.08);}
+  button.mini{padding:1px 8px;font-family:"IBM Plex Mono",monospace;font-size:14px;line-height:1.5;}
+  button.gh{border-style:dashed;color:var(--muted);}
+  button:disabled{opacity:.45;cursor:not-allowed;}
+  .bar{display:flex;gap:9px;flex-wrap:wrap;align-items:center;}
+  .bar .spacer{flex:1;}
+  .status{font-size:12px;color:var(--muted);font-family:"IBM Plex Mono",monospace;}
+  .status.ok{color:var(--go);} .status.bad{color:var(--alert);}
+
+  .items{display:flex;flex-wrap:wrap;gap:7px;padding:10px 14px;}
+  .it{display:flex;align-items:center;gap:7px;background:var(--surface-2);
+      border-left:3px solid var(--k1);padding:5px 8px;font-size:12px;}
+  .it .lb{font-family:"IBM Plex Mono",monospace;font-weight:600;min-width:26px;}
+  .it .qt{font-family:"IBM Plex Mono",monospace;width:34px;text-align:center;font-weight:600;}
+  .it .sub{color:var(--muted);font-size:10.5px;white-space:nowrap;}
+  .it .x{border:none;background:none;color:var(--muted);padding:0 2px;font-size:15px;line-height:1;}
+  .it .x:hover{color:var(--alert);background:none;}
+  .add{display:flex;gap:7px;padding:0 14px 12px;flex-wrap:wrap;align-items:center;}
+  select{font-family:"IBM Plex Mono",monospace;font-size:12.5px;padding:5px 7px;
+         border:1px solid var(--line-hard);background:var(--surface-2);color:var(--ink);}
+  select:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .warnbox{display:flex;gap:9px;padding:9px 14px;background:var(--alert-soft);font-size:12.5px;
+           border-top:1px solid var(--line);}
+  .warnbox b{color:var(--alert);}
+
+  .grid{display:grid;grid-template-columns:1fr 290px;gap:18px;align-items:start;}
+  @media (max-width:880px){.grid{grid-template-columns:1fr;}}
+  .panel{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);}
+  .ph{padding:10px 14px;border-bottom:1px solid var(--line);
+      font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:17px;text-transform:uppercase;}
+  .pb{padding:12px 14px;}
+  .hint{font-size:11.5px;color:var(--muted);padding:0 14px 12px;}
+  .inv{display:flex;flex-direction:column;gap:6px;}
+  .ir{display:grid;grid-template-columns:16px 1fr auto;gap:9px;align-items:center;font-size:12.5px;}
+  .ir .sw{width:13px;height:13px;}
+  .ir .nm{display:flex;flex-direction:column;line-height:1.25;}
+  .ir .nm b{font-family:"IBM Plex Mono",monospace;font-size:12.5px;}
+  .ir .nm span{color:var(--muted);font-size:11px;}
+  .ir .ct{font-family:"IBM Plex Mono",monospace;font-size:12.5px;text-align:right;white-space:nowrap;}
+  .ir .ct.done{color:var(--go);} .ir .ct.over{color:var(--alert);font-weight:600;}
+  .invbar{height:5px;background:var(--surface-3);grid-column:2/4;margin-top:-3px;}
+  .invbar i{display:block;height:100%;background:var(--go);}
+  .invbar i.over{background:var(--alert);}
+  .cfg{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;font-size:12.5px;}
+  .cfg label{color:var(--muted);}
+  .cfg input{width:76px;font-family:"IBM Plex Mono",monospace;font-size:12.5px;padding:4px 6px;
+             border:1px solid var(--line-hard);background:var(--surface-2);color:var(--ink);text-align:right;}
+  .cfg input:focus-visible{outline:2px solid var(--steel);outline-offset:1px;}
+  .lamv{font-size:13px;margin-bottom:3px;}
+  .lamv b{font-family:"Barlow Condensed",sans-serif;font-size:25px;font-weight:700;
+          line-height:1;margin-right:5px;color:var(--steel);}
+  .lamsub{font-size:11.5px;color:var(--muted);margin-top:6px;line-height:1.45;}
+
+  footer{color:var(--muted);font-size:11.5px;border-top:1px solid var(--line);padding-top:13px;line-height:1.8;}
+  [hidden]{display:none !important;}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="kicker">Hiperpack · Amazon MID · Mérida</div>
+    <h1>Embarque MID</h1>
+    <p class="lede">Corrugado para las 3,200 bahías del centro de distribución de Mérida:
+      qué se envía, en cuántas tarimas, de qué medida y en cuántos camiones.
+      En la pestaña <b>Planear</b> se puede mover la carga y probar escenarios.</p>
+    <div class="facts" id="facts"></div>
+  </header>
+
+  <div class="tabs">
+    <button id="tab-doc" class="on">Documento</button>
+    <button id="tab-plan">Planear</button>
+  </div>
+
+  <!-- ============ DOCUMENTO ============ -->
+  <div class="pane" id="pane-doc">
+    <section class="sec">
+      <div class="sechead"><h2>Material y unidad de carga</h2></div>
+      <div class="note ok">
+        <span class="tag">Cartón</span>
+        <p><b>Flauta B · 32 ECT · virgen / virgen · 3.0 mm de espesor.</b>
+          Las piezas viajan troqueladas y acostadas, sin armar.</p>
+      </div>
+      <div class="unit">
+        <svg viewBox="0 0 100 120" style="width:100%;max-width:130px;height:auto;">
+          <rect x="14" y="14" width="72" height="44" fill="var(--k1)" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+          <rect x="14" y="58" width="72" height="44" fill="var(--k2)" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+          <rect x="10" y="102" width="80" height="9" fill="var(--muted)" stroke="rgba(0,0,0,.3)" stroke-width="1"/>
+          <text x="50" y="40" font-size="10" font-family="IBM Plex Mono, monospace" font-weight="600"
+                text-anchor="middle" fill="#fff" id="svg-lp1">366 lám</text>
+          <text x="50" y="84" font-size="10" font-family="IBM Plex Mono, monospace" font-weight="600"
+                text-anchor="middle" fill="#fff" id="svg-lp2">366 lám</text>
+          <text x="50" y="117" font-size="9" font-family="IBM Plex Mono, monospace"
+                text-anchor="middle" fill="var(--muted)">tarima</text>
+          <line x1="93" y1="14" x2="93" y2="102" stroke="var(--ink)" stroke-width="1"/>
+          <text x="97" y="60" font-size="9" font-family="IBM Plex Mono, monospace" fill="var(--ink)"
+                text-anchor="middle" transform="rotate(90 97 60)" id="svg-alto">2.20 m</text>
+        </svg>
+        <div id="unittxt"></div>
+      </div>
+    </section>
+
+    <section class="sec">
+      <div class="sechead"><h2>Desglose por código</h2>
+        <p>Cada código es una pieza distinta del sistema de bahías.</p></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Código</th><th>Pieza</th><th>Medida de lámina</th>
+          <th class="r">Láminas</th><th class="r">Pacas</th><th class="r">Tarimas</th>
+          <th class="r">Peso por tarima</th></tr></thead>
+        <tbody id="cods"></tbody></table></div>
+    </section>
+
+    <section class="sec">
+      <div class="sechead"><h2>Tarimas requeridas</h2>
+        <p>Agrupadas por medida. La mínima es la de la lámina; la sugerida deja 5 cm de holgura por lado.</p></div>
+      <div class="tblwrap"><table>
+        <thead><tr><th>Medida mínima</th><th>Medida sugerida</th><th>Códigos que la usan</th>
+          <th class="r">Tarimas</th></tr></thead>
+        <tbody id="tarimas"></tbody></table></div>
+    </section>
+
+    <section class="sec">
+      <div class="sechead"><h2>Programa de camiones</h2>
+        <p>Piso de cada camión visto desde arriba, a escala. Recepción en Mérida martes, jueves y sábado.</p></div>
+      <div class="note">
+        <span class="tag">Holgura</span>
+        <p>Los camiones van al <b>79% de piso en promedio</b>, no llenos. Preferimos que sobre espacio
+          a que se quede material en el andén: si una tarima sale más alta, si el cartón se esponja
+          o si hay que meter algo de última hora, hay lugar. El último camión va como reserva.</p>
+      </div>
+      <div class="note" style="border-left-color:var(--go);background:var(--go-soft);">
+        <span class="tag" style="color:var(--go)">Pruébalo</span>
+        <p style="flex:1">Este plan no está cerrado. Súbele la ocupación de los camiones, junta viajes
+          o reacomoda la carga y mira cuántos camiones salen — todo se recalcula solo.
+          <br><button id="goplan" style="margin-top:9px">Abrir el planificador →</button></p>
+      </div>
+      <div id="docTrucks"></div>
+    </section>
+  </div>
+
+  <!-- ============ PLANEAR ============ -->
+  <div class="pane" id="pane-plan" hidden>
+    <div class="note" style="border-left-color:var(--go);background:var(--go-soft);">
+      <span class="tag" style="color:var(--go)">Abierto</span>
+      <p>Cualquiera puede mover la carga aquí y ver el resultado al instante — nada se rompe.
+        Tus cambios se guardan solos en este navegador, así que puedes cerrar y volver.
+        Cuando tengas una distribución que te guste, dale <b>Copiar escenario</b>: te da un texto corto
+        que mandas por correo o WhatsApp, y del otro lado se pega con <b>Pegar escenario</b> y se ve igualita.</p>
+    </div>
+    <div class="bar">
+      <button class="pri" id="save">Guardar en mi navegador</button>
+      <button id="copy">Copiar escenario</button>
+      <button id="paste">Pegar escenario</button>
+      <button id="addtk">+ Camión</button>
+      <button id="pack">Acomodar automático</button>
+      <button class="gh" id="reset">Restaurar sugerido</button>
+      <span class="spacer"></span>
+      <span class="status" id="st"></span>
+    </div>
+    <div class="grid">
+      <div id="planTrucks"></div>
+      <div style="display:flex;flex-direction:column;gap:15px;">
+        <div class="panel">
+          <div class="ph">Láminas</div>
+          <div class="pb"><div id="lam"></div></div>
+          <div class="hint">Flauta B, 32 ECT, virgen / virgen.</div>
+        </div>
+        <div class="panel">
+          <div class="ph">Inventario</div>
+          <div class="pb"><div class="inv" id="inv"></div></div>
+          <div class="hint">Tarimas asignadas contra las que pide el proyecto.</div>
+        </div>
+        <div class="panel">
+          <div class="ph">Supuestos</div>
+          <div class="pb"><div class="cfg" id="cfg"></div></div>
+          <div class="hint">Cambia cualquiera y todo se recalcula.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Cartón flauta B, 32 ECT, virgen / virgen · 3.0 mm · piezas troqueladas y acostadas ·
+    paca de 110 cm, dos pacas por tarima · caja seca de 53 pies, interior 16.15 × 2.59 m,
+    altura útil de estiba 2.60 m.<br>
+    Los pesos son estimados a partir del gramaje del cartón y están sujetos a confirmación.
+  </footer>
+</div>
+
+<script>
+(function(){
+"use strict";
+var COD=["B1","B2","B3","B4","E1","E2","E3","E4","E5","E6"];
+var DIM={B1:[1.42,1.29],B2:[0.43,0.95],B3:[1.30,0.88],B4:[1.41,1.26],
+         E1:[1.36,0.99],E2:[1.17,1.91],E3:[1.17,1.91],E4:[1.58,1.25],
+         E5:[0.92,0.93],E6:[1.41,1.26]};
+var QTY={B1:72960,B2:72960,B3:72960,B4:12160,E1:5760,E2:960,E3:960,E4:1920,E5:960,E6:640};
+var NOM={B1:"Bloque L",B2:"Divisor bloque L",B3:"Cajón",B4:"Sheld N",
+         E1:"Drawer",E2:"Lower",E3:"Upper",E4:"Entrepaño",E5:"Separadores",E6:"Sheld N"};
+var COL={B1:"--k1",B2:"--k5",B3:"--k2",B4:"--k4",E1:"--k1",E2:"--k2",E3:"--k3",
+         E4:"--k4",E5:"--k5",E6:"--steel"};
+var PALE={B2:1,E3:1,E5:1};
+function cv(t){return "var("+t+")";}
+function nf(n){return n.toLocaleString("es-MX");}
+
+var CFGDEF=[["L","Largo interior",16.15,"m"],["W","Ancho interior",2.59,"m"],
+            ["HU","Altura útil",2.60,"m"],["PH","Alto de paca",1.10,"m"],
+            ["PT","Pacas por tarima",2,""],["ESP","Espesor cartón",3.0,"mm"],
+            ["KG","Peso cartón",0.50,"kg/m²"],["MAX","Carga máxima",22,"ton"],
+            ["OBJ","Ocupación objetivo",85,"%"]];
+var DEFAULT={cfg:{},plan:[
+  [["B1",18],["B2",18]],[["B1",18]],[["B1",18]],[["B1",18]],[["B1",18]],
+  [["B1",10],["B2",36]],[["B2",46],["B3",8]],[["B3",20]],[["B3",20]],[["B3",20]],
+  [["B3",20]],[["B3",12],["B4",8]],[["B4",9],["E1",8]],
+  [["E2",2],["E3",2],["E4",3],["E5",2],["E6",1]]]};
+CFGDEF.forEach(function(c){DEFAULT.cfg[c[0]]=c[2];});
+
+var KEY="hp_mid_embarque_v1", TABKEY="hp_mid_tab";
+var S=null, artifactNs=undefined;
+function clone(o){return JSON.parse(JSON.stringify(o));}
+function persist(){try{localStorage.setItem(KEY,JSON.stringify(S));}catch(e){}}
+
+/* ---- cálculo ---- */
+function lamPaca(){return Math.floor(S.cfg.PH/(S.cfg.ESP/1000));}
+function lamTarima(){return lamPaca()*S.cfg.PT;}
+function altoTarima(){return S.cfg.PH*S.cfg.PT;}
+function m2(c){return DIM[c][0]*DIM[c][1];}
+function pacas(c){return Math.ceil(QTY[c]/lamPaca());}
+function tarProy(c){return Math.ceil(pacas(c)/S.cfg.PT);}
+function orient(c){
+  var a=DIM[c][0],b=DIM[c][1],best=null;
+  [[a,b,"a lo largo"],[b,a,"girada"]].forEach(function(o){
+    var ac=Math.floor(S.cfg.W/o[1]); if(ac<1) return;
+    var tot=ac*Math.floor(S.cfg.L/o[0]);
+    if(!best||tot>best.tot) best={lar:o[0],anc:o[1],ori:o[2],ac:ac,tot:tot};
+  });
+  return best||{lar:a,anc:b,ori:"—",ac:0,tot:0};
+}
+function calcTruck(items){
+  var x=0,lam=0,peso=0,tar=0,z=[];
+  items.forEach(function(it){
+    var c=it[0],n=it[1],o=orient(c),filas=Math.ceil(n/Math.max(o.ac,1));
+    z.push({cod:c,n:n,o:o,filas:filas,x0:x});
+    x+=filas*o.lar; tar+=n; lam+=n*lamTarima(); peso+=n*lamTarima()*m2(c)*S.cfg.KG/1000;
+  });
+  return {largo:x,piso:x/S.cfg.L,lam:lam,peso:peso,tar:tar,z:z,
+          cabe:x<=S.cfg.L+0.001,altoOk:altoTarima()<=S.cfg.HU+0.001};
+}
+/* fechas: primero sale 28/08 llega 31/08; luego martes, jueves y sábado */
+function fechas(n){
+  var out=[[new Date(2026,7,28),new Date(2026,7,31)]];
+  var cur=new Date(2026,8,1);
+  while(out.length<n){
+    var d=cur.getDay();
+    if((d===2||d===4||d===6)&&cur>out[out.length-1][1]){
+      var s=new Date(cur); s.setDate(s.getDate()-3);
+      out.push([s,new Date(cur)]);
+    }
+    cur.setDate(cur.getDate()+1);
+  }
+  return out;
+}
+var DIAS=["dom","lun","mar","mié","jue","vie","sáb"];
+function fmt(d){return ("0"+d.getDate()).slice(-2)+"/"+("0"+(d.getMonth()+1)).slice(-2);}
+
+/* ---- dibujo del piso ---- */
+function floorSvg(k){
+  var rects="";
+  k.z.forEach(function(z){
+    var p=0;
+    for(var f=0;f<z.filas;f++){
+      for(var a=0;a<z.o.ac&&p<z.n;a++,p++){
+        rects+='<rect x="'+(z.x0+f*z.o.lar).toFixed(3)+'" y="'+(a*z.o.anc).toFixed(3)+'" width="'+
+          Math.max(z.o.lar-0.03,0.05).toFixed(3)+'" height="'+Math.max(z.o.anc-0.03,0.05).toFixed(3)+
+          '" fill="'+cv(COL[z.cod])+'" stroke="rgba(0,0,0,.25)" stroke-width="0.015"/>';
+      }
+    }
+    if(k.z.length>1&&z.filas*z.o.lar>0.9){
+      rects+='<text x="'+(z.x0+z.filas*z.o.lar/2).toFixed(2)+'" y="'+(S.cfg.W/2).toFixed(2)+
+        '" font-size="0.40" font-family="IBM Plex Mono, monospace" font-weight="600" '+
+        'text-anchor="middle" dominant-baseline="central" fill="'+
+        (PALE[z.cod]?"#4A3316":"#fff")+'">'+z.cod+'</text>';
+    }
+  });
+  if(k.largo<S.cfg.L){
+    rects+='<rect x="'+k.largo.toFixed(2)+'" y="0" width="'+Math.max(S.cfg.L-k.largo,0).toFixed(2)+
+      '" height="'+S.cfg.W+'" fill="none" stroke="var(--line-hard)" stroke-width="0.02" stroke-dasharray="0.12 0.1"/>';
+  }
+  return '<div class="flab"><span>← FRENTE</span><span>'+S.cfg.L.toFixed(2)+' × '+S.cfg.W.toFixed(2)+
+    ' m · tarimas de '+altoTarima().toFixed(2)+' m</span><span>PUERTAS →</span></div>'+
+    '<svg class="floor" viewBox="0 0 '+S.cfg.L+' '+S.cfg.W+'" preserveAspectRatio="xMidYMid meet">'+rects+'</svg>';
+}
+function met(l,v,cl){return '<div class="m"><span class="ml">'+l+'</span><span class="mv'+
+  (cl?" "+cl:"")+'">'+v+'</span></div>';}
+
+/* ---- render ---- */
+function render(){
+  var F=fechas(S.plan.length);
+  var totTar=0,totLam=0,totPeso=0,malos=0;
+  S.plan.forEach(function(it){var k=calcTruck(it);totTar+=k.tar;totLam+=k.lam;totPeso+=k.peso;
+    if(!k.cabe||!k.altoOk)malos++;});
+
+  document.getElementById("facts").innerHTML=
+    fact("Láminas",nf(COD.reduce(function(a,c){return a+QTY[c];},0)))+
+    fact("Tarimas",totTar)+fact("Camiones",S.plan.length)+
+    fact("Peso total",Math.round(totPeso)+"<small> ton</small>");
+
+  /* --- documento --- */
+  document.getElementById("svg-lp1").textContent=nf(lamPaca())+" lám";
+  document.getElementById("svg-lp2").textContent=nf(lamPaca())+" lám";
+  document.getElementById("svg-alto").textContent=altoTarima().toFixed(2)+" m";
+  document.getElementById("unittxt").innerHTML=
+    ustep("Paca",S.cfg.PH*100+" cm de cartón acostado = <b>"+nf(lamPaca())+" láminas</b>")+
+    ustep("Tarima",S.cfg.PT+" pacas encimadas = <b>"+nf(lamTarima())+" láminas</b> · <b>"+
+      altoTarima().toFixed(2)+" m</b> de alto")+
+    ustep("Huella","la de la lámina — las piezas desbordan una tarima estándar, "+
+      "por eso cada código lleva su propia medida")+
+    ustep("Camión","caja seca de 53 pies · interior <b>"+S.cfg.L.toFixed(2)+" × "+
+      S.cfg.W.toFixed(2)+" m</b>");
+
+  var tb=document.getElementById("cods"); tb.innerHTML="";
+  var tl=0,tt=0;
+  COD.forEach(function(c){
+    tl+=QTY[c]; tt+=tarProy(c);
+    tb.innerHTML+='<tr><td><span class="chip" style="background:'+cv(COL[c])+'"></span>'+
+      '<span class="cd">'+c+'</span></td><td>'+NOM[c]+'</td>'+
+      '<td class="cd">'+DIM[c][0].toFixed(2)+' × '+DIM[c][1].toFixed(2)+' m</td>'+
+      '<td class="r">'+nf(QTY[c])+'</td><td class="r">'+pacas(c)+'</td>'+
+      '<td class="r"><b>'+tarProy(c)+'</b></td>'+
+      '<td class="r">'+nf(Math.round(lamTarima()*m2(c)*S.cfg.KG))+' kg</td></tr>';
+  });
+  tb.innerHTML+='<tr class="tot"><td colspan="3">Total</td><td class="r">'+nf(tl)+
+    '</td><td class="r"></td><td class="r">'+tt+'</td><td class="r"></td></tr>';
+
+  var g={};
+  COD.forEach(function(c){
+    var a=Math.max(DIM[c][0],DIM[c][1]),b=Math.min(DIM[c][0],DIM[c][1]);
+    var k=a.toFixed(2)+"x"+b.toFixed(2);
+    if(!g[k]) g[k]={a:a,b:b,n:0,c:[]};
+    g[k].n+=tarProy(c); g[k].c.push(c);
+  });
+  var tb2=document.getElementById("tarimas"); tb2.innerHTML=""; var t2=0;
+  Object.keys(g).map(function(k){return g[k];}).sort(function(x,y){return y.n-x.n;})
+   .forEach(function(v){
+    t2+=v.n;
+    tb2.innerHTML+='<tr><td class="cd">'+v.a.toFixed(2)+' × '+v.b.toFixed(2)+' m</td>'+
+      '<td class="cd">'+(v.a+0.05).toFixed(2)+' × '+(v.b+0.05).toFixed(2)+' m</td><td>'+
+      v.c.map(function(c){return '<span class="chip" style="background:'+cv(COL[c])+'"></span>'+
+        c+' · '+NOM[c];}).join("&nbsp;&nbsp; ")+'</td><td class="r"><b>'+v.n+'</b></td></tr>';
+  });
+  tb2.innerHTML+='<tr class="tot"><td colspan="3">Total de tarimas</td><td class="r">'+t2+'</td></tr>';
+
+  var dh=document.getElementById("docTrucks"); dh.innerHTML="";
+  S.plan.forEach(function(items,i){
+    var k=calcTruck(items);
+    dh.innerHTML+='<div class="tk"><div class="tkh"><div class="tkn">'+(i+1)+'</div>'+
+      '<div class="tkm">'+met("Tarimas",k.tar)+met("Láminas",nf(k.lam))+
+      met("Piso",Math.round(k.piso*100)+"%")+met("Peso",k.peso.toFixed(1)+" t")+
+      met("Llega a Mérida",fmt(F[i][1])+" "+DIAS[F[i][1].getDay()])+'</div></div>'+
+      floorSvg(k)+'<div class="zl">'+items.map(function(it){
+        return '<span class="zz" style="border-left-color:'+cv(COL[it[0]])+'"><b>'+it[0]+'</b> · '+
+          NOM[it[0]]+' <span>· '+it[1]+' tarimas · '+nf(it[1]*lamTarima())+' láminas</span></span>';
+      }).join("")+'</div></div>';
+  });
+
+  /* --- planear --- */
+  var ph=document.getElementById("planTrucks"); ph.innerHTML="";
+  S.plan.forEach(function(items,i){
+    var k=calcTruck(items);
+    var its=items.map(function(it,j){
+      var o=orient(it[0]);
+      return '<div class="it" style="border-left-color:'+cv(COL[it[0]])+'">'+
+        '<span class="lb">'+it[0]+'</span>'+
+        '<button class="mini" data-a="dec" data-t="'+i+'" data-i="'+j+'" aria-label="Quitar tarima">−</button>'+
+        '<span class="qt">'+it[1]+'</span>'+
+        '<button class="mini" data-a="inc" data-t="'+i+'" data-i="'+j+'" aria-label="Agregar tarima">+</button>'+
+        '<span class="sub">'+Math.ceil(it[1]/Math.max(o.ac,1))+'×'+o.ac+' · '+nf(it[1]*lamTarima())+' lám</span>'+
+        '<button class="x" data-a="del" data-t="'+i+'" data-i="'+j+'" aria-label="Quitar código">×</button></div>';
+    }).join("");
+    var libres=COD.filter(function(c){return !items.some(function(it){return it[0]===c;});});
+    var el=document.createElement("div");
+    el.className="tk"+((!k.cabe||!k.altoOk)?" bad":"");
+    el.innerHTML='<div class="tkh"><div class="tkn">'+(i+1)+'</div><div class="tkm">'+
+      met("Tarimas",k.tar)+met("Láminas",nf(k.lam))+
+      met("Piso",Math.round(k.piso*100)+"%",k.cabe?(k.piso>S.cfg.OBJ/100?"warn":""):"hot")+
+      met("Peso",k.peso.toFixed(1)+" t",k.peso>S.cfg.MAX?"hot":"")+
+      met("Llega",fmt(F[i][1])+" "+DIAS[F[i][1].getDay()])+'</div>'+
+      '<button data-a="rmtk" data-t="'+i+'">Eliminar</button></div>'+
+      floorSvg(k)+
+      '<div class="items">'+(its||'<span style="color:var(--muted);font-size:12px">Camión vacío</span>')+'</div>'+
+      '<div class="add">'+(libres.length?'<select data-t="'+i+'">'+
+        libres.map(function(c){return '<option value="'+c+'">'+c+' · '+NOM[c]+'</option>';}).join("")+
+        '</select><button data-a="add" data-t="'+i+'">Agregar código</button>'+
+        '<button data-a="fill" data-t="'+i+'">Llenar con lo que quepa</button>':'')+'</div>'+
+      (!k.cabe?'<div class="warnbox"><b>No cabe.</b>&nbsp;Se pasa '+(k.largo-S.cfg.L).toFixed(2)+
+        ' m del largo del camión.</div>':'')+
+      (!k.altoOk?'<div class="warnbox"><b>La tarima no cabe de alto.</b>&nbsp;'+altoTarima().toFixed(2)+
+        ' m contra '+S.cfg.HU.toFixed(2)+' m útiles.</div>':'');
+    ph.appendChild(el);
+  });
+
+  document.getElementById("lam").innerHTML=
+    '<div class="lamv"><b>'+nf(lamPaca())+'</b> láminas por paca</div>'+
+    '<div class="lamv"><b>'+nf(lamTarima())+'</b> láminas por tarima</div>'+
+    '<div class="lamsub">'+altoTarima().toFixed(2)+' m de alto · una tarima de B1 pesa '+
+    nf(Math.round(lamTarima()*m2("B1")*S.cfg.KG))+' kg</div>';
+
+  document.getElementById("inv").innerHTML=COD.map(function(c){
+    var a=asignadas(c),t=tarProy(c),p=t?Math.min(a/t,1.4):0;
+    return '<div class="ir"><span class="sw" style="background:'+cv(COL[c])+'"></span>'+
+      '<span class="nm"><b>'+c+'</b><span>'+NOM[c]+'</span></span>'+
+      '<span class="ct '+(a===t?"done":(a>t?"over":""))+'">'+a+' / '+t+'</span></div>'+
+      '<div class="invbar"><i class="'+(a>t?"over":"")+'" style="width:'+Math.min(p*100,100)+'%"></i></div>';
+  }).join("");
+
+  var st=document.getElementById("st");
+  var falt=COD.filter(function(c){return asignadas(c)!==tarProy(c);});
+  if(malos){st.textContent=malos+" camión(es) no cierran"; st.className="status bad";}
+  else if(falt.length){st.textContent="Faltan por cuadrar: "+falt.join(", "); st.className="status";}
+  else {st.textContent="Plan completo y todo cabe"; st.className="status ok";}
+}
+function fact(l,v){return '<div class="fact"><div class="l">'+l+'</div><div class="v">'+v+'</div></div>';}
+function ustep(a,b){return '<div class="ustep"><span class="un">'+a+'</span><span>'+b+'</span></div>';}
+function asignadas(c){var n=0;S.plan.forEach(function(it){it.forEach(function(x){if(x[0]===c)n+=x[1];});});return n;}
+function renderCfg(){
+  document.getElementById("cfg").innerHTML=CFGDEF.map(function(c){
+    return '<label for="cfg_'+c[0]+'">'+c[1]+(c[3]?" ("+c[3]+")":"")+'</label>'+
+      '<input id="cfg_'+c[0]+'" type="number" step="0.01" min="0" value="'+S.cfg[c[0]]+'" data-c="'+c[0]+'">';
+  }).join("");
+}
+
+/* ---- acciones ---- */
+function cabeMas(items,c,objetivo){
+  var tope=objetivo?S.cfg.L*(S.cfg.OBJ/100):S.cfg.L;
+  var o=orient(c),k=calcTruck(items),libre=tope-k.largo;
+  var ya=items.filter(function(x){return x[0]===c;})[0];
+  if(ya){var fy=Math.ceil(ya[1]/Math.max(o.ac,1));
+    return Math.max((fy+Math.floor(libre/o.lar))*o.ac-ya[1],0);}
+  return Math.max(Math.floor(libre/o.lar)*o.ac,0);
+}
+function pend(c){return Math.max(tarProy(c)-asignadas(c),0);}
+
+document.addEventListener("click",function(e){
+  var b=e.target.closest("button"); if(!b||!b.dataset.a) return;
+  var a=b.dataset.a,t=+b.dataset.t,i=+b.dataset.i;
+  if(a==="inc") S.plan[t][i][1]++;
+  else if(a==="dec"){S.plan[t][i][1]--; if(S.plan[t][i][1]<1) S.plan[t].splice(i,1);}
+  else if(a==="del") S.plan[t].splice(i,1);
+  else if(a==="rmtk") S.plan.splice(t,1);
+  else if(a==="add"){
+    var sel=b.parentNode.querySelector("select"); if(!sel) return;
+    var c=sel.value;
+    S.plan[t].push([c,Math.min(Math.max(cabeMas(S.plan[t],c),1),Math.max(pend(c),1))]);
+  }
+  else if(a==="fill"){
+    COD.forEach(function(c){
+      var p=pend(c),cabe=cabeMas(S.plan[t],c,true),n=Math.min(p,cabe);
+      if(n<=0) return;
+      var ya=S.plan[t].filter(function(x){return x[0]===c;})[0];
+      if(ya) ya[1]+=n; else S.plan[t].push([c,n]);
+    });
+  } else return;
+  persist(); render();
+});
+document.getElementById("addtk").onclick=function(){S.plan.push([]);persist();render();};
+document.getElementById("reset").onclick=function(){
+  if(!confirm("¿Volver al plan sugerido? Se pierden tus cambios.")) return;
+  S=clone(DEFAULT); persist(); renderCfg(); render();
+};
+document.getElementById("pack").onclick=function(){
+  var p={}; COD.forEach(function(c){p[c]=tarProy(c);});
+  var plan=[],o1=orient("B1"),o2=orient("B2");
+  var y=Math.floor(S.cfg.L/(o1.lar*(o2.ac/o1.ac)+o2.lar));
+  var t1=Math.min(y*o2.ac,p.B1),t2=Math.min(y*o2.ac,p.B2);
+  if(t1>0&&t2>0){plan.push([["B1",t1],["B2",t2]]); p.B1-=t1; p.B2-=t2;}
+  COD.forEach(function(c){
+    while(p[c]>0){
+      var cam=null;
+      for(var i=1;i<plan.length;i++){if(cabeMas(plan[i],c,true)>0){cam=plan[i];break;}}
+      if(!cam){cam=[];plan.push(cam);}
+      var n=Math.min(p[c],cabeMas(cam,c,true));
+      if(n<=0){plan.push([]);continue;}
+      var ya=cam.filter(function(x){return x[0]===c;})[0];
+      if(ya) ya[1]+=n; else cam.push([c,n]);
+      p[c]-=n;
+    }
+  });
+  S.plan=plan; persist(); render();
+};
+document.addEventListener("input",function(e){
+  var c=e.target.dataset&&e.target.dataset.c; if(!c) return;
+  var v=parseFloat(e.target.value); if(isNaN(v)||v<=0) return;
+  S.cfg[c]=v; persist(); render();
+});
+
+/* ---- pestañas ---- */
+function tab(which){
+  var d=which==="doc";
+  document.getElementById("pane-doc").hidden=!d;
+  document.getElementById("pane-plan").hidden=d;
+  document.getElementById("tab-doc").className=d?"on":"";
+  document.getElementById("tab-plan").className=d?"":"on";
+  try{localStorage.setItem(TABKEY,which);}catch(e){}
+}
+document.getElementById("tab-doc").onclick=function(){tab("doc");};
+document.getElementById("tab-plan").onclick=function(){tab("plan");};
+document.getElementById("goplan").onclick=function(){
+  tab("plan"); window.scrollTo({top:0,behavior:"smooth"});
+};
+
+/* ---- copiar / pegar escenario ---- */
+function encode(){
+  var p=S.plan.map(function(t){
+    return t.map(function(x){return x[0]+":"+x[1];}).join(",");
+  }).join("|");
+  var d=[];
+  CFGDEF.forEach(function(c){ if(S.cfg[c[0]]!==c[2]) d.push(c[0]+"="+S.cfg[c[0]]); });
+  return "MID1|"+p+(d.length?"|#"+d.join(","):"");
+}
+function decode(txt){
+  var parts=String(txt).trim().split("|");
+  if(parts.shift()!=="MID1") throw new Error("formato");
+  var cfg=null;
+  if(parts.length&&parts[parts.length-1].charAt(0)==="#"){
+    cfg={}; parts.pop().slice(1).split(",").forEach(function(kv){
+      var a=kv.split("="); if(a.length===2){var v=parseFloat(a[1]); if(!isNaN(v)) cfg[a[0]]=v;}
+    });
+  }
+  var plan=parts.filter(function(s){return s.length;}).map(function(seg){
+    return seg.split(",").filter(function(s){return s.length;}).map(function(it){
+      var a=it.split(":"), c=a[0], n=parseInt(a[1],10);
+      if(COD.indexOf(c)<0||!(n>0)) throw new Error("código");
+      return [c,n];
+    });
+  });
+  if(!plan.length) throw new Error("vacío");
+  return {plan:plan,cfg:cfg};
+}
+document.getElementById("copy").onclick=async function(){
+  var code=encode();
+  try{
+    await navigator.clipboard.writeText(code);
+    setSt("Escenario copiado — pégalo en un correo o WhatsApp","ok");
+  }catch(e){
+    window.prompt("Copia este texto y mándalo:",code);
+    setSt("Escenario listo para copiar");
+  }
+};
+document.getElementById("paste").onclick=function(){
+  var txt=window.prompt("Pega aquí el escenario que te mandaron:");
+  if(!txt) return;
+  try{
+    var r=decode(txt);
+    S.plan=r.plan;
+    if(r.cfg) CFGDEF.forEach(function(c){ S.cfg[c[0]]=(c[0] in r.cfg)?r.cfg[c[0]]:c[2]; });
+    persist(); renderCfg(); render();
+    setSt("Escenario cargado: "+r.plan.length+" camiones","ok");
+  }catch(e){
+    setSt("Ese texto no es un escenario válido","bad");
+  }
+};
+
+/* ---- guardar ---- */
+function setSt(t,cl){var s=document.getElementById("st");s.textContent=t;s.className="status"+(cl?" "+cl:"");}
+document.getElementById("save").onclick=async function(){
+  var btn=this; btn.disabled=true; setSt("Guardando…"); persist();
+  try{
+    if(artifactNs===undefined){
+      artifactNs=(window.claude&&window.claude.use)?await window.claude.use("artifact"):null;
+    }
+    if(!artifactNs){setSt("Guardado en este navegador","ok"); btn.disabled=false; return;}
+    await artifactNs.publish({"data/plan.json":JSON.stringify(S)});
+    setSt("Plan guardado en la página","ok");
+  }catch(err){
+    var c=err&&err.code;
+    if(c==="conflict") setSt("Alguien guardó primero; la página se recarga");
+    else if(c==="not_writer"||c==="not_granted"||c==="capability_disabled")
+      setSt("Solo lectura: quedó guardado en este navegador");
+    else setSt("No se pudo fijar en la página; quedó guardado aquí","bad");
+  }
+  btn.disabled=false;
+};
+
+/* ---- arranque ---- */
+(async function(){
+  var remoto=null;
+  try{var r=await fetch("data/plan.json",{cache:"no-store"});
+    if(r.ok){var j=await r.json(); if(j&&j.plan) remoto=j;}}catch(e){}
+  if(!remoto){try{var s=localStorage.getItem(KEY); if(s){var p=JSON.parse(s); if(p&&p.plan) remoto=p;}}catch(e){}}
+  S=remoto||clone(DEFAULT);
+  CFGDEF.forEach(function(c){if(typeof S.cfg[c[0]]!=="number") S.cfg[c[0]]=c[2];});
+  renderCfg(); render();
+  var t=null; try{t=localStorage.getItem(TABKEY);}catch(e){}
+  tab(t==="plan"?"plan":"doc");
+})();
+})();
+</script>
+
+</body>
+</html>

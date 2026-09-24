@@ -505,7 +505,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-      <div class="topbar-title">Flujos Eugenio</div>
+      <div class="topbar-title">Flujos Eugenio <span style="font-size:10px;color:var(--text3);font-weight:500;">v4.0</span></div>
       <div id="privacy-btn" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.6;" title="Ocultar números">👁</div>
     </div>
     <div class="user-toggle">
@@ -1224,7 +1224,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Auto-refresh cada 10 segundos con protección contra operaciones en curso
   // (2s saturaba las cuotas de Apps Script y provocaba fallas de sync)
-  setInterval(autoSync, 10000);
+  // ★ v4: de 10s a 45s. Con sync incremental el payload es diminuto, y
+  //   además sincronizamos al volver a la app, que es cuando de verdad
+  //   importa ver lo que capturó Andrea.
+  setInterval(autoSync, 45000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(); });
+  window.addEventListener('online', () => autoSync());
 });
 
 // NAV
@@ -1429,36 +1434,52 @@ function enviarAlSheet(regs, btn) {
     soloLocal.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
   }
 
-  const doFetch = paraSheet.length > 0
-    ? fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: paraSheet }) }).then(r => r.json())
-    : Promise.resolve({ ok: true });
+  // ══ GUARDADO OPTIMISTA (v4) ═══════════════════════════════════════
+  // Antes: el botón se quedaba en "Guardando..." hasta que el servidor
+  // contestaba (1 a 3 segundos, más si había syncs en cola). Ahora el
+  // registro aparece YA y la subida ocurre en segundo plano.
+  paraSheet.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
+  ordenarRegistros(allRecords);
+  saveLocal();
+  resetForm();
+  btn.classList.remove('loading');
+  btn.textContent = 'Guardar registro';
 
-  doFetch
-  .then(() => {
-    paraSheet.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
-    saveLocal(); resetForm();
-    btn.classList.remove('loading'); btn.textContent = 'Guardar registro';
-    const programados = soloLocal.length;
-    const ejecutados  = paraSheet.length;
-    // Aplicar pago a deuda si se vinculó (por registro, solo los ya operados)
-    // FIX v3.3: antes esto tronaba con "monto is not defined" y el saldo de la
-    // deuda nunca bajaba, mostrando "Error al conectar con Sheets" por error.
-    const todayPago = hoy();
-    regs.forEach(r => {
-      if (r.agrupador && String(r.agrupador).indexOf('DEUDA:') === 0 && r.fecha <= todayPago) {
-        aplicarPagoADeuda(String(r.agrupador).slice(6), Math.abs(parseFloat(r.monto) || 0), r);
-      }
-    });
-
-    if (programados > 0) {
-      showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
-    } else {
-      showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
+  // Aplicar pago a deuda si se vinculó (solo los ya operados)
+  const todayPago = hoy();
+  regs.forEach(r => {
+    if (r.agrupador && String(r.agrupador).indexOf('DEUDA:') === 0 && r.fecha <= todayPago) {
+      aplicarPagoADeuda(String(r.agrupador).slice(6), Math.abs(parseFloat(r.monto) || 0), r);
     }
-    showPage('list');
-    renderDeudas();
-  })
-  .catch(() => { btn.classList.remove('loading'); btn.textContent = 'Guardar registro'; showToast('Error al conectar con Sheets', 'error'); });
+  });
+
+  const programados = soloLocal.length;
+  const ejecutados  = paraSheet.length;
+  if (programados > 0) {
+    showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
+  } else {
+    showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
+  }
+  showPage('list');
+  renderDeudas();
+
+  // ── Subida en segundo plano. El usuario ya siguió con lo suyo. ──
+  if (paraSheet.length === 0) return;
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: paraSheet }) })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp && resp.ok) {
+        // Confirmar contra el servidor en la siguiente vuelta.
+        setTimeout(() => autoSync(), 1500);
+      } else {
+        encolarSubida(paraSheet);
+        showToast('Guardado local — se subirá al recuperar conexión', '');
+      }
+    })
+    .catch(() => {
+      encolarSubida(paraSheet);
+      showToast('Guardado local — se subirá al recuperar conexión', '');
+    });
 }
 
 // EJECUTAR RECURRENTES PENDIENTES DE CASH — corre al abrir la app y en cada sync
@@ -1904,7 +1925,7 @@ function renderRecords() {
   const byDate = {};
   past.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha] = []; byDate[r.fecha].push(r); });
   Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(date => {
-    const recs = byDate[date];
+    const recs = ordenarRegistros(byDate[date]); // ★ más reciente arriba dentro del día
     const grp = document.createElement('div'); grp.className = 'day-group';
     const dt = recs.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
     const hdr = document.createElement('div'); hdr.className = 'day-header';
@@ -2173,7 +2194,8 @@ function loadRecords() {
   renderDashboard();
 
   showToast('Sincronizando...', '');
-  fetch(APPS_SCRIPT_URL)
+  // ★ v4: '?v=2' pide el formato compacto (63% más ligero).
+  fetch(APPS_SCRIPT_URL + '?v=2')
     .then(r => r.json())
     .then(data => {
       if (!data.ok) return;
@@ -2202,25 +2224,16 @@ function loadRecords() {
 
       // Cargar registros — merge con locales pendientes
       if (data.rows) {
-        const sheetRecs = data.rows.map(r => ({
-          id:             String(r['ID'] || r['id'] || generateId()),
-          fecha:          formatSheetDate(r['FECHA OPERACI\u00d3N'] || r['FECHA OPERACION'] || r['fecha'] || ''),
-          hora:           String(r['HORA'] || r['hora'] || ''),
-          cartera:        String(r['CARTERA'] || r['cartera'] || ''),
-          tipo:           String(r['TIPO'] || r['tipo'] || ''),
-          categoria:      String(r['CATEGORIA'] || r['categor\u00eda'] || r['CATEGOR\u00cdA'] || r['categoria'] || ''),
-          monto:          parseFloat(r['MONTO'] || r['monto'] || 0),
-          fechaFlujo:     formatSheetDate(r['FECHA FLUJO'] || r['fechaFlujo'] || ''),
-          nota:           String(r['NOTA'] || r['nota'] || ''),
-          usuario:        String(r['USUARIO'] || r['usuario'] || ''),
-          carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
-          agrupador:      String(r['AGRUPADOR'] || r['agrupador'] || ''),
-          conciliado:     String(r['CONCILIADO'] || r['conciliado'] || '').toUpperCase() === 'X',
-        })).filter(r => r.fecha && r.cartera);
+        // ★ Antes aquí había una copia literal de parseSheetRow. Tener el
+        //   parser escrito dos veces fue justo lo que dejó fuera los campos
+        //   de transferencia. Ahora hay una sola fuente de verdad.
+        const sheetRecs = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera);
         const sheetIds = new Set(sheetRecs.map(r => r.id));
         const pending = allRecords.filter(r => !sheetIds.has(r.id));
         allRecords = [...pending, ...sheetRecs];
-        allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+        ordenarRegistros(allRecords);
+        ultimoSync = data.servidor || ultimoSync;
+        totalServidor = (typeof data.total === 'number') ? data.total : totalServidor;
         saveLocal();
       }
 
@@ -2237,6 +2250,10 @@ const pendingIds = new Set(); // IDs recién agregados, esperando que lleguen al
 const pendingConc = new Map(); // id → true/false de conciliado, esperando confirmación del Sheet
 let syncBusy = false;
 
+// ── Estado del sync incremental (v4) ──
+let ultimoSync = '';      // corte de reloj del servidor; '' = pedir todo
+let totalServidor = null; // filas que dice tener el servidor (detecta borrados)
+
 function parseSheetRow(r) {
   return {
     id:             String(r['ID'] || r['id'] || ''),
@@ -2252,31 +2269,121 @@ function parseSheetRow(r) {
     carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
     agrupador:      String(r['AGRUPADOR'] || r['agrupador'] || ''),
     conciliado:     String(r['CONCILIADO'] || r['conciliado'] || '').toUpperCase() === 'X',
+    // ★ FIX: sin estos dos campos, después de cada sync las transferencias
+    //   perdían el vínculo entre sus dos mitades y editar una sola dejaba
+    //   la otra intacta (dinero apareciendo o desapareciendo en silencio).
+    idTransferencia:    String(r['ID TRANSFERENCIA'] || r['idTransferencia'] || ''),
+    montoTransferencia: r['MONTO TRANSFERENCIA'] || r['montoTransferencia'] || '',
+    // Campos nuevos (v4): hoy vienen vacíos, los usará la etapa de MSI.
+    naturaleza:     String(r['NATURALEZA'] || r['naturaleza'] || ''),
+    msiGrupo:       String(r['MSI_GRUPO'] || r['msiGrupo'] || ''),
+    msiNum:         r['MSI_NUM'] || '',
+    msiPlazo:       r['MSI_PLAZO'] || '',
   };
 }
 
-function autoSync() {
+// ── Orden canónico: día más reciente arriba y, dentro del día, el
+//    movimiento más reciente arriba. Si un registro viejo no trae HORA,
+//    cae al id, que empieza con la fecha-hora en base36 y ordena solo.
+function ordenarRegistros(arr) {
+  return arr.sort(function(a, b) {
+    const f = String(b.fecha || '').localeCompare(String(a.fecha || ''));
+    if (f !== 0) return f;
+    const h = String(b.hora || '').localeCompare(String(a.hora || ''));
+    if (h !== 0) return h;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  });
+}
+
+// ── El backend v4 manda {cols:[...], rows:[[...]]} en vez de un objeto
+//    por fila (63% más ligero). Aquí se vuelve a armar como objetos para
+//    que el resto de la app siga funcionando sin cambios.
+function expandirCompacto(data) {
+  if (!data || !Array.isArray(data.rows)) return [];
+  if (!Array.isArray(data.cols) || !data.cols.length) return data.rows; // formato viejo
+  const cols = data.cols;
+  return data.rows.map(function(fila) {
+    const o = {};
+    for (var i = 0; i < cols.length; i++) o[cols[i]] = fila[i];
+    return o;
+  });
+}
+
+// ── Cola de subida: lo que no logró llegar al Sheet se guarda y se
+//    reintenta solo en el siguiente sync. Permite capturar sin señal.
+function encolarSubida(rows) {
+  let cola = [];
+  try { cola = JSON.parse(localStorage.getItem('flujos_cola_subida') || '[]'); } catch (e) {}
+  rows.forEach(function(r) { if (!cola.find(function(x) { return x.id === r.id; })) cola.push(r); });
+  try { localStorage.setItem('flujos_cola_subida', JSON.stringify(cola)); } catch (e) {}
+}
+
+function flushColaSubida() {
+  let cola = [];
+  try { cola = JSON.parse(localStorage.getItem('flujos_cola_subida') || '[]'); } catch (e) {}
+  if (!cola.length) return Promise.resolve();
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: cola }) })
+    .then(function(r) { return r.json(); })
+    .then(function(resp) {
+      if (resp && resp.ok) {
+        localStorage.removeItem('flujos_cola_subida');
+        showToast(cola.length + ' registro' + (cola.length !== 1 ? 's' : '') + ' sincronizado' + (cola.length !== 1 ? 's' : '') + ' ✓', 'success');
+      }
+    })
+    .catch(function() {});
+}
+
+function autoSync(forzarCompleto) {
   if (syncBusy) return;
   syncBusy = true;
-  fetch(APPS_SCRIPT_URL)
+
+  // Reintenta primero lo que quedó atorado sin señal.
+  flushColaSubida();
+
+  // ★ Sync incremental: si ya tenemos un corte del servidor, pedimos SOLO
+  //   lo que cambió desde entonces. En un minuto normal son 0 o 2 filas
+  //   en vez de los 4,267 registros completos.
+  const usarIncremental = !forzarCompleto && !!ultimoSync;
+  const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(ultimoSync) : '');
+
+  fetch(url)
     .then(r => r.json())
     .then(data => {
-      if (!data.ok || !data.rows) return;
-      const sheetRecs = data.rows.map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
-      const sheetIds = new Set(sheetRecs.map(r => r.id));
+      if (!data.ok) return;
 
-      // Limpiar deletedIds que ya no están en el Sheet (confirmados borrados)
-      deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
-      // Limpiar pendingIds que ya llegaron al Sheet
-      pendingIds.forEach(id => { if (sheetIds.has(id)) pendingIds.delete(id); });
+      const incremental = data.modo === 'incremental';
+      const recibidos = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
 
-      // Registros locales que aún no llegaron al Sheet (pendientes de guardar)
-      const localPending = allRecords.filter(r => pendingIds.has(r.id));
+      if (incremental) {
+        // El servidor dice cuántas filas tiene en total. Si no coincide con
+        // lo nuestro, alguien borró algo y el incremental no puede verlo:
+        // pedimos snapshot completo en la siguiente vuelta.
+        const mios = allRecords.filter(r => !r._pendiente).length;
+        if (typeof data.total === 'number' && data.total !== mios && recibidos.length === 0) {
+          ultimoSync = '';
+          syncBusy = false;
+          return autoSync(true);
+        }
+        if (recibidos.length === 0) {
+          ultimoSync = data.servidor || ultimoSync;
+          syncBusy = false;
+          return;
+        }
+        // Mezclar: lo recibido pisa lo que ya teníamos con el mismo id.
+        const nuevosIds = new Set(recibidos.map(r => r.id));
+        allRecords = [...recibidos, ...allRecords.filter(r => !nuevosIds.has(r.id))];
+        recibidos.forEach(r => pendingIds.delete(r.id));
+      } else {
+        const sheetIds = new Set(recibidos.map(r => r.id));
+        deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
+        pendingIds.forEach(id => { if (sheetIds.has(id)) pendingIds.delete(id); });
+        const localPending = allRecords.filter(r => pendingIds.has(r.id));
+        const sheetFiltered = recibidos.filter(r => !deletedIds.has(r.id));
+        allRecords = [...localPending, ...sheetFiltered];
+      }
 
-      // Del Sheet, excluir los que borramos localmente (aún no confirmados)
-      const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
-
-      allRecords = [...localPending, ...sheetFiltered];
+      ultimoSync = data.servidor || ultimoSync;
+      if (typeof data.total === 'number') totalServidor = data.total;
 
       // Re-agregar recurrentes pendientes de cash (no están en el Sheet)
       try {
@@ -2284,7 +2391,7 @@ function autoSync() {
         pendRec.forEach(r => { r._pendiente = true; if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
       } catch(e) {}
 
-      allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+      ordenarRegistros(allRecords);
 
       // Reaplicar conciliaciones que aún no confirma el Sheet
       pendingConc.forEach((val, id) => {
@@ -2296,9 +2403,9 @@ function autoSync() {
 
       saveLocal();
 
-      // Deudas: aceptar la versión del Sheet si no hay cambios locales sin subir
+      // Deudas: solo viajan en el snapshot completo
       let deudasCambiaron = false;
-      if (Array.isArray(data.deudas) && !deudasDirty && data.deudas.length > 0) {
+      if (!incremental && Array.isArray(data.deudas) && !deudasDirty && data.deudas.length > 0) {
         if (JSON.stringify(data.deudas) !== JSON.stringify(deudas)) {
           deudas = data.deudas;
           saveDeudas(false);

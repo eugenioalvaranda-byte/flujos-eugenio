@@ -121,7 +121,7 @@ select.field-input { cursor: pointer; }
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
   <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.2</span></div>
+    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.3</span></div>
   </div>
   <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
     <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
@@ -496,7 +496,7 @@ function renderRecords() {
   const byDate = {};
   recs.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha]=[]; byDate[r.fecha].push(r); });
   Object.keys(byDate).sort((a,b) => b.localeCompare(a)).forEach(date => {
-    const rs = byDate[date];
+    const rs = ordenarRegistros(byDate[date]); // ★ más reciente arriba
     const dt = rs.reduce((s,r) => s+(parseFloat(r.monto)||0), 0);
     const grp = document.createElement('div');
     grp.innerHTML = `<div class="day-header"><span class="day-date">${formatDate(date)}</span><span class="day-total" style="color:${dt>=0?'var(--green)':'var(--red)'}">${dt>=0?'+':'−'}$${fmtN(Math.abs(dt))}</span></div>`;
@@ -896,27 +896,78 @@ function parseSheetRow(r) {
     nota:           String(r['NOTA'] || r['nota'] || ''),
     usuario:        String(r['USUARIO'] || r['usuario'] || ''),
     carteraDestino: String(r['CARTERA DESTINO'] || r['carteraDestino'] || ''),
+    // ★ FIX: sin esto, tras cada sync las transferencias perdían el vínculo
+    //   entre sus dos mitades y editar una dejaba la otra intacta.
+    idTransferencia:    String(r['ID TRANSFERENCIA'] || r['idTransferencia'] || ''),
+    montoTransferencia: r['MONTO TRANSFERENCIA'] || r['montoTransferencia'] || '',
   };
 }
+
+// ── Orden: día más reciente arriba y, dentro del día, lo más reciente
+//    arriba. Si falta HORA cae al id, que ordena cronológicamente solo.
+function ordenarRegistros(arr) {
+  return arr.sort(function(a, b) {
+    const f = String(b.fecha || '').localeCompare(String(a.fecha || ''));
+    if (f !== 0) return f;
+    const h = String(b.hora || '').localeCompare(String(a.hora || ''));
+    if (h !== 0) return h;
+    return String(b.id || '').localeCompare(String(a.id || ''));
+  });
+}
+
+// ── El backend v4 manda {cols, rows} en vez de un objeto por fila.
+function expandirCompacto(data) {
+  if (!data || !Array.isArray(data.rows)) return [];
+  if (!Array.isArray(data.cols) || !data.cols.length) return data.rows;
+  const cols = data.cols;
+  return data.rows.map(function(fila) {
+    const o = {};
+    for (var i = 0; i < cols.length; i++) o[cols[i]] = fila[i];
+    return o;
+  });
+}
+
+let ultimoSync = '';
+let totalServidor = null;
 
 function autoSync(showMsg) {
   if (syncBusy) return;
   syncBusy = true;
-  fetch(APPS_SCRIPT_URL)
+  // ★ v4: incremental — solo lo que cambió desde el último corte.
+  const usarIncremental = !!ultimoSync;
+  const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(ultimoSync) : '');
+  fetch(url)
     .then(r => r.json())
     .then(data => {
-      if (!data.ok || !data.rows) return;
+      if (!data.ok) return;
       if (data.carteras && data.carteras.length) {
         localStorage.setItem('flujos_carteras', JSON.stringify(data.carteras));
       }
-      const sheetRecs = data.rows.map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
-      const sheetIds = new Set(sheetRecs.map(r => r.id));
-      deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
-      pendingIds.forEach(id => { if (sheetIds.has(id)) pendingIds.delete(id); });
-      const localPending = allRecords.filter(r => pendingIds.has(r.id));
-      const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
-      allRecords = [...localPending, ...sheetFiltered];
-      allRecords.sort((a, b) => b.fecha.localeCompare(a.fecha));
+      const incremental = data.modo === 'incremental';
+      const sheetRecs = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
+
+      if (incremental) {
+        if (sheetRecs.length === 0) {
+          const mios = allRecords.length;
+          if (typeof data.total === 'number' && data.total !== mios) { ultimoSync = ''; syncBusy = false; return autoSync(showMsg); }
+          ultimoSync = data.servidor || ultimoSync;
+          syncBusy = false;
+          return;
+        }
+        const nuevosIds = new Set(sheetRecs.map(r => r.id));
+        allRecords = [...sheetRecs, ...allRecords.filter(r => !nuevosIds.has(r.id))];
+        sheetRecs.forEach(r => pendingIds.delete(r.id));
+      } else {
+        const sheetIds = new Set(sheetRecs.map(r => r.id));
+        deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
+        pendingIds.forEach(id => { if (sheetIds.has(id)) pendingIds.delete(id); });
+        const localPending = allRecords.filter(r => pendingIds.has(r.id));
+        const sheetFiltered = sheetRecs.filter(r => !deletedIds.has(r.id));
+        allRecords = [...localPending, ...sheetFiltered];
+      }
+      ultimoSync = data.servidor || ultimoSync;
+      if (typeof data.total === 'number') totalServidor = data.total;
+      ordenarRegistros(allRecords);
       myRecords = allRecords.filter(r => r.usuario === USUARIO);
       localStorage.setItem('flujos_records_andrea', JSON.stringify(allRecords));
       renderDash();
@@ -929,7 +980,11 @@ function autoSync(showMsg) {
 }
 
 function startAutoRefresh() {
-  setInterval(() => autoSync(false), 10000); // 2s saturaba Apps Script y causaba fallas de sync
+  // ★ v4: 45s en vez de 10s. Con incremental el payload es diminuto, y
+  //   además sincroniza al volver a la app.
+  setInterval(() => autoSync(false), 45000);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(false); });
+  window.addEventListener('online', () => autoSync(false));
 }
 
 // UTILS

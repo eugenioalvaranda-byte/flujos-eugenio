@@ -505,7 +505,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar">
     <div style="display:flex;align-items:center;gap:10px;">
-      <div class="topbar-title">Flujos Eugenio <span style="font-size:10px;color:var(--text3);font-weight:500;">v4.0</span></div>
+      <div class="topbar-title">Flujos Eugenio <span style="font-size:10px;color:var(--text3);font-weight:500;">v4.1</span></div>
       <div id="privacy-btn" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.6;" title="Ocultar números">👁</div>
     </div>
     <div class="user-toggle">
@@ -1041,7 +1041,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v3.4</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.1</span>
       </div>
     </div>
 
@@ -1228,8 +1228,13 @@ document.addEventListener('DOMContentLoaded', () => {
   //   además sincronizamos al volver a la app, que es cuando de verdad
   //   importa ver lo que capturó Andrea.
   setInterval(autoSync, 45000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(); });
-  window.addEventListener('online', () => autoSync());
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    // ★ v4.1: si pasó más de un minuto, avisar que se está actualizando
+    if (Date.now() - ultimoSyncOkMs > 60000) indicadorSync('actualizando');
+    autoSync();
+  });
+  window.addEventListener('online', () => { indicadorSync('actualizando'); autoSync(); });
 });
 
 // NAV
@@ -2193,7 +2198,31 @@ function loadRecords() {
   loadDeudas();
   renderDashboard();
 
-  showToast('Sincronizando...', '');
+  // ★ v4.1: recordar en este dispositivo el corte del último sync.
+  //   Antes vivía solo en memoria: cada vez que se recargaba la página
+  //   (abrir en otro dispositivo, o que el celular cerrara la pestaña)
+  //   se volvían a bajar los ~4,300 registros completos. Por eso tardaba
+  //   más de un minuto. Ahora solo se pide lo que cambió.
+  try {
+    ultimoSync = localStorage.getItem('flujos_ultimo_sync') || '';
+    const tot = localStorage.getItem('flujos_total_servidor');
+    totalServidor = (tot !== null && tot !== '' && !isNaN(Number(tot))) ? Number(tot) : null;
+  } catch (e) { ultimoSync = ''; }
+
+  indicadorSync('actualizando');
+  const hayCache = !!ultimoSync && allRecords.some(r => !r._pendiente);
+  if (hayCache) {
+    autoSync();                 // incremental: llega en segundos
+    programarSnapshotCompleto(); // revisión completa en segundo plano, 1 vez cada 12 h
+  } else {
+    cargarSnapshotInicial();    // dispositivo nuevo o caché borrada
+  }
+}
+
+// Carga completa inicial (solo cuando el dispositivo no tiene caché)
+function cargarSnapshotInicial() {
+  if (syncBusy) { setTimeout(cargarSnapshotInicial, 1000); return; }
+  syncBusy = true;
   // ★ v4: '?v=2' pide el formato compacto (63% más ligero).
   fetch(APPS_SCRIPT_URL + '?v=2')
     .then(r => r.json())
@@ -2238,9 +2267,70 @@ function loadRecords() {
       }
 
       renderDashboard();
+      try { localStorage.setItem('flujos_ultimo_full', String(Date.now())); } catch (e) {}
+      guardarEstadoSync();
+      ultimoSyncOkMs = Date.now();
+      indicadorSync('ok');
       showToast(`${allRecords.length} registros cargados \u2713`, 'success');
     })
-    .catch(() => showToast('Sin conexi\u00f3n \u2014 usando datos locales', ''));
+    .catch(() => { indicadorSync('error'); showToast('Sin conexi\u00f3n \u2014 usando datos locales', ''); })
+    .finally(() => { syncBusy = false; });
+}
+
+// Revisión completa en segundo plano: atrapa cambios hechos directo en el
+// Sheet y refresca carteras/metas/deudas. No bloquea: ya estás viendo
+// datos al día gracias al incremental.
+function programarSnapshotCompleto() {
+  let ult = 0;
+  try { ult = Number(localStorage.getItem('flujos_ultimo_full') || 0); } catch (e) {}
+  if (Date.now() - ult < 12 * 3600 * 1000) return;
+  const intentar = () => {
+    if (syncBusy) { setTimeout(intentar, 5000); return; }
+    autoSync(true);
+  };
+  setTimeout(intentar, 15000);
+}
+
+function guardarEstadoSync() {
+  try {
+    localStorage.setItem('flujos_ultimo_sync', ultimoSync || '');
+    if (typeof totalServidor === 'number') localStorage.setItem('flujos_total_servidor', String(totalServidor));
+  } catch (e) {}
+}
+
+// Indicador discreto de estado: solo aparece al abrir o al volver a la app
+let indicadorActivo = false;
+function indicadorSync(estado) {
+  let el = document.getElementById('sync-pill');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sync-pill';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);' +
+      'z-index:9999;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;font-family:inherit;' +
+      'background:rgba(30,32,40,.94);color:#e6e8ef;border:1px solid rgba(255,255,255,.08);' +
+      'box-shadow:0 4px 14px rgba(0,0,0,.35);transition:opacity .35s;opacity:0;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  clearTimeout(el._t);
+  if (estado === 'actualizando') {
+    indicadorActivo = true;
+    el.textContent = 'Actualizando\u2026';
+    el.style.opacity = '1';
+  } else if (estado === 'ok') {
+    if (!indicadorActivo) return;
+    indicadorActivo = false;
+    el.textContent = 'Al d\u00eda';
+    el.style.opacity = '1';
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+  } else if (estado === 'error') {
+    if (!indicadorActivo) return;
+    indicadorActivo = false;
+    el.textContent = 'Sin conexi\u00f3n: mostrando datos guardados';
+    el.style.opacity = '1';
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 4000);
+  }
 }
 function saveLocal() { localStorage.setItem('flujos_records', JSON.stringify(allRecords)); }
 
@@ -2249,6 +2339,7 @@ const deletedIds = new Set(); // IDs borrados localmente, esperando confirmació
 const pendingIds = new Set(); // IDs recién agregados, esperando que lleguen al Sheet
 const pendingConc = new Map(); // id → true/false de conciliado, esperando confirmación del Sheet
 let syncBusy = false;
+let ultimoSyncOkMs = 0; // ★ v4.1: hora del último sync exitoso
 
 // ── Estado del sync incremental (v4) ──
 let ultimoSync = '';      // corte de reloj del servidor; '' = pedir todo
@@ -2346,10 +2437,23 @@ function autoSync(forzarCompleto) {
   const usarIncremental = !forzarCompleto && !!ultimoSync;
   const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(ultimoSync) : '');
 
+  let okCiclo = false, reintentarCompleto = false;
+
   fetch(url)
     .then(r => r.json())
     .then(data => {
       if (!data.ok) return;
+      okCiclo = true;
+
+      // ★ v4.1: si el servidor manda la config, refrescarla aquí también
+      if (data.carteras && data.carteras.length) {
+        carterasConfig = data.carteras;
+        try { localStorage.setItem('flujos_carteras', JSON.stringify(carterasConfig)); } catch (e) {}
+      }
+      if (data.metas && data.metas.length) {
+        metasConfig = data.metas;
+        try { localStorage.setItem('flujos_metas', JSON.stringify(metasConfig)); } catch (e) {}
+      }
 
       const incremental = data.modo === 'incremental';
       const recibidos = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
@@ -2360,13 +2464,15 @@ function autoSync(forzarCompleto) {
         // pedimos snapshot completo en la siguiente vuelta.
         const mios = allRecords.filter(r => !r._pendiente).length;
         if (typeof data.total === 'number' && data.total !== mios && recibidos.length === 0) {
+          // ★ v4.1: el reintento completo se lanza en finally, ya liberado
+          //   syncBusy, para no correr dos sincronizaciones encimadas.
           ultimoSync = '';
-          syncBusy = false;
-          return autoSync(true);
+          okCiclo = false;
+          reintentarCompleto = true;
+          return;
         }
         if (recibidos.length === 0) {
           ultimoSync = data.servidor || ultimoSync;
-          syncBusy = false;
           return;
         }
         // Mezclar: lo recibido pisa lo que ya teníamos con el mismo id.
@@ -2380,6 +2486,7 @@ function autoSync(forzarCompleto) {
         const localPending = allRecords.filter(r => pendingIds.has(r.id));
         const sheetFiltered = recibidos.filter(r => !deletedIds.has(r.id));
         allRecords = [...localPending, ...sheetFiltered];
+        try { localStorage.setItem('flujos_ultimo_full', String(Date.now())); } catch (e) {}
       }
 
       ultimoSync = data.servidor || ultimoSync;
@@ -2423,8 +2530,16 @@ function autoSync(forzarCompleto) {
       else if (ap.id === 'page-conc') renderConciliacion();
       else if (ap.id === 'page-deu' && deudasCambiaron) renderDeudas();
     })
-    .catch(() => {})
-    .finally(() => { syncBusy = false; });
+    .catch(() => { indicadorSync('error'); })
+    .finally(() => {
+      syncBusy = false;
+      if (okCiclo) {
+        guardarEstadoSync();
+        ultimoSyncOkMs = Date.now();
+        indicadorSync('ok');
+      }
+      if (reintentarCompleto) autoSync(true);
+    });
 }
 
 // UTILS

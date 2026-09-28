@@ -121,7 +121,7 @@ select.field-input { cursor: pointer; }
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
   <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.3</span></div>
+    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.4</span></div>
   </div>
   <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
     <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
@@ -341,6 +341,17 @@ function loadRecords() {
   myRecords = allRecords.filter(r => r.usuario === USUARIO);
   renderDash();
 
+  // ★ v1.4: recordar el corte del último sync en este dispositivo, para
+  //   pedir solo lo que cambió en vez de bajar todo cada vez que se abre.
+  try {
+    if (allRecords.length) {
+      ultimoSync = localStorage.getItem('flujos_ultimo_sync_andrea') || '';
+      const tot = localStorage.getItem('flujos_total_servidor_andrea');
+      totalServidor = (tot !== null && tot !== '' && !isNaN(Number(tot))) ? Number(tot) : null;
+    }
+  } catch (e) { ultimoSync = ''; }
+
+  indicadorSync('actualizando');
   autoSync(true);
 }
 
@@ -929,10 +940,47 @@ function expandirCompacto(data) {
 
 let ultimoSync = '';
 let totalServidor = null;
+let ultimoSyncOkMs = 0;
+
+function guardarEstadoSync() {
+  try {
+    localStorage.setItem('flujos_ultimo_sync_andrea', ultimoSync || '');
+    if (typeof totalServidor === 'number') localStorage.setItem('flujos_total_servidor_andrea', String(totalServidor));
+  } catch (e) {}
+}
+
+let indicadorActivo = false;
+function indicadorSync(estado) {
+  let el = document.getElementById('sync-pill');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'sync-pill';
+    el.setAttribute('role', 'status');
+    el.setAttribute('aria-live', 'polite');
+    el.style.cssText = 'position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);left:50%;transform:translateX(-50%);' +
+      'z-index:9999;padding:6px 14px;border-radius:999px;font-size:12px;font-weight:600;font-family:inherit;' +
+      'background:rgba(30,32,40,.94);color:#e6e8ef;border:1px solid rgba(255,255,255,.08);' +
+      'box-shadow:0 4px 14px rgba(0,0,0,.35);transition:opacity .35s;opacity:0;pointer-events:none;white-space:nowrap;';
+    document.body.appendChild(el);
+  }
+  clearTimeout(el._t);
+  if (estado === 'actualizando') {
+    indicadorActivo = true; el.textContent = 'Actualizando\u2026'; el.style.opacity = '1';
+  } else if (estado === 'ok') {
+    if (!indicadorActivo) return;
+    indicadorActivo = false; el.textContent = 'Al d\u00eda'; el.style.opacity = '1';
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 1800);
+  } else if (estado === 'error') {
+    if (!indicadorActivo) return;
+    indicadorActivo = false; el.textContent = 'Sin conexi\u00f3n: mostrando datos guardados'; el.style.opacity = '1';
+    el._t = setTimeout(() => { el.style.opacity = '0'; }, 4000);
+  }
+}
 
 function autoSync(showMsg) {
   if (syncBusy) return;
   syncBusy = true;
+  let okCiclo = false, reintentarCompleto = false;
   // ★ v4: incremental — solo lo que cambió desde el último corte.
   const usarIncremental = !!ultimoSync;
   const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(ultimoSync) : '');
@@ -940,6 +988,7 @@ function autoSync(showMsg) {
     .then(r => r.json())
     .then(data => {
       if (!data.ok) return;
+      okCiclo = true;
       if (data.carteras && data.carteras.length) {
         localStorage.setItem('flujos_carteras', JSON.stringify(data.carteras));
       }
@@ -949,9 +998,8 @@ function autoSync(showMsg) {
       if (incremental) {
         if (sheetRecs.length === 0) {
           const mios = allRecords.length;
-          if (typeof data.total === 'number' && data.total !== mios) { ultimoSync = ''; syncBusy = false; return autoSync(showMsg); }
+          if (typeof data.total === 'number' && data.total !== mios) { ultimoSync = ''; okCiclo = false; reintentarCompleto = true; return; }
           ultimoSync = data.servidor || ultimoSync;
-          syncBusy = false;
           return;
         }
         const nuevosIds = new Set(sheetRecs.map(r => r.id));
@@ -975,16 +1023,24 @@ function autoSync(showMsg) {
       if (ap && ap.id === 'page-list') renderRecords();
       if (showMsg) showToast(`${myRecords.length} registros ✓`, 'success');
     })
-    .catch(() => {})
-    .finally(() => { syncBusy = false; });
+    .catch(() => { indicadorSync('error'); })
+    .finally(() => {
+      syncBusy = false;
+      if (okCiclo) { guardarEstadoSync(); ultimoSyncOkMs = Date.now(); indicadorSync('ok'); }
+      if (reintentarCompleto) autoSync(showMsg);
+    });
 }
 
 function startAutoRefresh() {
   // ★ v4: 45s en vez de 10s. Con incremental el payload es diminuto, y
   //   además sincroniza al volver a la app.
   setInterval(() => autoSync(false), 45000);
-  document.addEventListener('visibilitychange', () => { if (!document.hidden) autoSync(false); });
-  window.addEventListener('online', () => autoSync(false));
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) return;
+    if (Date.now() - ultimoSyncOkMs > 60000) indicadorSync('actualizando');
+    autoSync(false);
+  });
+  window.addEventListener('online', () => { indicadorSync('actualizando'); autoSync(false); });
 }
 
 // UTILS

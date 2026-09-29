@@ -453,6 +453,170 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   .an-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 16px; }
 }
 
+
+/* ═══════════════════════════════════════════
+   v4.2 — REDISEÑO (estilo Spendee)
+   ═══════════════════════════════════════════ */
+:root { --text3: #7E7E96; --surface: #16161C; --hair: rgba(255,255,255,0.06); }
+.ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+
+/* Barra inferior + botón flotante */
+.nav { padding: 8px 2px max(14px, env(safe-area-inset-bottom)); background: rgba(12,12,16,0.97); }
+.nav-item { gap: 4px; font-size: 9.5px; letter-spacing: -0.2px; min-width: 0; white-space: nowrap; }
+.nav-item .ico { width: 22px; height: 22px; }
+.nav-item span { overflow: hidden; max-width: 100%; }
+.nav-item.active { font-weight: 700; }
+.fab { position: fixed; z-index: 101; bottom: calc(78px + env(safe-area-inset-bottom)); right: max(16px, calc(50vw - 199px)); width: 58px; height: 58px; border-radius: 29px; background: var(--green); color: #0B0B0F; border: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(0,224,150,0.35); cursor: pointer; transition: transform .15s; }
+.fab:active { transform: scale(.93); }
+.fab .ico { width: 26px; height: 26px; stroke-width: 2.4; }
+body.on-form .fab, body.on-chat .fab, body.on-cfg .fab, body.on-conc .fab { display: none; }
+
+/* Piezas comunes */
+.icon-btn { width: 40px; height: 40px; border-radius: 20px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); color: var(--text); display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; }
+.icon-btn.on { color: var(--green); border-color: var(--green-border); }
+.card { background: var(--surface); border-radius: 20px; overflow: hidden; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 20px; font-size: 13px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.pill.pos { background: var(--green-dim); color: var(--green); }
+.pill.neg { background: var(--red-dim); color: #FF7A7A; }
+.pill .ico { width: 14px; height: 14px; stroke-width: 2.2; }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 0 4px 10px; gap: 10px; }
+.sec-h h2 { font-size: 18px; font-weight: 700; }
+.sec-h > span { font-size: 13px; color: var(--text2); text-align: right; }
+.sec-h b { color: var(--text); font-weight: 600; }
+.row { display: flex; gap: 12px; padding: 13px 16px; border-bottom: 1px solid var(--hair); align-items: center; cursor: pointer; }
+.row:last-child { border-bottom: 0; }
+.row.dim { opacity: .5; }
+.w-ico { width: 38px; height: 38px; border-radius: 11px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; color: #0B0B0F; }
+.w-ico .ico { stroke-width: 2; }
+.row-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 5px; }
+.row-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+.row-name { font-size: 15px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.row-amt { font-family: var(--display); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+.row-amt.neg { color: #FF7A7A; }
+.row-sub { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--text2); }
+.bar { height: 5px; border-radius: 3px; background: #26262F; overflow: hidden; }
+.bar > i { display: block; height: 100%; border-radius: 3px; background: var(--green); }
+.more-btn { width: 100%; min-height: 48px; display: flex; align-items: center; justify-content: space-between; padding: 0 16px; background: none; border: 0; border-top: 1px solid var(--hair); color: var(--text2); font-size: 13px; cursor: pointer; font-family: var(--font); }
+.more-btn .ico { transition: transform .2s; }
+.more-btn.open .ico { transform: rotate(180deg); }
+.link-btn { background: none; border: 0; color: var(--text2); font-size: 13px; font-weight: 600; cursor: pointer; font-family: var(--font); padding: 10px 4px; }
+
+/* Resumen */
+.r-top { padding: 54px 20px 16px; gap: 10px; }
+.r-title { font-family: var(--display); font-size: 24px; font-weight: 700; letter-spacing: -0.4px; display: flex; align-items: baseline; gap: 6px; }
+.r-ver { font-size: 10px; color: var(--text3); font-weight: 500; font-family: var(--font); letter-spacing: 0; }
+.r-top .user-btn { padding: 7px 12px; }
+.r-wrap { padding: 0 20px 28px; }
+.r-tools { display: flex; gap: 6px; margin-bottom: 18px; }
+.r-tools .filter-toggle-btn, .r-tools .dash-date-btn { padding: 7px 12px; font-size: 12px; border-radius: 16px; background: var(--surface); }
+.r-hero-label { font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+.r-hero-num { font-family: var(--display); font-size: 44px; font-weight: 700; letter-spacing: -1.8px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.r-hero-num.neg { color: var(--red); }
+.r-pillrow { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--text2); flex-wrap: wrap; }
+.r-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 22px 0 10px; }
+.r-tile { background: var(--surface); border-radius: 14px; padding: 12px; min-width: 0; }
+.r-tile-l { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+.r-tile-v { font-family: var(--display); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-tile-v.neg { color: #FF7A7A; }
+.r-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); padding: 0 4px; margin-bottom: 24px; }
+.r-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.r-chart { padding: 18px 16px 14px; margin-bottom: 26px; }
+.r-chart-h { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 14px; }
+.r-h2 { font-size: 16px; font-weight: 700; }
+.r-legend { display: flex; gap: 12px; font-size: 12px; color: var(--text2); }
+.r-legend i { display: inline-block; width: 8px; height: 8px; border-radius: 4px; margin-right: 5px; }
+.r-bars { display: flex; justify-content: space-between; align-items: flex-end; height: 128px; }
+.r-bar-col { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; gap: 8px; background: none; border: 0; padding: 0; cursor: pointer; font-family: var(--font); }
+.r-bar-pair { display: flex; align-items: flex-end; gap: 4px; height: 100px; }
+.r-bar { width: 13px; border-radius: 4px; min-height: 2px; }
+.r-bar-m { font-size: 12px; color: var(--text3); }
+.r-bar-col.cur .r-bar-m { color: var(--text); font-weight: 700; }
+.r-chart-foot { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; color: var(--text2); margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.r-chart-foot b { color: var(--text); font-weight: 600; }
+
+/* Registros */
+.l-search { margin: 0 20px 4px; height: 44px; border-radius: 22px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; gap: 8px; padding: 0 14px; color: var(--text2); }
+.l-search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--text); font-family: var(--font); font-size: 14px; -webkit-appearance: none; }
+.l-month { display: flex; align-items: center; justify-content: space-between; margin: 0 12px; }
+.l-month-btn { width: 44px; height: 44px; background: none; border: 0; color: var(--text2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.l-month-lbl { font-size: 15px; font-weight: 600; }
+.l-hero { display: flex; flex-direction: column; align-items: center; gap: 10px; margin: 2px 0 18px; }
+.l-hero-num { font-family: var(--display); font-size: 38px; font-weight: 700; letter-spacing: -1.5px; font-variant-numeric: tabular-nums; }
+.l-note { margin: 6px 20px 14px; font-size: 13px; color: var(--text2); text-align: center; }
+.filter-row { padding: 0 20px 10px; }
+.filter-pill { padding: 8px 14px; border: 1px solid rgba(255,255,255,0.08); background: var(--surface); color: #C9C9DA; font-weight: 600; }
+.filter-pill.active { background: var(--text); color: #0B0B0F; border-color: var(--text); }
+#list-saldo-bar { margin: 4px 20px 18px !important; border-radius: 14px !important; background: var(--surface) !important; border: 0 !important; }
+.records-list { padding: 0 20px 24px; }
+.day-group { margin-bottom: 18px; }
+.day-header { padding: 0 4px 8px; }
+.day-date { font-size: 14px; color: var(--text2); font-weight: 600; }
+.day-total { font-family: var(--font); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.day-total.neg { color: var(--text2); }
+.day-card { background: var(--surface); border-radius: 20px; overflow: hidden; }
+.day-card .record-item { background: none; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; margin: 0; padding: 12px 14px; }
+.day-card .record-item:last-child { border-bottom: 0; }
+.day-card .record-amount.neg { color: var(--text); }
+.record-icon { width: 40px; height: 40px; border-radius: 20px; }
+.record-cat { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.record-cat > span:first-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-meta { font-size: 12px; display: flex; align-items: center; gap: 6px; margin-top: 3px; min-width: 0; }
+.record-meta > span:last-child { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-amount { font-size: 15px; font-variant-numeric: tabular-nums; }
+.rec-group-header { border-radius: 14px; }
+.u-badge { flex-shrink: 0; width: 16px; height: 16px; border-radius: 8px; background: #F08BBE; color: #0B0B0F; font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
+.msi-chip { flex-shrink: 0; padding: 2px 7px; border-radius: 6px; background: rgba(108,182,255,0.16); color: #8CC6FF; font-size: 11px; font-weight: 700; }
+
+/* Conciliación */
+.c-cycle { display: flex; align-items: center; justify-content: space-between; background: var(--surface); border-radius: 14px; padding: 4px; margin: 0 20px 16px; }
+.c-cycle-lbl { display: flex; flex-direction: column; align-items: center; gap: 2px; text-align: center; }
+.c-cycle-lbl b { font-size: 14px; }
+.c-cycle-lbl span { font-size: 12px; color: var(--text2); }
+.c-ec { display: block; background: var(--surface); border-radius: 20px; padding: 16px 18px; margin: 0 20px 12px; border: 1px solid rgba(255,255,255,0.12); }
+.c-ec span { display: block; font-size: 14px; color: var(--text2); margin-bottom: 6px; }
+.c-ec input { width: 100%; background: none; border: 0; outline: none; color: var(--text); font-family: var(--display); font-size: 34px; font-weight: 700; letter-spacing: -1.2px; padding: 0; -webkit-appearance: none; }
+.c-ec input::placeholder { color: #3A3A46; }
+.c-res { margin: 0 20px 12px; border-radius: 20px; padding: 16px 18px; }
+.c-res.warn { background: rgba(245,185,66,0.1); border: 1px solid rgba(245,185,66,0.35); }
+.c-res.ok { background: var(--green-dim); border: 1px solid var(--green-border); }
+.c-res.idle { background: var(--surface); }
+.c-res-h { display: flex; align-items: center; gap: 10px; font-family: var(--display); font-size: 20px; font-weight: 700; margin-bottom: 8px; font-variant-numeric: tabular-nums; }
+.c-res-h .ico { width: 22px; height: 22px; stroke-width: 2; }
+.c-res.warn .c-res-h { color: #F5B942; }
+.c-res.ok .c-res-h { color: var(--green); }
+.c-res p { font-size: 13px; line-height: 1.5; color: #D8D8E4; margin-bottom: 10px; }
+.c-res-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); padding: 2px 0; }
+.c-res-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.c-hint { margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 13px; line-height: 1.45; color: #D8D8E4; }
+.c-pdf { margin: 0 20px 24px; }
+.c-pdf-btn { width: 100%; min-height: 52px; display: flex; align-items: center; justify-content: center; gap: 8px; background: none; border: 1px dashed rgba(255,255,255,0.22); border-radius: 16px; color: #C9C9DA; font-size: 14px; font-weight: 600; cursor: pointer; font-family: var(--font); }
+.c-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--hair); cursor: pointer; }
+.c-row:last-child { border-bottom: 0; }
+.c-row input { width: 20px; height: 20px; accent-color: var(--green); flex-shrink: 0; margin: 0; cursor: pointer; }
+.c-row.done { opacity: .5; }
+.c-row.match { background: rgba(245,185,66,0.1); }
+.c-row-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.c-row-main b { font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.c-row-main span { font-size: 12px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+body { padding-bottom: 150px; }
+.dash-desktop-title { display: none; }
+.c-ec input::-webkit-outer-spin-button, .c-ec input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.c-ec input[type=number] { -moz-appearance: textfield; appearance: textfield; }
+.sb { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.sb-l { font-size: 12px; color: var(--text2); margin-bottom: 3px; }
+.sb-v { font-family: var(--display); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sb-v.neg { color: #FF7A7A; }
+@media (min-width: 768px) {
+  body { padding-bottom: 0; }
+  .fab { display: none; }
+  .dash-left-col.r-wrap { max-width: 760px; }
+  #page-list, #page-conc { max-width: 760px; }
+}
+@media (min-width: 1024px) {
+  .dash-left-col.r-wrap { padding: 32px 28px; }
+  .dash-desktop-title { display: block; }
+}
 </style>
 </head>
 <body>
@@ -485,6 +649,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
   <div class="sidebar-nav-item" id="snav-deu" onclick="showPage('deu')">
     <span class="sidebar-nav-icon">💳</span> Deudas
   </div>
+  <div class="sidebar-nav-item" id="snav-conc" onclick="showPage('conc')">
+    <span class="sidebar-nav-icon">🧾</span> Conciliación
+  </div>
   <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
     <span class="sidebar-nav-icon">⚙</span> Configuración
   </div>
@@ -503,28 +670,26 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 <!-- DASHBOARD -->
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
-  <div class="topbar">
-    <div style="display:flex;align-items:center;gap:10px;">
-      <div class="topbar-title">Flujos Eugenio <span style="font-size:10px;color:var(--text3);font-weight:500;">v4.1</span></div>
-      <div id="privacy-btn" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.6;" title="Ocultar números">👁</div>
-    </div>
-    <div class="user-toggle">
-      <div class="user-btn active" onclick="setUser('Eugenio',this)">👨 Eugenio</div>
-      <div class="user-btn" onclick="setUser('Andrea',this)">👩 Andrea</div>
+  <div class="topbar r-top">
+    <div class="r-title">Resumen <span class="r-ver">v4.2</span></div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
+      <div class="user-toggle">
+        <div class="user-btn active" onclick="setUser('Eugenio',this)">Eugenio</div>
+        <div class="user-btn" onclick="setUser('Andrea',this)">Andrea</div>
+      </div>
     </div>
   </div>
 
-  <!-- Desktop: columna izquierda -->
-  <div class="dash-left-col">
+  <div class="dash-left-col r-wrap">
     <div class="dash-desktop-title">Resumen</div>
 
-    <!-- Filtros y fecha -->
-    <div style="display:flex;gap:6px;align-items:center;margin-bottom:12px;">
-      <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()" style="flex-shrink:0">⚙ Filtros</div>
-      <div id="dash-date-chip" class="dash-date-btn" onclick="openDatePicker()" style="flex-shrink:0">📅 Al día de hoy</div>
+    <div class="r-tools">
+      <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()">Filtros</div>
+      <div id="dash-date-chip" class="dash-date-btn" onclick="openDatePicker()">Al día de hoy</div>
     </div>
 
-    <div class="adv-filters" id="dash-adv-filters" style="margin:0 0 12px;">
+    <div class="adv-filters" id="dash-adv-filters" style="margin:0 0 16px;">
       <div class="adv-grid">
         <div><div class="adv-label">Cartera</div><select class="adv-input" id="dash-filt-cartera"><option value="">Todas</option></select></div>
         <div><div class="adv-label">Categoría</div><select class="adv-input" id="dash-filt-cat"><option value="">Todas</option></select></div>
@@ -535,87 +700,31 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
     </div>
 
-    <div class="dash-hero">
-      <div class="dash-hero-top"><div class="dash-label">Patrimonio Neto</div></div>
-      <div class="dash-networth"><span class="cur">$</span><span id="dash-total">—</span></div>
-      <div class="dash-networth-label" id="dash-cutoff-label">Movimientos reales + deuda TDC futura</div>
-      <div class="dash-split">
-        <div class="dash-split-card">
-          <div class="dash-split-label">💵 Cash</div>
-          <div class="dash-split-val cash" id="dash-cash">—</div>
-          <div class="dash-split-sub">Efectivo + Bancos</div>
-        </div>
-        <div class="dash-split-card">
-          <div class="dash-split-label">💳 Deuda TDC</div>
-          <div class="dash-split-val tdc" id="dash-tdc">—</div>
-          <div class="dash-split-sub">Total tarjetas</div>
-        </div>
+    <div class="r-hero-label">Patrimonio neto</div>
+    <div class="r-hero-num privacy-num" id="dash-total">—</div>
+    <div class="r-pillrow"><span class="pill pos privacy-num" id="dash-bal">—</span><span id="dash-cutoff-label">este mes</span></div>
+
+    <div class="r-tiles">
+      <div class="r-tile"><div class="r-tile-l">Disponible</div><div class="r-tile-v privacy-num" id="dash-cash">—</div></div>
+      <div class="r-tile"><div class="r-tile-l">Tarjetas</div><div class="r-tile-v privacy-num" id="dash-tdc">—</div></div>
+      <div class="r-tile"><div class="r-tile-l">Créditos</div><div class="r-tile-v neg privacy-num" id="pn-deudas-total">—</div></div>
+    </div>
+    <div class="r-line"><span>Patrimonio contando créditos</span><b class="privacy-num" id="pn-con-deudas">—</b></div>
+
+    <div class="card r-chart">
+      <div class="r-chart-h">
+        <div class="r-h2">Flujo por mes</div>
+        <div class="r-legend"><span><i style="background:var(--green)"></i>Ingresos</span><span><i style="background:#FF6363"></i>Gastos</span></div>
       </div>
+      <div class="r-bars" id="dash-bars"></div>
+      <div class="r-chart-foot"><span id="dash-mes-lbl">Este mes</span><span>Entró <b class="privacy-num" id="dash-ing">—</b>, salió <b class="privacy-num" id="dash-gas">—</b></span></div>
     </div>
 
-    <div class="dash-mes-row" style="margin:0 0 12px;">
-      <div class="dash-mes-pill"><div class="dash-mes-label">↑ Ingresos mes</div><div class="dash-mes-val pos" id="dash-ing">—</div></div>
-      <div class="dash-mes-pill"><div class="dash-mes-label">↓ Gastos mes</div><div class="dash-mes-val neg" id="dash-gas">—</div></div>
-      <div class="dash-mes-pill" style="grid-column:1/-1;"><div class="dash-mes-label">= Balance</div><div class="dash-mes-val" id="dash-bal">—</div></div>
-    </div>
+    <div class="sec-h"><h2>Tarjetas</h2><span id="tdc-summary"></span></div>
+    <div class="card" id="wallets-tdc" style="margin-bottom:26px;"></div>
 
-    <!-- Patrimonio Neto repetido como referencia rápida -->
-  <div style="margin:0 16px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:10px;">Patrimonio Neto al día de hoy</div>
-    <div style="display:flex;gap:16px;align-items:center;">
-      <div style="flex:1;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">Total</div>
-        <div id="dash-pn-total" class="privacy-num" style="font-family:var(--display);font-size:24px;font-weight:700;color:var(--green);">—</div>
-      </div>
-      <div style="flex:1;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">💵 Cash</div>
-        <div id="dash-pn-cash" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--green);">—</div>
-      </div>
-      <div style="flex:1;">
-        <div style="font-size:11px;color:var(--text3);margin-bottom:4px;">💳 Deuda TDC</div>
-        <div id="dash-pn-tdc" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">—</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="wallets-group-title">💵 Carteras Cash</div>
-    <div class="wallets-grid" id="wallets-cash"></div>
-    <div class="wallets-group-title">💳 Tarjetas de Crédito</div>
-    <div id="tdc-summary" style="margin:0 16px 10px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:14px;display:none;">
-      <div style="display:flex;gap:12px;">
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Deuda total</div>
-          <div id="tdc-sum-total" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">—</div>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;" id="tdc-sum-pago-label">Pago del 24</div>
-          <div id="tdc-sum-pago" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text);">—</div>
-        </div>
-        <div style="flex:1;">
-          <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:4px;">Diferido / MSI</div>
-          <div id="tdc-sum-dif" class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--text2);">—</div>
-        </div>
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-top:8px;">Pago del 24 = cargos ya cortados o por cortar de este ciclo · Diferido = MSI y cargos de ciclos siguientes</div>
-    </div>
-    <div class="wallets-grid" id="wallets-tdc"></div>
-
-    <!-- Patrimonio incluyendo créditos -->
-    <div style="margin-top:16px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:16px;" id="pn-deudas-section">
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1.2px;font-weight:700;margin-bottom:10px;">Patrimonio neto incluyendo créditos</div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
-        <span style="font-size:13px;color:var(--text2);">Patrimonio sin créditos</span>
-        <span id="pn-sin-deudas" class="privacy-num" style="font-family:var(--display);font-size:13px;font-weight:700;">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:7px 0;border-bottom:0.5px solid var(--border);">
-        <span style="font-size:13px;color:var(--text2);">Total créditos</span>
-        <span id="pn-deudas-total" class="privacy-num" style="font-family:var(--display);font-size:13px;font-weight:700;color:var(--red);">—</span>
-      </div>
-      <div style="display:flex;justify-content:space-between;padding:10px 0 0;">
-        <span style="font-size:14px;font-weight:700;">Patrimonio real</span>
-        <span id="pn-con-deudas" class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;">—</span>
-      </div>
-    </div>
+    <div class="sec-h"><h2>Disponible</h2><span class="privacy-num" id="dash-cash-2" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);"></span></div>
+    <div class="card" id="wallets-cash"></div>
   </div>
 
   <!-- Desktop: columna derecha (oculta en móvil via CSS) -->
@@ -703,14 +812,13 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 <div id="page-list" class="page">
   <div class="list-topbar">
     <div class="list-title">Registros</div>
-    <div class="filter-toggle-btn" id="list-adv-btn" onclick="toggleListFilters()">⚙ Filtros</div>
+    <div class="filter-toggle-btn" id="list-adv-btn" onclick="toggleListFilters()">Filtros</div>
   </div>
   <!-- Buscador -->
-  <div style="padding:0 16px 10px;">
-    <input type="text" id="search-input" placeholder="🔍  Buscar por categoría, nota, monto, cartera..."
-      oninput="renderRecords()"
-      style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;">
-  </div>
+  <label class="l-search">
+    <svg class="ico" viewBox="0 0 24 24"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg>
+    <input type="text" id="search-input" placeholder="Buscar nota, categoría o monto" oninput="renderRecords()">
+  </label>
   <div class="adv-filters" id="list-adv-filters">
     <div class="adv-grid">
       <div><div class="adv-label">Desde</div><input class="adv-input" type="date" id="filt-desde"></div>
@@ -723,6 +831,18 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       <div class="adv-btn apply" onclick="applyListFilters()">Aplicar</div>
     </div>
   </div>
+  <div id="list-month-block">
+    <div class="l-month">
+      <button class="l-month-btn" onclick="moverMesLista(-1)" aria-label="Mes anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="l-month-lbl" id="list-month-lbl">—</div>
+      <button class="l-month-btn" onclick="moverMesLista(1)" aria-label="Mes siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="l-hero">
+      <div class="l-hero-num privacy-num" id="list-mes-bal">—</div>
+      <div style="display:flex;gap:8px;"><span class="pill pos privacy-num" id="list-mes-ing">—</span><span class="pill neg privacy-num" id="list-mes-gas">—</span></div>
+    </div>
+  </div>
+  <div class="l-note" id="list-custom-note" style="display:none;"></div>
   <div class="filter-row">
     <div class="filter-pill active" data-filter="todos" onclick="setFilter('todos',this)">Todos</div>
     <div class="filter-pill" data-filter="GASTO" onclick="setFilter('GASTO',this)">Gastos</div>
@@ -730,9 +850,9 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
     <div class="filter-pill" data-filter="TRANSFERENCIA" onclick="setFilter('TRANSFERENCIA',this)">Transferencias</div>
   </div>
   <div class="filter-row" style="padding-top:0;">
-    <div class="filter-pill active" data-user="todos" onclick="setUserFilter('todos',this)">👥 Todos</div>
-    <div class="filter-pill" data-user="Eugenio" onclick="setUserFilter('Eugenio',this)">👨 Eugenio</div>
-    <div class="filter-pill" data-user="Andrea" onclick="setUserFilter('Andrea',this)">👩 Andrea</div>
+    <div class="filter-pill active" data-user="todos" onclick="setUserFilter('todos',this)">Los dos</div>
+    <div class="filter-pill" data-user="Eugenio" onclick="setUserFilter('Eugenio',this)">Eugenio</div>
+    <div class="filter-pill" data-user="Andrea" onclick="setUserFilter('Andrea',this)">Andrea</div>
   </div>
   <div id="list-saldo-bar" style="margin:0 16px 10px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 14px;display:none;"></div>
   <div class="records-list" id="records-list"></div>
@@ -888,38 +1008,35 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
 <!-- CONCILIACIÓN TDC -->
 <div id="page-conc" class="page">
-  <div class="topbar">
-    <div class="topbar-title">🧾 Conciliación TDC</div>
-    <div onclick="showPage('dash')" style="padding:8px 14px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:20px;font-size:12px;font-weight:600;color:var(--text2);cursor:pointer;">← Resumen</div>
+  <div class="list-topbar"><div class="list-title">Conciliación</div></div>
+  <div class="filter-row" id="conc-chips"></div>
+  <div class="c-cycle">
+    <button class="l-month-btn" onclick="moverCicloConc(1)" aria-label="Ciclo anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <div class="c-cycle-lbl"><b id="conc-ciclo-rango">—</b><span id="conc-ciclo-pago">—</span></div>
+    <button class="l-month-btn" onclick="moverCicloConc(-1)" aria-label="Ciclo siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <select id="conc-ciclo" onchange="renderConciliacion()" style="display:none;"></select>
   </div>
-  <div style="padding:0 16px 10px;">
-    <div style="font-size:11px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Tarjeta</div>
-    <div class="chips-wrap" id="conc-chips"></div>
-  </div>
-  <!-- Conciliación automática con PDF (v3.4) -->
-  <div style="margin:0 16px 12px;background:var(--bg2);border:1px dashed var(--border2);border-radius:var(--radius);padding:14px;">
-    <div style="font-weight:700;font-size:13px;margin-bottom:3px;">📄 Conciliación automática con PDF</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Sube el estado de cuenta de la tarjeta seleccionada. La IA extrae los movimientos y los compara contra tus registros.</div>
+  <label class="c-ec">
+    <span>Total de tu estado de cuenta</span>
+    <input type="number" id="conc-ec" placeholder="$0.00" inputmode="decimal" step="0.01" oninput="guardarECyCalcular()">
+  </label>
+  <div id="conc-resumen"></div>
+  <div class="c-pdf">
     <input type="file" id="pdf-file" accept="application/pdf,.pdf" style="display:none;" onchange="procesarPDFEstado(this)">
-    <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <div id="pdf-btn" onclick="document.getElementById('pdf-file').click()" style="flex:1;min-width:130px;text-align:center;padding:10px;background:var(--blue);border-radius:var(--radius-sm);font-weight:700;font-size:13px;color:#fff;cursor:pointer;">📎 Subir PDF</div>
-      <div id="pdf-retomar" onclick="retomarPDF()" style="display:none;flex:1;min-width:130px;text-align:center;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-weight:700;font-size:13px;color:var(--text2);cursor:pointer;">↺ Retomar última</div>
-    </div>
-    <div id="pdf-status" style="margin-top:8px;font-size:11px;color:var(--text3);"></div>
+    <button class="c-pdf-btn" id="pdf-btn" onclick="document.getElementById('pdf-file').click()"><svg class="ico" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></svg>Subir el PDF y que la app busque sola</button>
+    <button class="link-btn" id="pdf-retomar" onclick="retomarPDF()" style="display:none;width:100%;color:var(--blue);">Retomar la última lectura del PDF</button>
+    <div id="pdf-status" style="margin-top:8px;font-size:12px;color:var(--text3);"></div>
   </div>
-  <div id="pdf-resultados" style="margin:0 16px 14px;display:none;"></div>
-  <div style="padding:0 16px 10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;">
-    <div><div class="adv-label">Ciclo</div><select class="adv-input" id="conc-ciclo" onchange="renderConciliacion()"></select></div>
-    <div><div class="adv-label">Total del estado de cuenta</div><input class="adv-input" type="number" id="conc-ec" placeholder="0.00" inputmode="decimal" oninput="guardarECyCalcular()"></div>
+  <div id="pdf-resultados" style="margin:0 20px 14px;display:none;"></div>
+  <div class="sec-h" style="margin:0 24px 10px;"><h2>Cargos del ciclo</h2><span>Del más grande al más chico</span></div>
+  <div class="card" style="margin:0 20px 6px;">
+    <div id="conc-lista"></div>
+    <button class="more-btn" id="conc-vermas" onclick="toggleConcVerTodos()" style="display:none;justify-content:center;color:var(--green);font-weight:600;"></button>
   </div>
-  <div id="conc-resumen" style="margin:0 16px 12px;"></div>
-  <div style="display:flex;gap:6px;margin:0 16px 10px;flex-wrap:wrap;">
-    <div class="filter-pill active" id="conc-f-todos" onclick="setConcFiltro('todos',this)">Todos</div>
-    <div class="filter-pill" id="conc-f-pend" onclick="setConcFiltro('pendientes',this)">Sin conciliar</div>
-    <div class="filter-pill" onclick="marcarTodosConc(true)">✓ Marcar todo</div>
-    <div class="filter-pill" onclick="marcarTodosConc(false)">Desmarcar todo</div>
+  <div style="display:flex;justify-content:center;gap:18px;margin:0 20px 28px;">
+    <button class="link-btn" onclick="marcarTodosConc(true)">Palomear todos</button>
+    <button class="link-btn" onclick="marcarTodosConc(false)">Quitar palomitas</button>
   </div>
-  <div id="conc-lista" style="margin:0 16px 24px;"></div>
 </div>
 
 <!-- DEUDAS -->
@@ -1041,7 +1158,7 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.1</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.2</span>
       </div>
     </div>
 
@@ -1083,15 +1200,16 @@ select.field-input, select.rec-input, select.adv-input, select.datepick-input { 
 
 <!-- NAV -->
 <div class="nav">
-  <div class="nav-item active" id="nav-dash" onclick="showPage('dash')"><div class="nav-icon">◈</div><span>Resumen</span></div>
-  <div class="nav-item" id="nav-list" onclick="showPage('list')"><div class="nav-icon">≡</div><span>Registros</span></div>
-  <div class="nav-add" onclick="showPage('form')">+</div>
-  <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><div class="nav-icon">📊</div><span>Dashboard</span></div>
-  <div class="nav-item" onclick="abrirProyeccion()"><div class="nav-icon">📈</div><span>Proyección</span></div>
-  <div class="nav-item" id="nav-chat" onclick="showPage('chat')"><div class="nav-icon">🤖</div><span>IA</span></div>
-  <div class="nav-item" id="nav-deu" onclick="showPage('deu')"><div class="nav-icon">💳</div><span>Deudas</span></div>
-  <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><div class="nav-icon">⚙</div><span>Config</span></div>
+  <div class="nav-item active" id="nav-dash" onclick="showPage('dash')"><svg class="ico" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Resumen</span></div>
+  <div class="nav-item" id="nav-list" onclick="showPage('list')"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Registros</span></div>
+  <div class="nav-item" id="nav-proy" onclick="showPage('proy')"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/></svg><span>Dashboard</span></div>
+  <div class="nav-item" onclick="abrirProyeccion()"><svg class="ico" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg><span>Proyección</span></div>
+  <div class="nav-item" id="nav-chat" onclick="showPage('chat')"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg><span>IA</span></div>
+  <div class="nav-item" id="nav-deu" onclick="showPage('deu')"><svg class="ico" viewBox="0 0 24 24"><path d="M3 6h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM2 10h20M6 15h4"/></svg><span>Deudas</span></div>
+  <div class="nav-item" id="nav-conc" onclick="showPage('conc')"><svg class="ico" viewBox="0 0 24 24"><path d="M5 3h14v18l-3.5-2-3.5 2-3.5-2L5 21zM9 11l2 2 4-4"/></svg><span>Conciliar</span></div>
+  <div class="nav-item" id="nav-cfg" onclick="showPage('cfg')"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 4v6M9 14v6"/></svg><span>Config</span></div>
 </div>
+<button class="fab" onclick="showPage('form')" aria-label="Nuevo movimiento"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" onclick="closeModal(event)">
@@ -1243,6 +1361,9 @@ function showPage(p) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
   const n = document.getElementById('nav-' + p); if (n) n.classList.add('active');
+  document.body.className = document.body.className.replace(/\bon-\w+\b/g, '').trim();
+  document.body.classList.add('on-' + p);
+  window.scrollTo(0, 0);
   if (p === 'list') renderRecords();
   if (p === 'dash') { renderDashboard(); if(privacyOn) setTimeout(togglePrivacy,10) && setTimeout(togglePrivacy,10); }
   if (p === 'cfg') renderConfigPage();
@@ -1622,29 +1743,151 @@ function applyPrivacyToPage() {
   });
 }
 
+// ══════════════════════════════════════════
+// v4.2 — HELPERS VISUALES
+// ══════════════════════════════════════════
+function fmt0(n) { return Math.round(Math.abs(n)).toLocaleString('es-MX'); }
+function money0(n) { return (n < -0.5 ? '−' : '') + '$' + fmt0(n); }
+// Centavos solo cuando existen: $186 / $1,284.50
+function fmtSmart(n) { const a = Math.abs(n); return Math.abs(a - Math.round(a)) < 0.005 ? fmt0(a) : fmtN(a); }
+function nombreCartera(c) { return String(c || '').replace(/^TDC\s+/, ''); }
+function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h, 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+const ICO = {
+  bank:   'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18',
+  wallet: 'M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2zM16 14h.01',
+  safe:   'M4 4h16v16H4zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6zM12 9v1M12 14v1',
+  card:   'M3 6h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM2 10h20M6 15h4',
+  cart:   'M3 4h2l2.4 11h11L21 7H6.2M9 20h.01M18 20h.01',
+  globe:  'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z',
+  home:   'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  fuel:   'M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3M7 7h4',
+  car:    'M5 16l1.5-5A2 2 0 0 1 8.4 9.5h7.2a2 2 0 0 1 1.9 1.5L19 16M4 16h16v3H4zM7 19v1.5M17 19v1.5',
+  heart:  'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+  shirt:  'M8 4l-5 3 2 4 2-1v10h10V10l2 1 2-4-5-3a4 4 0 0 1-8 0z',
+  food:   'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1-3 4-3 7h3v11',
+  screen: 'M3 5h18v12H3zM8 21h8M12 17v4',
+  gift:   'M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-1-3-5-3-5-1s5 1 5 1zm0 0c1-3 5-3 5-1s-5 1-5 1z',
+  flame:  'M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-3.5 2-5 1 1.5 2 2 2 2s-.5-4 1-7z',
+  book:   'M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h8',
+  user:   'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z',
+  receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',
+  trend:  'M3 17l6-6 4 4 8-8M15 7h6v6',
+  coin:   'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M14.5 9.5H11a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5',
+  brief:  'M4 8h16v11H4zM9 8V5h6v3M4 13h16',
+  xfer:   'M7 7h13l-3-3M17 17H4l3 3',
+  tag:    'M3 12V4h8l10 10-8 8zM7.5 7.5h.01',
+  chevD:  'M6 9l6 6 6-6',
+  chevL:  'M15 6l-6 6 6 6',
+  chevR:  'M9 6l6 6-6 6',
+  up:     'M12 19V5M6 11l6-6 6 6',
+  down:   'M12 5v14M6 13l6 6 6-6',
+  warn:   'M12 4l9 16H3zM12 10v4M12 17h.01',
+  check:  'M5 12l5 5 9-10',
+  search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4',
+  upload: 'M12 16V4M7 9l5-5 5 5M4 20h16'
+};
+function svgIco(d) { return '<svg class="ico" viewBox="0 0 24 24"><path d="' + d + '"/></svg>'; }
+
+const COLOR_CARTERA = {
+  'EFECTIVO': '#3DDC97', 'EFECTIVO ANDREA': '#F08BBE', 'BANAMEX': '#A78BFA', 'BAJIO': '#F2B84B',
+  'SANTANDER': '#FF8F8F', 'CAJA FUERTE': '#F59E5B',
+  'TDC AMEX ORO': '#D9B44A', 'TDC AMEX PLATINO': '#B4B9C6', 'TDC LIKE U': '#6CB6FF',
+  'TDC CITI': '#5ED3C4', 'TDC INVEX VOLARIS': '#A78BFA', 'TDC TARJETA PALACIO': '#F08BBE'
+};
+const PALETA = ['#3DDC97','#A78BFA','#F2B84B','#F59E5B','#F08BBE','#6CB6FF','#5ED3C4','#D9B44A','#B4B9C6','#FF8F8F'];
+function colorCartera(c) {
+  if (COLOR_CARTERA[c]) return COLOR_CARTERA[c];
+  let h = 0; for (const ch of String(c)) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return PALETA[h % PALETA.length];
+}
+function icoCartera(c) {
+  if (CARTERAS_TDC.includes(c)) return ICO.card;
+  if (/CAJA/.test(c)) return ICO.safe;
+  if (/EFECTIVO/.test(c)) return ICO.wallet;
+  return ICO.bank;
+}
+// Ícono y color por categoría (en la Fase 3 esto vivirá en el catálogo editable)
+const VISUAL_CAT = {
+  'SUPER': ['cart', '#3DDC97'], 'VIAJES': ['globe', '#6CB6FF'], 'RENTA': ['home', '#A78BFA'],
+  'GASTOS DEPARTAMENTO': ['home', '#A78BFA'], 'GASOLINA': ['fuel', '#F59E5B'],
+  'TRANSPORTE / MOVILIDAD': ['car', '#6CB6FF'], 'UBER': ['car', '#6CB6FF'],
+  'SALUD / DEPORTE': ['heart', '#F08BBE'], 'SEGURO GASTOS MEDICOS': ['shield', '#F08BBE'],
+  'ROPA / ACCESORIOS': ['shirt', '#B9A5FB'], 'FIESTA / COMIDA / RECREACIÓN': ['food', '#F08BBE'],
+  'DIGITALES': ['screen', '#F2B84B'], 'REGALOS': ['gift', '#F08BBE'], 'GAS': ['flame', '#F59E5B'],
+  'COLEGIO': ['book', '#6CB6FF'], 'CLASES EXTRACURRICULARES': ['book', '#6CB6FF'],
+  'ENFERMERA / MUCHACHA': ['user', '#5ED3C4'], 'SEGURO COCHES': ['shield', '#5ED3C4'],
+  'IMPUESTOS': ['receipt', '#B4B9C6'], 'INVERSIÓN': ['trend', '#3DDC97'], 'AHORRO GNP': ['trend', '#3DDC97'],
+  'AHORRO HIPERPACK': ['trend', '#3DDC97'], 'CRYPTOS': ['trend', '#3DDC97'],
+  'PAGO CREDITO': ['bank', '#5ED3C4'], 'PAGO CREDITO BANCOS': ['bank', '#5ED3C4'],
+  'PAGO CREDITO GENERAL': ['bank', '#5ED3C4'], 'PAGO CREDITO HIPOTECARIO': ['bank', '#5ED3C4'],
+  'PRÉSTAMOS': ['coin', '#F2B84B'],
+  'NOMINA HIPERPACK': ['brief', '#00E096'], 'KUBEL': ['brief', '#00E096'], 'COMISIÓN FACT': ['brief', '#00E096'],
+  'BONOS / COMISIONES HIPERPACK': ['brief', '#00E096'], 'UTILIDADES HIPERPACK': ['brief', '#00E096'],
+  'FILTROS': ['brief', '#00E096'], 'UTILIDADES DE INVERSIÓN': ['trend', '#00E096'],
+  'PAGO DE PRÉSTAMOS': ['coin', '#00E096'], 'PEDI PRESTADO': ['coin', '#00E096'], 'OTROS': ['coin', '#00E096']
+};
+function catVisual(r) {
+  if (r.tipo === 'TRANSFERENCIA') return { d: ICO.xfer, c: '#C9C9DA' };
+  if (r.tipo === 'INGRESO POR TRANSFERENCIA') return { d: ICO.xfer, c: '#6CB6FF' };
+  const v = VISUAL_CAT[r.categoria];
+  if (v) return { d: ICO[v[0]], c: v[1] };
+  return (parseFloat(r.monto) || 0) > 0 ? { d: ICO.coin, c: '#00E096' } : { d: ICO.tag, c: '#B4B9C6' };
+}
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_LARGOS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function mesLargo(ym) { const [y, m] = ym.split('-').map(Number); const t = MESES_LARGOS[m - 1]; return t.charAt(0).toUpperCase() + t.slice(1) + ' ' + y; }
+function formatDateLargo(iso) { const [y, m, d] = iso.split('-').map(Number); return d + ' de ' + MESES_LARGOS[m - 1]; }
+// Lo que ya se abonó a una tarjeta desde el pago anterior (cuenta para el siguiente 24)
+function pagadoCiclo(cartera, pagoISO) {
+  const desde = pagoAnterior(pagoISO), today = hoy();
+  let s = 0;
+  allRecords.forEach(r => {
+    if (r.cartera !== cartera || r._pendiente) return;
+    const m = parseFloat(r.monto) || 0;
+    if (m <= 0) return;
+    if (r.fecha > desde && r.fecha <= pagoISO && r.fecha <= today) s += m;
+  });
+  return s;
+}
+// Flujo (ingresos y gastos sin transferencias) de un mes, respetando filtros del Resumen
+function flujoMes(ym, cutoff) {
+  let ing = 0, gas = 0;
+  allRecords.forEach(r => {
+    if (r._pendiente || !r.fecha || r.fecha.slice(0, 7) !== ym) return;
+    if (cutoff && r.fecha > cutoff) return;
+    if (dashFilters.cartera && r.cartera !== dashFilters.cartera) return;
+    if (dashFilters.cat && r.categoria !== dashFilters.cat) return;
+    const m = parseFloat(r.monto) || 0;
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+  });
+  return { ing, gas };
+}
+let dashTdcCeroAbiertas = false;
+function toggleTdcCero(btn) {
+  dashTdcCeroAbiertas = !dashTdcCeroAbiertas;
+  const box = document.getElementById('tdc-cero-box');
+  if (box) box.style.display = dashTdcCeroAbiertas ? 'block' : 'none';
+  btn.classList.toggle('open', dashTdcCeroAbiertas);
+}
+
 function renderDashboard() {
   const today = hoy();
   const cutoff = dashCutoffDate;
-  const nowCutoff = new Date(cutoff + 'T23:59:59');
-  const month = nowCutoff.getMonth(), year = nowCutoff.getFullYear();
+  const ymCorte = cutoff.slice(0, 7);
 
-  // PATRIMONIO NETO — pasado + gastos futuros TDC (ya se gastó), excluye ingresos futuros y gastos futuros cash
+  // PATRIMONIO NETO — pasado + gastos futuros TDC (ya se gastó); ignora ingresos futuros y gastos futuros cash
   const saldosHoy = {};
   CARTERAS.forEach(c => saldosHoy[c] = getSaldoInicial(c));
   allRecords.forEach(r => {
     const esFuturo = r.fecha > today;
     const esTdc = CARTERAS_TDC.includes(r.cartera);
     const m = parseFloat(r.monto) || 0;
-
     if (!esFuturo) {
-      // Pasado: cuenta todo
       if (saldosHoy[r.cartera] !== undefined) saldosHoy[r.cartera] += m;
-    } else {
-      // Futuro: solo gastos de TDC (ya se gastó, el pago es futuro)
-      if (esTdc && m < 0 && r.tipo === 'GASTO') {
-        if (saldosHoy[r.cartera] !== undefined) saldosHoy[r.cartera] += m;
-      }
-      // Ingresos futuros y gastos futuros cash: se ignoran
+    } else if (esTdc && m < 0 && r.tipo === 'GASTO') {
+      if (saldosHoy[r.cartera] !== undefined) saldosHoy[r.cartera] += m;
     }
   });
   const cashHoy = CARTERAS_CASH.reduce((s, c) => s + (saldosHoy[c] || 0), 0);
@@ -1652,125 +1895,110 @@ function renderDashboard() {
   const patrimonioNeto = cashHoy + tdcHoy;
 
   const pnEl = document.getElementById('dash-total');
-  pnEl.textContent = (patrimonioNeto < 0 ? '−' : '') + fmtN(Math.abs(patrimonioNeto));
-  pnEl.style.color = patrimonioNeto < 0 ? 'var(--red)' : 'var(--green)';
+  pnEl.textContent = money0(patrimonioNeto);
+  pnEl.classList.toggle('neg', patrimonioNeto < 0);
 
-  // Update PN summary card in resumen tab
-  const pnTotal = document.getElementById('dash-pn-total');
-  const pnCash  = document.getElementById('dash-pn-cash');
-  const pnTdc   = document.getElementById('dash-pn-tdc');
-  if (pnTotal) { pnTotal.textContent = (patrimonioNeto<0?'−':'')+'$'+fmtN(Math.abs(patrimonioNeto)); pnTotal.style.color = patrimonioNeto<0?'var(--red)':'var(--green)'; }
-  if (pnCash)  { pnCash.textContent  = (cashHoy<0?'−':'')+'$'+fmtN(Math.abs(cashHoy));  pnCash.style.color  = cashHoy<0?'var(--red)':'var(--green)'; }
-  if (pnTdc)   { pnTdc.textContent   = '$'+fmtN(Math.abs(tdcHoy)); }
-
-  // Patrimonio con deudas
-  const sinDeuEl = document.getElementById('pn-sin-deudas');
-  if (sinDeuEl) {
-    sinDeuEl.textContent = (patrimonioNeto < 0 ? '−' : '') + '$' + fmtN(Math.abs(patrimonioNeto));
-    sinDeuEl.style.color = patrimonioNeto >= 0 ? 'var(--green)' : 'var(--red)';
-  }
+  const cashEl = document.getElementById('dash-cash');
+  cashEl.textContent = money0(cashHoy);
+  cashEl.classList.toggle('neg', cashHoy < 0);
+  document.getElementById('dash-cash-2').textContent = money0(cashHoy);
+  const tdcEl = document.getElementById('dash-tdc');
+  tdcEl.textContent = money0(tdcHoy);
+  tdcEl.classList.toggle('neg', tdcHoy < -0.5);
   actualizarPatrimonioConDeudas();
 
-  // CASH y TDC — cash solo hasta hoy, TDC incluye gastos futuros (ya se gastó)
-  const cashEl = document.getElementById('dash-cash');
-  cashEl.textContent = (cashHoy < 0 ? '−' : '') + '$' + fmtN(Math.abs(cashHoy));
-  cashEl.className = 'dash-split-val ' + (cashHoy < 0 ? 'tdc' : 'cash');
-
-  // Saldo TDC = todo lo pasado + todos los gastos futuros de TDC
-  const saldosTdcTotal = {};
-  CARTERAS_TDC.forEach(c => saldosTdcTotal[c] = getSaldoInicial(c));
-  allRecords.forEach(r => {
-    if (!CARTERAS_TDC.includes(r.cartera)) return;
-    const m = parseFloat(r.monto) || 0;
-    const esFuturo = r.fecha > today;
-    if (!esFuturo) {
-      saldosTdcTotal[r.cartera] += m;
-    } else if (m < 0 && r.tipo === 'GASTO') {
-      saldosTdcTotal[r.cartera] += m;
-    }
-  });
-  const tdcTotalCompleto = CARTERAS_TDC.reduce((s, c) => s + (saldosTdcTotal[c] || 0), 0);
-  document.getElementById('dash-tdc').textContent = '$' + fmtN(Math.abs(tdcTotalCompleto));
-
+  // Fecha de corte del balance
   const isToday = cutoff === today;
-  document.getElementById('dash-cutoff-label').textContent = 'Movimientos reales + deuda TDC futura';
   const chip = document.getElementById('dash-date-chip');
-  chip.textContent = isToday ? '📅 Balance: hoy' : '📅 Balance: ' + formatDateShort(cutoff);
+  chip.textContent = isToday ? 'Al día de hoy' : 'Balance al ' + formatDateShort(cutoff);
   chip.className = isToday ? 'dash-date-btn' : 'dash-date-btn custom';
 
-  // BALANCE — según fecha de corte, con saldos iniciales
-  const saldosCorte = {};
-  CARTERAS.forEach(c => saldosCorte[c] = getSaldoInicial(c));
-  allRecords.forEach(r => {
-    if (r.fecha > cutoff) return;
-    if (dashFilters.cartera && r.cartera !== dashFilters.cartera) return;
-    const m = parseFloat(r.monto) || 0;
-    if (saldosCorte[r.cartera] !== undefined) saldosCorte[r.cartera] += m;
-  });
-
-  let ing = 0, gas = 0;
-  allRecords.forEach(r => {
-    if (r.fecha > cutoff) return;
-    const parts = r.fecha.split('-');
-    const rm = parseInt(parts[1]) - 1, ry = parseInt(parts[0]);
-    if (rm === month && ry === year) {
-      const m = parseFloat(r.monto) || 0;
-      if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
-      if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
-    }
-  });
-  document.getElementById('dash-ing').textContent = '$' + fmtN(ing);
-  document.getElementById('dash-gas').textContent = '$' + fmtN(Math.abs(gas));
-  const bal = ing + gas;
+  // FLUJO DEL MES (hasta la fecha de corte)
+  const fm = flujoMes(ymCorte, cutoff);
+  const bal = fm.ing + fm.gas;
   const be = document.getElementById('dash-bal');
-  be.textContent = (bal >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(bal));
-  be.className = 'dash-mes-val ' + (bal >= 0 ? 'pos' : 'neg');
+  be.innerHTML = svgIco(bal >= 0 ? ICO.up : ICO.down) + '$' + fmt0(bal);
+  be.className = 'pill privacy-num ' + (bal >= 0 ? 'pos' : 'neg');
+  document.getElementById('dash-cutoff-label').textContent = isToday ? 'este mes' : 'en ' + MESES_LARGOS[parseInt(ymCorte.slice(5)) - 1] + ' al ' + formatDateShort(cutoff);
+  document.getElementById('dash-ing').textContent = '$' + fmt0(fm.ing);
+  document.getElementById('dash-gas').textContent = '$' + fmt0(fm.gas);
+  document.getElementById('dash-mes-lbl').textContent = mesLargo(ymCorte).split(' ')[0];
 
-  // WALLETS con saldo inicial
-  // FIX v3.4: las tarjetas de EFECTIVO/BANCOS muestran el saldo REAL a hoy.
-  // Antes usaban 'saldosCorte' (hasta la fecha de corte del balance), así que
-  // una transferencia programada a futuro —p.ej. mañana— ya restaba y el saldo
-  // no cuadraba con la barra de Registros. El dinero futuro en cash aún no se mueve.
-  const gc = document.getElementById('wallets-cash'); gc.innerHTML = '';
-  CARTERAS_CASH.forEach(c => {
-    const s = saldosHoy[c] || 0;
-    const card = document.createElement('div'); card.className = 'wallet-card';
-    card.style.cursor = 'pointer';
-    card.innerHTML = `<div class="wallet-name">${c}</div><div class="wallet-amount ${s < 0 ? 'neg' : 'pos'}">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>`;
-    card.onclick = () => openWalletDetail(c);
-    gc.appendChild(card);
-  });
-  const gt = document.getElementById('wallets-tdc'); gt.innerHTML = '';
+  // BARRAS: 6 meses que terminan en el mes del corte. Tocar una barra abre ese mes en Registros.
+  const barsEl = document.getElementById('dash-bars');
+  const meses = [];
+  let [yy, mm] = ymCorte.split('-').map(Number);
+  for (let i = 0; i < 6; i++) { meses.unshift(yy + '-' + String(mm).padStart(2, '0')); mm--; if (mm < 1) { mm = 12; yy--; } }
+  const datos = meses.map(ym => { const f = ym === ymCorte ? fm : flujoMes(ym, null); return { ym, ing: f.ing, gas: Math.abs(f.gas) }; });
+  const maxV = Math.max(1, ...datos.map(d => Math.max(d.ing, d.gas)));
+  barsEl.innerHTML = datos.map(d => {
+    const cur = d.ym === ymCorte;
+    const hI = Math.round(d.ing / maxV * 100), hG = Math.round(d.gas / maxV * 100);
+    return `<button class="r-bar-col${cur ? ' cur' : ''}" onclick="irAMesRegistros('${d.ym}')" aria-label="Ver ${mesLargo(d.ym)} en Registros">
+      <div class="r-bar-pair">
+        <div class="r-bar" style="height:${hI}px;background:${cur ? '#00E096' : 'rgba(0,224,150,0.32)'}"></div>
+        <div class="r-bar" style="height:${hG}px;background:${cur ? '#FF6363' : 'rgba(255,99,99,0.32)'}"></div>
+      </div>
+      <div class="r-bar-m">${MESES_CORTOS[parseInt(d.ym.slice(5)) - 1]}</div>
+    </button>`;
+  }).join('');
+
+  // TARJETAS: saldo, barra del pago del 24 y lo diferido
+  const saldosTdcTotal = {};
+  CARTERAS_TDC.forEach(c => saldosTdcTotal[c] = saldosHoy[c] || 0);
   const pagoProx = proximoPago24();
-  let sumPago24 = 0, sumDiferido = 0;
+  let sumFaltan = 0, sumPago = 0;
+  const conSaldo = [], sinSaldo = [];
   CARTERAS_TDC.forEach(c => {
-    const s = saldosTdcTotal[c] || 0;
+    const s = saldosTdcTotal[c];
     const st = statsTDC(c, pagoProx);
-    sumPago24 += st.pagoMonto; sumDiferido += st.diferido;
-    const card = document.createElement('div'); card.className = 'wallet-card tdc-card';
-    card.style.cursor = 'pointer';
-    card.innerHTML = `<div class="wallet-name">💳 ${c}</div>
-      <div class="wallet-amount ${s < 0 ? 'neg' : 'pos'}">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>
-      <div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);font-size:11px;">
-        <div style="display:flex;justify-content:space-between;padding:1px 0;"><span style="color:var(--text3);">Pago ${formatDateShort(pagoProx)}</span><span class="privacy-num" style="font-weight:700;color:${st.pagoMonto > 0 ? 'var(--red)' : 'var(--text3)'};">$${fmtN(st.pagoMonto)}</span></div>
-        <div style="display:flex;justify-content:space-between;padding:1px 0;"><span style="color:var(--text3);">Diferido/MSI</span><span class="privacy-num" style="font-weight:700;color:var(--text2);">$${fmtN(st.diferido)}</span></div>
-        <div onclick="event.stopPropagation();abrirConciliacion('${c}')" style="margin-top:6px;text-align:center;padding:6px;background:var(--bg3);border-radius:6px;color:var(--blue);font-weight:700;">🧾 Conciliar</div>
-      </div>`;
-    card.onclick = () => openWalletDetail(c);
-    gt.appendChild(card);
+    const pagado = pagadoCiclo(c, pagoProx);
+    const faltan = Math.max(0, st.pagoMonto - pagado);
+    sumFaltan += faltan; sumPago += st.pagoMonto;
+    const pct = st.pagoMonto > 0.5 ? Math.min(100, pagado / st.pagoMonto * 100) : 100;
+    let izq;
+    if (st.pagoMonto <= 0.5) izq = 'Sin pago este ciclo';
+    else if (faltan < 1) izq = 'Pago del ' + formatDateShort(pagoProx) + ' cubierto';
+    else izq = `Faltan <span class="privacy-num">$${fmt0(faltan)}</span> de <span class="privacy-num">$${fmt0(st.pagoMonto)}</span>`;
+    const der = st.diferido > 0.5 ? `A meses <span class="privacy-num">$${fmt0(st.diferido)}</span>` : '';
+    const html = `<div class="row" onclick="openWalletDetail('${c}')">
+      <div class="w-ico" style="background:${colorCartera(c)}">${svgIco(ICO.card)}</div>
+      <div class="row-main">
+        <div class="row-top"><span class="row-name">${nombreCartera(c)}</span><span class="row-amt wallet-amount${s < -0.5 ? ' neg' : ''}">${money0(s)}</span></div>
+        ${st.pagoMonto > 0.5 ? `<div class="bar"><i style="width:${pct.toFixed(0)}%"></i></div>` : ''}
+        <div class="row-sub"><span>${izq}</span><span>${der}</span></div>
+      </div>
+    </div>`;
+    if (Math.abs(s) < 0.5 && st.pagoMonto < 0.5 && st.diferido < 0.5) sinSaldo.push(html); else conSaldo.push(html);
   });
-
-  // Franja de totales TDC: deuda total, pago del 24 y diferido a meses
+  const gt = document.getElementById('wallets-tdc');
+  gt.innerHTML = conSaldo.join('') + (sinSaldo.length ? `
+    <button class="more-btn${dashTdcCeroAbiertas ? ' open' : ''}" onclick="toggleTdcCero(this)">
+      <span>${sinSaldo.length} ${sinSaldo.length === 1 ? 'tarjeta sin saldo' : 'tarjetas sin saldo'}</span>${svgIco(ICO.chevD)}
+    </button>
+    <div id="tdc-cero-box" style="display:${dashTdcCeroAbiertas ? 'block' : 'none'};border-top:1px solid var(--hair);">${sinSaldo.join('')}</div>` : '');
   const tdcSum = document.getElementById('tdc-summary');
-  if (tdcSum) {
-    tdcSum.style.display = 'block';
-    document.getElementById('tdc-sum-total').textContent = '$' + fmtN(Math.abs(tdcTotalCompleto));
-    document.getElementById('tdc-sum-pago-label').textContent = 'Pago ' + formatDateShort(pagoProx);
-    document.getElementById('tdc-sum-pago').textContent = '$' + fmtN(sumPago24);
-    document.getElementById('tdc-sum-dif').textContent = '$' + fmtN(sumDiferido);
-  }
+  tdcSum.innerHTML = sumPago < 0.5 ? '' : sumFaltan < 1
+    ? 'Pago del ' + formatDateShort(pagoProx) + ' cubierto'
+    : `Faltan <b class="privacy-num">$${fmt0(sumFaltan)}</b> para el ${formatDateShort(pagoProx)}`;
+
+  // DISPONIBLE: saldo real a hoy (el dinero futuro en cash aún no se mueve)
+  const gc = document.getElementById('wallets-cash');
+  gc.innerHTML = CARTERAS_CASH.map(c => {
+    const s = saldosHoy[c] || 0;
+    const sub = s < -0.5 && /ANDREA/.test(c) ? 'Por reembolsar'
+      : /CAJA/.test(c) ? 'Efectivo guardado' : /EFECTIVO/.test(c) ? 'Efectivo' : 'Banco';
+    return `<div class="row${Math.abs(s) < 0.5 ? ' dim' : ''}" onclick="openWalletDetail('${c}')">
+      <div class="w-ico" style="background:${colorCartera(c)}">${svgIco(icoCartera(c))}</div>
+      <div class="row-main" style="gap:2px;"><span class="row-name">${c}</span><span style="font-size:12px;color:var(--text2);">${sub}</span></div>
+      <span class="row-amt wallet-amount${s < -0.5 ? ' neg' : ''}">${money0(s)}</span>
+    </div>`;
+  }).join('');
+
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
+
+function irAMesRegistros(ym) { listMonth = ym; showPage('list'); }
 
 // DATE PICKER
 function openDatePicker() { document.getElementById('datepick-overlay').classList.add('show'); }
@@ -1843,12 +2071,35 @@ function setFilter(f, el) {
   renderRecords();
 }
 
+// ★ v4.2: Registros se ve mes por mes (antes pintaba los 4,000+ registros a la vez).
+//   Si hay búsqueda o rango Desde/Hasta, se ignora el mes y se busca en todo.
+let listMonth = hoy().slice(0, 7);
+function moverMesLista(d) {
+  let [y, m] = listMonth.split('-').map(Number);
+  m += d; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+  listMonth = y + '-' + String(m).padStart(2, '0');
+  renderRecords();
+}
+function fechaDia(iso, conMes) {
+  const d = new Date(iso + 'T12:00:00');
+  const dia = d.toLocaleDateString('es-MX', { weekday: 'long' });
+  const cap = dia.charAt(0).toUpperCase() + dia.slice(1);
+  const num = d.getDate();
+  const today = hoy();
+  const ayer = toLocalDate(new Date(new Date(today + 'T12:00:00').getTime() - 86400000));
+  const mes = conMes ? ' ' + MESES_CORTOS[d.getMonth()].toLowerCase() + (iso.slice(0, 4) !== today.slice(0, 4) ? ' ' + iso.slice(0, 4) : '') : '';
+  if (iso === today) return 'Hoy, ' + dia + ' ' + num + mes;
+  if (iso === ayer) return 'Ayer, ' + dia + ' ' + num + mes;
+  return cap + ' ' + num + mes;
+}
+
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
   const today = hoy();
   actualizarSaldoBar();
 
   const searchTerm = (document.getElementById('search-input')?.value || '').toLowerCase().trim();
+  const modoMes = !searchTerm && !listFilters.desde && !listFilters.hasta;
 
   let records = allRecords.filter(r => {
     if (currentFilter !== 'todos') {
@@ -1869,11 +2120,36 @@ function renderRecords() {
       ].join(' ').toLowerCase();
       if (!haystack.includes(searchTerm)) return false;
     }
+    if (modoMes && (!r.fecha || r.fecha.slice(0, 7) !== listMonth)) return false;
     return true;
   });
 
+  // Encabezado del mes: flujo sin transferencias
+  const blk = document.getElementById('list-month-block');
+  const note = document.getElementById('list-custom-note');
+  if (blk) blk.style.display = modoMes ? 'block' : 'none';
+  if (note) {
+    note.style.display = modoMes ? 'none' : 'block';
+    note.textContent = records.length + (records.length === 1 ? ' movimiento' : ' movimientos') + (searchTerm ? ' encontrados en todos los meses' : ' en el rango elegido');
+  }
+  if (modoMes) {
+    let ing = 0, gas = 0;
+    records.forEach(r => {
+      if (r._pendiente) return;
+      const m = parseFloat(r.monto) || 0;
+      if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += m;
+      if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
+    });
+    const bal = ing + gas;
+    document.getElementById('list-month-lbl').textContent = mesLargo(listMonth);
+    document.getElementById('list-mes-bal').textContent = (bal >= 0 ? '+' : '−') + '$' + fmt0(bal);
+    document.getElementById('list-mes-ing').textContent = 'Entró $' + fmt0(ing);
+    document.getElementById('list-mes-gas').textContent = 'Salió $' + fmt0(gas);
+  }
+
   if (!records.length) {
-    list.innerHTML = '<div class="coming-soon" style="min-height:40vh"><div style="font-size:32px;opacity:0.25">📋</div><div style="font-size:14px;color:var(--text3)">Sin registros</div></div>';
+    list.innerHTML = '<div class="coming-soon" style="min-height:30vh"><div style="font-size:14px;color:var(--text2)">' +
+      (modoMes ? 'Sin movimientos en ' + MESES_LARGOS[parseInt(listMonth.slice(5)) - 1] : 'Nada coincide con tu búsqueda') + '</div></div>';
     return;
   }
 
@@ -1883,7 +2159,9 @@ function renderRecords() {
   // FUTUROS — master colapsable que oculta/muestra todo, con subgrupos por categoria
   if (future.length > 0) {
     const futTotal = future.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
-    const masterCollapsed = collapsedRecGroups['__future_master__'] !== false;
+    // En un mes que todavía no llega, todo es futuro: se muestra abierto.
+    const mesFuturo = modoMes && listMonth > today.slice(0, 7);
+    const masterCollapsed = collapsedRecGroups['__future_master__'] === undefined ? !mesFuturo : collapsedRecGroups['__future_master__'] !== false;
 
     const masterWrap = document.createElement('div');
     masterWrap.innerHTML = `
@@ -1929,14 +2207,21 @@ function renderRecords() {
   // PASADO agrupado por día (más reciente arriba)
   const byDate = {};
   past.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha] = []; byDate[r.fecha].push(r); });
+  // Transferencias: si las dos mitades están en la lista, se muestra un solo renglón (el de salida)
+  const salidas = new Set(records.filter(r => r.tipo === 'TRANSFERENCIA' && r.idTransferencia).map(r => r.idTransferencia));
   Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(date => {
     const recs = ordenarRegistros(byDate[date]); // ★ más reciente arriba dentro del día
     const grp = document.createElement('div'); grp.className = 'day-group';
     const dt = recs.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
     const hdr = document.createElement('div'); hdr.className = 'day-header';
-    hdr.innerHTML = `<span class="day-date">${formatDate(date)}</span><span class="day-total ${dt >= 0 ? 'pos' : 'neg'}">${dt >= 0 ? '+' : '−'}$${fmtN(Math.abs(dt))}</span>`;
+    hdr.innerHTML = `<span class="day-date">${fechaDia(date, !modoMes)}</span><span class="day-total ${dt > 0.005 ? 'pos' : 'neg'}">${Math.abs(dt) < 0.005 ? '$0' : (dt > 0 ? '+' : '−') + '$' + fmtSmart(dt)}</span>`;
     grp.appendChild(hdr);
-    recs.forEach(r => grp.appendChild(buildRecordItem(r, false)));
+    const cardEl = document.createElement('div'); cardEl.className = 'day-card';
+    recs.forEach(r => {
+      if (r.tipo === 'INGRESO POR TRANSFERENCIA' && r.idTransferencia && salidas.has(r.idTransferencia)) return;
+      cardEl.appendChild(buildRecordItem(r, false));
+    });
+    grp.appendChild(cardEl);
     list.appendChild(grp);
   });
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
@@ -1963,27 +2248,34 @@ function toggleRecGroup(key, elId, headerEl) {
 function buildRecordItem(r, isFuture) {
   const item = document.createElement('div');
   item.className = 'record-item' + (isFuture ? ' future' : '');
-  let iconClass = 'gas', iconChar = '↓';
-  if (r.tipo === 'INGRESO') { iconClass = 'ing'; iconChar = '↑'; }
-  if (r.tipo === 'TRANSFERENCIA') { iconClass = 'tra-out'; iconChar = '→'; }
-  if (r.tipo === 'INGRESO POR TRANSFERENCIA') { iconClass = 'tra-in'; iconChar = '→'; }
   const monto = parseFloat(r.monto) || 0;
   const isTraOut = r.tipo === 'TRANSFERENCIA';
   const isTraIn  = r.tipo === 'INGRESO POR TRANSFERENCIA';
   const esCashFuturo = isFuture && CARTERAS_CASH.includes(r.cartera) && monto < 0 && r.tipo === 'GASTO';
-  const esIngresoFuturo = isFuture && monto > 0 && r.tipo === 'INGRESO';
   // Cash futuro → gris (proyectado, no comprometido). Ingreso futuro → verde. TDC futuro → rojo (comprometido)
-  if (esCashFuturo) { iconClass = 'tra-out'; iconChar = '↓'; }
-  if (esIngresoFuturo) { iconClass = 'ing'; }
   const amtClass = isTraOut ? 'tra-out' : isTraIn ? 'tra-in' : esCashFuturo ? 'tra-out' : monto > 0 ? 'pos' : monto < 0 ? 'neg' : 'neu';
-  const amtStr = (isTraOut ? '−' : isTraIn ? '+' : monto >= 0 ? '+' : '−') + '$' + fmtN(Math.abs(monto));
+  const amtStr = (isTraOut ? '' : isTraIn ? '+' : monto >= 0 ? '+' : '−') + '$' + fmtSmart(monto);
+  const v = catVisual(r);
+  let titulo = r.categoria || r.tipo;
+  let meta = nombreCartera(r.cartera);
+  if (isTraOut) {
+    titulo = CARTERAS_TDC.includes(r.carteraDestino) ? 'Pago de tarjeta' : 'Transferencia';
+    meta = nombreCartera(r.cartera) + ' → ' + nombreCartera(r.carteraDestino);
+  } else if (isTraIn) {
+    titulo = 'Transferencia recibida';
+  }
+  if (r.nota) meta += ' · ' + r.nota;
+  if (isFuture) meta += ' · ' + formatDateShort(r.fecha);
   const usuarioDisplay = r.usuario ? (r.usuario.includes('@') ? r.usuario.split('@')[0] : r.usuario) : '';
-  const meta = [r.cartera, r.carteraDestino ? '→ ' + r.carteraDestino : '', usuarioDisplay && usuarioDisplay.toLowerCase() !== 'eugenio' ? usuarioDisplay : ''].filter(Boolean).join(' · ');
+  const u = usuarioDisplay.toLowerCase();
+  const badge = u === 'andrea' ? '<span class="u-badge" aria-label="Capturado por Andrea">A</span>'
+    : (u && u !== 'eugenio' ? '<span class="u-badge" style="background:var(--bg5);color:var(--text);">' + usuarioDisplay.charAt(0).toUpperCase() + '</span>' : '');
+  const msi = r.msiNum && r.msiPlazo ? '<span class="msi-chip">MSI ' + r.msiNum + '/' + r.msiPlazo + '</span>' : '';
   item.innerHTML = `
-    <div class="record-icon ${iconClass}">${iconChar}</div>
+    <div class="record-icon" style="background:${hexA(v.c, 0.16)};color:${v.c}">${svgIco(v.d)}</div>
     <div class="record-body">
-      <div class="record-cat">${r.categoria || (r.tipo === 'TRANSFERENCIA' ? 'Transferencia' : r.tipo)}</div>
-      <div class="record-meta">${meta}${r.nota ? ' · ' + r.nota : ''}${isFuture ? ' · ' + formatDate(r.fecha) : ''}</div>
+      <div class="record-cat"><span>${titulo}</span>${msi}</div>
+      <div class="record-meta">${badge}<span>${meta}</span></div>
     </div>
     <div class="record-amount ${amtClass}">${amtStr}</div>`;
   item.onclick = () => openEditModal(r);
@@ -2880,6 +3172,7 @@ function togglePrivacy() {
   const btns = ['privacy-btn','privacy-btn-desk'];
   btns.forEach(id => {
     const el = document.getElementById(id);
+    if (el && el.dataset.icon) { el.classList.toggle('on', privacyOn); return; }
     if (el) { el.textContent = privacyOn ? '🙈' : '👁'; el.style.opacity = privacyOn ? '1' : '0.5'; }
   });
   // Blur wallet amounts, KPIs, record amounts
@@ -3059,10 +3352,10 @@ function actualizarPatrimonioConDeudas() {
   if (elConDeu) {
     const { neto } = calcPatrimonio();
     const netoConDeu = neto - totalDeudas;
-    elConDeu.textContent = (netoConDeu < 0 ? '−' : '') + '$' + fmtN(Math.abs(netoConDeu));
-    elConDeu.style.color = netoConDeu >= 0 ? 'var(--green)' : 'var(--red)';
+    elConDeu.textContent = (netoConDeu < 0 ? '−' : '') + '$' + fmt0(netoConDeu);
+    elConDeu.style.color = netoConDeu >= 0 ? '' : 'var(--red)';
   }
-  if (elTotalDeu) elTotalDeu.textContent = '−$' + fmtN(totalDeudas);
+  if (elTotalDeu) elTotalDeu.textContent = (totalDeudas > 0.5 ? '−' : '') + '$' + fmt0(totalDeudas);
 }
 
 function abrirFormDeuda(id) {
@@ -3664,29 +3957,30 @@ function actualizarSaldoBar() {
   };
   const cartera = listFilters.cartera || '';
   bar.style.display = 'block';
+  const v = (n) => `<div class="sb-v privacy-num${n < -0.5 ? ' neg' : ''}">${money0(n)}</div>`;
   if (cartera) {
     const s = calcSaldo(cartera);
     const esTdc = CARTERAS_TDC.includes(cartera);
-    const sub = esTdc ? 'Incluye gastos futuros comprometidos' : 'Saldo al día de hoy';
-    let extra = '';
     if (esTdc) {
       const st = statsTDC(cartera);
-      extra = `<div style="display:flex;gap:14px;margin-top:6px;font-size:11px;color:var(--text3);">
-        <span>Pago ${formatDateShort(st.pago)}: <span class="privacy-num" style="font-weight:700;color:var(--red);">$${fmtN(st.pagoMonto)}</span></span>
-        <span>Diferido: <span class="privacy-num" style="font-weight:700;color:var(--text2);">$${fmtN(st.diferido)}</span></span>
+      const pagado = pagadoCiclo(cartera, st.pago);
+      const faltan = Math.max(0, st.pagoMonto - pagado);
+      bar.innerHTML = `<div class="sb">
+        <div><div class="sb-l">Saldo ${nombreCartera(cartera)}</div>${v(s)}</div>
+        <div><div class="sb-l">Falta para el ${formatDateShort(st.pago)}</div>${v(-faltan)}</div>
+        <div><div class="sb-l">A meses</div><div class="sb-v privacy-num">$${fmt0(st.diferido)}</div></div>
       </div>`;
+    } else {
+      bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="sb-l" style="margin:0;">Saldo de ${cartera} hoy</div>${v(s)}</div>`;
     }
-    bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">
-      <div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">${esTdc ? '💳' : '💵'} ${cartera}</div><div style="font-size:10px;color:var(--text3);margin-top:2px;">${sub}</div></div>
-      <div class="privacy-num" style="font-family:var(--display);font-size:18px;font-weight:700;color:${s < 0 ? 'var(--red)' : 'var(--green)'};">${s < 0 ? '−' : ''}$${fmtN(Math.abs(s))}</div>
-    </div>${extra}`;
   } else {
     const cash = CARTERAS_CASH.reduce((s, c) => s + calcSaldo(c), 0);
     const tdc  = CARTERAS_TDC.reduce((s, c) => s + calcSaldo(c), 0);
-    bar.innerHTML = `<div style="display:flex;gap:16px;">
-      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">💵 Cash total</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:${cash < 0 ? 'var(--red)' : 'var(--green)'};">${cash < 0 ? '−' : ''}$${fmtN(Math.abs(cash))}</div></div>
-      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">💳 Deuda TDC</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:var(--red);">$${fmtN(Math.abs(tdc))}</div></div>
-      <div style="flex:1;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Neto</div><div class="privacy-num" style="font-family:var(--display);font-size:16px;font-weight:700;color:${(cash + tdc) < 0 ? 'var(--red)' : 'var(--green)'};">${(cash + tdc) < 0 ? '−' : ''}$${fmtN(Math.abs(cash + tdc))}</div></div>
+    bar.innerHTML = `<div class="sb">
+      <div><div class="sb-l">Disponible</div>${v(cash)}</div>
+      <div><div class="sb-l">Tarjetas</div>${v(tdc)}</div>
+      <div><div class="sb-l">Neto</div>${v(cash + tdc)}</div>
     </div>`;
   }
 }
@@ -3710,6 +4004,7 @@ function initConciliacion() {
 
 function setConcCartera(c) {
   concCartera = c;
+  concVerTodos = false;
   if (pdfConc && pdfConc.cartera !== c) {
     pdfConc = null;
     const box = document.getElementById('pdf-resultados');
@@ -3728,7 +4023,7 @@ function renderConcChips() {
   wrap.innerHTML = '';
   CARTERAS_TDC.forEach(c => {
     const el = document.createElement('div');
-    el.className = 'chip' + (concCartera === c ? ' active gas' : '');
+    el.className = 'filter-pill' + (concCartera === c ? ' active' : '');
     el.textContent = c.replace('TDC ', '');
     el.onclick = () => setConcCartera(c);
     wrap.appendChild(el);
@@ -3760,12 +4055,38 @@ function registrosDelCiclo() {
   }).sort((a, b) => a.fecha.localeCompare(b.fecha) || String(a.hora || '').localeCompare(String(b.hora || '')));
 }
 
+let concVerTodos = false;
+const CONC_LIMITE = 8;
+function moverCicloConc(d) {
+  const sel = document.getElementById('conc-ciclo');
+  if (!sel || !sel.options.length) return;
+  const i = Math.min(sel.options.length - 1, Math.max(0, sel.selectedIndex + d));
+  if (i === sel.selectedIndex) return;
+  sel.selectedIndex = i;
+  concVerTodos = false;
+  renderConciliacion();
+}
+function toggleConcVerTodos() { concVerTodos = !concVerTodos; renderConciliacion(); }
+
+// Diferencia entre el estado de cuenta y la app para el ciclo visible (null si no hay EC)
+function difConc(recs) {
+  const ec = parseFloat(document.getElementById('conc-ec')?.value) || 0;
+  if (!(ec > 0)) return null;
+  const total = recs.reduce((s, r) => s + Math.abs(parseFloat(r.monto) || 0), 0);
+  return ec - total;
+}
+
 function renderConciliacion() {
   const lista = document.getElementById('conc-lista');
   if (!lista) return;
   const sel = document.getElementById('conc-ciclo');
   if (sel && !sel.options.length) poblarCiclos(false);
   const pago = sel ? sel.value : proximoPago24();
+
+  // Etiqueta del ciclo
+  const rg = rangoCiclo(concCartera, pago);
+  document.getElementById('conc-ciclo-rango').textContent = formatDateShort(rg.desde) + ' – ' + formatDateShort(rg.hasta);
+  document.getElementById('conc-ciclo-pago').textContent = (pago < hoy() ? 'Se pagó el ' : 'Se paga el ') + formatDateLargo(pago);
 
   // Total del estado de cuenta guardado para este ciclo/tarjeta
   const ecInput = document.getElementById('conc-ec');
@@ -3774,26 +4095,33 @@ function renderConciliacion() {
   }
 
   const recs = registrosDelCiclo();
-  const visibles = concFiltro === 'pendientes' ? recs.filter(r => !r.conciliado) : recs;
+  const dif = difConc(recs);
+  // Un cargo que mide exactamente lo que sobra probablemente es el culpable
+  const objetivo = dif !== null && dif < -0.5 ? Math.abs(dif) : null;
+  const orden = recs.slice().sort((a, b) => Math.abs(parseFloat(b.monto) || 0) - Math.abs(parseFloat(a.monto) || 0));
+  const visibles = concVerTodos ? orden : orden.slice(0, CONC_LIMITE);
   lista.innerHTML = visibles.length
-    ? visibles.map(r => filaConc(r)).join('')
-    : `<div style="text-align:center;padding:34px;color:var(--text3);font-size:13px;">${recs.length ? 'Todo conciliado en este ciclo ✓' : 'Sin cargos en este ciclo'}</div>`;
+    ? visibles.map(r => filaConc(r, objetivo)).join('')
+    : '<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px;">Sin cargos en este ciclo</div>';
+  const vm = document.getElementById('conc-vermas');
+  if (vm) {
+    vm.style.display = recs.length > CONC_LIMITE ? 'flex' : 'none';
+    vm.textContent = concVerTodos ? 'Ver solo los más grandes' : 'Ver los ' + recs.length + ' cargos';
+  }
   actualizarTotalesConc();
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 
-function filaConc(r) {
+function filaConc(r, objetivo) {
   const m = Math.abs(parseFloat(r.monto) || 0);
-  const uIcon = r.usuario === 'Andrea' ? '👩' : '👨';
-  const desc = r.nota || r.categoria || r.tipo;
-  return `<div style="display:flex;align-items:center;gap:10px;background:var(--bg2);border:0.5px solid ${r.conciliado ? 'var(--border)' : 'var(--border2)'};border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;${r.conciliado ? 'opacity:0.55;' : ''}">
-    <input type="checkbox" ${r.conciliado ? 'checked' : ''} onchange="toggleConciliado('${r.id}', this.checked)" style="width:19px;height:19px;accent-color:var(--green);flex-shrink:0;cursor:pointer;">
-    <div style="flex:1;min-width:0;">
-      <div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${desc}</div>
-      <div style="font-size:11px;color:var(--text3);">${uIcon} ${formatDateShort(r.fecha)}${r.categoria && r.nota ? ' · ' + r.categoria : ''}</div>
-    </div>
-    <div class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:14px;">$${fmtN(m)}</div>
-  </div>`;
+  const desc = r.categoria || r.nota || r.tipo;
+  const sub = [formatDateShort(r.fecha), r.categoria && r.nota ? r.nota : '', r.usuario === 'Andrea' ? 'Andrea' : ''].filter(Boolean).join(' · ');
+  const match = objetivo !== null && Math.abs(m - objetivo) < 0.5;
+  return `<label class="c-row${r.conciliado ? ' done' : ''}${match ? ' match' : ''}">
+    <input type="checkbox" ${r.conciliado ? 'checked' : ''} onchange="toggleConciliado('${r.id}', this.checked)" aria-label="Marcar como revisado">
+    <span class="c-row-main"><b>${desc}</b><span>${sub}</span></span>
+    <span class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:14px;font-variant-numeric:tabular-nums;">$${fmtN(m)}</span>
+  </label>`;
 }
 
 function actualizarTotalesConc() {
@@ -3802,17 +4130,36 @@ function actualizarTotalesConc() {
   const recs = registrosDelCiclo();
   const total = recs.reduce((s, r) => s + Math.abs(parseFloat(r.monto) || 0), 0);
   const nConc = recs.filter(r => r.conciliado).length;
-  const ec = parseFloat(document.getElementById('conc-ec')?.value) || 0;
-  let difHtml = '<span style="color:var(--text3);">Captura el total del EC</span>';
-  if (ec > 0) {
-    const dif = ec - total;
-    if (Math.abs(dif) < 1) difHtml = '<span style="color:var(--green);font-weight:700;">✓ Cuadra</span>';
-    else difHtml = `<span class="privacy-num" style="color:var(--red);font-weight:700;">${dif > 0 ? 'Faltan' : 'Sobran'} $${fmtN(Math.abs(dif))}</span>`;
+  const dif = difConc(recs);
+  const lineaApp = `<div class="c-res-line"><span>En la app</span><b class="privacy-num">$${fmtN(total)} en ${recs.length} ${recs.length === 1 ? 'cargo' : 'cargos'}</b></div>`
+    + (nConc ? `<div class="c-res-line"><span>Palomeados</span><b>${nConc} de ${recs.length}</b></div>` : '');
+
+  if (dif === null) {
+    box.innerHTML = `<div class="c-res idle"><p style="margin-bottom:10px;">Escribe el total que trae tu estado de cuenta y te digo si cuadra.</p>${lineaApp}</div>`;
+    return;
   }
-  box.innerHTML = `<div style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);padding:12px 14px;display:flex;gap:12px;">
-    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Registrado (${recs.length})</div><div class="privacy-num" style="font-family:var(--display);font-size:15px;font-weight:700;">$${fmtN(total)}</div></div>
-    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Conciliados</div><div style="font-family:var(--display);font-size:15px;font-weight:700;color:${nConc === recs.length && recs.length ? 'var(--green)' : 'var(--text)'};">${nConc}/${recs.length}</div></div>
-    <div style="flex:1;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;">Vs. estado de cuenta</div><div style="font-size:13px;margin-top:2px;">${difHtml}</div></div>
+  if (Math.abs(dif) < 1) {
+    box.innerHTML = `<div class="c-res ok"><div class="c-res-h">${svgIco(ICO.check)}Cuadra</div>${lineaApp}</div>`;
+    return;
+  }
+  const abs = Math.abs(dif);
+  let texto, pista = '';
+  if (dif > 0) {
+    texto = `Tu estado de cuenta trae <b class="privacy-num">$${fmtN(abs)}</b> más que la app. Busca en el papel un cargo de ese monto, o varios que sumen eso: son los que faltan por capturar.`;
+  } else {
+    texto = `La app tiene <b class="privacy-num">$${fmtN(abs)}</b> más que tu estado de cuenta. Suele ser un cargo duplicado o uno que cae en otro ciclo.`;
+    const exacto = recs.find(r => Math.abs(Math.abs(parseFloat(r.monto) || 0) - abs) < 0.5);
+    if (exacto) {
+      pista = `<div class="c-hint">Este cargo mide exactamente la diferencia: <b>${exacto.categoria || exacto.nota}</b>, ${formatDateShort(exacto.fecha)}. Está marcado en la lista.</div>`;
+    } else {
+      const vistos = {};
+      const dup = recs.find(r => { const k = r.fecha + '|' + Math.abs(parseFloat(r.monto) || 0).toFixed(2); if (vistos[k]) return true; vistos[k] = 1; return false; });
+      if (dup) pista = `<div class="c-hint">Posible duplicado: dos cargos de <b class="privacy-num">$${fmtN(Math.abs(parseFloat(dup.monto) || 0))}</b> el ${formatDateShort(dup.fecha)}.</div>`;
+    }
+  }
+  box.innerHTML = `<div class="c-res warn">
+    <div class="c-res-h">${svgIco(ICO.warn)}<span class="privacy-num">${dif > 0 ? 'Faltan' : 'Sobran'} $${fmtN(abs)}</span></div>
+    <p>${texto}</p>${lineaApp}${pista}
   </div>`;
 }
 
@@ -3820,13 +4167,11 @@ function guardarECyCalcular() {
   const sel = document.getElementById('conc-ciclo');
   const pago = sel ? sel.value : proximoPago24();
   localStorage.setItem('flujos_ec_' + concCartera + '_' + pago, document.getElementById('conc-ec').value);
-  actualizarTotalesConc();
+  renderConciliacion();
 }
 
 function setConcFiltro(f, el) {
   concFiltro = f;
-  document.getElementById('conc-f-todos')?.classList.toggle('active', f === 'todos');
-  document.getElementById('conc-f-pend')?.classList.toggle('active', f === 'pendientes');
   renderConciliacion();
 }
 

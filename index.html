@@ -617,6 +617,69 @@ body { padding-bottom: 150px; }
   .dash-left-col.r-wrap { padding: 32px 28px; }
   .dash-desktop-title { display: block; }
 }
+
+/* ═══ v4.3 ═══ */
+/* Resumen: patrimonio como dato informativo */
+.r-tiles { margin: 0 0 12px; }
+.r-pn { padding: 16px; margin-bottom: 26px; }
+.r-pn-l { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.r-pn-main { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.r-pn-v { font-family: var(--display); font-size: 26px; font-weight: 700; letter-spacing: -0.8px; font-variant-numeric: tabular-nums; }
+.r-pn-v.neg { color: #FF7A7A; }
+.r-pn-cut { font-size: 13px; color: var(--text2); }
+.r-pn-line { display: flex; justify-content: space-between; font-size: 13px; color: var(--text2); margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--hair); }
+.r-pn-line b { color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Tarjetas: tres renglones con nombre */
+.t-row { align-items: flex-start; }
+.t-kv { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; font-size: 13px; color: var(--text2); }
+.t-kv b { font-family: var(--display); font-size: 14px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.t-kv b.neg { color: #FF7A7A; }
+.t-kv b.dim { color: var(--text2); font-weight: 600; }
+.t-kv.main span { color: var(--text); font-weight: 600; }
+.t-note { font-size: 12px; color: var(--text3); }
+.t-note.warn { color: #F5B942; }
+/* Transferencias: las dos patas a la vista */
+.x-legs { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.x-leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); min-width: 0; }
+.x-leg > span:nth-child(2) { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.x-leg b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text2); flex-shrink: 0; }
+.x-dot { width: 7px; height: 7px; border-radius: 4px; flex-shrink: 0; }
+.x-dot.out { background: #FF7A7A; }
+.x-dot.in { background: var(--green); }
+.x-leg.miss, .x-leg.miss b { color: #F5B942; }
+.x-leg.miss .x-dot { background: none; border: 1.5px dashed #F5B942; width: 5px; height: 5px; }
+.x-warn { margin-top: 6px; font-size: 12px; line-height: 1.4; color: #F5B942; }
+.warn-chip { flex-shrink: 0; padding: 2px 7px; border-radius: 6px; background: rgba(245,185,66,0.16); color: #F5B942; font-size: 11px; font-weight: 700; }
+.record-item.has-warn { background: rgba(245,185,66,0.06) !important; }
+.day-card .record-item { align-items: flex-start; }
+.day-card .record-item .record-amount { padding-top: 1px; }
+/* Chat: caja grande y a todo lo ancho */
+.chat-bar { position: fixed; z-index: 90; left: 0; right: 0; bottom: calc(54px + max(14px, env(safe-area-inset-bottom))); padding: 10px 14px 8px; background: var(--bg); border-top: 1px solid var(--hair); }
+.chat-bar-in { display: flex; gap: 8px; align-items: flex-end; }
+#chat-input { flex: 1; min-height: 78px; max-height: 40vh; background: var(--surface); border: 1px solid rgba(255,255,255,0.12); border-radius: 18px; padding: 13px 15px; color: var(--text); font-family: var(--font); font-size: 16px; line-height: 1.45; outline: none; resize: none; overflow-y: auto; }
+#chat-input:focus { border-color: var(--green-border); }
+#chat-send-btn { width: 48px; height: 48px; border-radius: 24px; background: var(--green); color: #0B0B0F; display: flex; align-items: center; justify-content: center; cursor: pointer; flex-shrink: 0; border: 0; }
+#chat-send-btn .ico { width: 22px; height: 22px; stroke-width: 2.4; }
+.chat-foot { font-size: 11px; color: var(--text3); text-align: center; margin-top: 6px; }
+#chat-messages { padding-bottom: 190px !important; }
+/* Barra lateral de computadora con los mismos íconos */
+.sidebar-nav-icon { display: inline-flex; align-items: center; justify-content: center; }
+.sidebar-nav-icon .ico { width: 20px; height: 20px; }
+.side-eye { width: 36px; height: 36px; border-radius: 18px; background: none; border: 1px solid rgba(255,255,255,0.08); color: var(--text2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.side-eye.on { color: var(--green); border-color: var(--green-border); }
+.side-user-l { font-size: 12px; color: var(--text3); margin-bottom: 8px; }
+@media (min-width: 768px) {
+  /* Computadora: la misma columna del celular, centrada */
+  #page-list, #page-conc, #page-chat { max-width: none !important; box-sizing: border-box; padding-left: max(0px, calc((100% - 660px) / 2)); padding-right: max(0px, calc((100% - 660px) / 2)); }
+  .dash-left-col.r-wrap { max-width: 660px !important; margin: 0 auto; box-sizing: border-box; }
+  .chat-bar { left: 200px; bottom: 0; padding-bottom: 14px; }
+  .chat-bar-in, .chat-foot { max-width: 620px; margin-left: auto; margin-right: auto; }
+  #chat-messages { padding-bottom: 170px !important; }
+}
+@media (min-width: 1024px) {
+  .chat-bar { left: 220px; }
+  .dash-left-col.r-wrap { padding: 32px 20px; }
+}
 </style>
 </head>
 <body>
@@ -628,38 +691,38 @@ body { padding-bottom: 150px; }
       <div class="sidebar-logo-title">Flujos Eugenio</div>
       <div class="sidebar-logo-sub">Sistema de flujos</div>
     </div>
-    <div id="privacy-btn-desk" onclick="togglePrivacy()" style="cursor:pointer;font-size:18px;opacity:0.5;margin-top:2px;" title="Ocultar números">👁</div>
+    <button id="privacy-btn-desk" class="side-eye" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
   </div>
   <div class="sidebar-add-btn" onclick="showPage('form')">+ Nuevo movimiento</div>
   <div class="sidebar-nav-item active" id="snav-dash" onclick="showPage('dash')">
-    <span class="sidebar-nav-icon">◈</span> Resumen
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg></span> Resumen
   </div>
   <div class="sidebar-nav-item" id="snav-list" onclick="showPage('list')">
-    <span class="sidebar-nav-icon">≡</span> Registros
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg></span> Registros
   </div>
   <div class="sidebar-nav-item" id="snav-proy" onclick="showPage('proy')">
-    <span class="sidebar-nav-icon">📊</span> Dashboard
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M4 20V11M10 20V5M16 20v-6M3 20h18"/></svg></span> Dashboard
   </div>
   <div class="sidebar-nav-item" onclick="abrirProyeccion()">
-    <span class="sidebar-nav-icon">📈</span> Proyección
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8M15 7h6v6"/></svg></span> Proyección
   </div>
   <div class="sidebar-nav-item" id="snav-chat" onclick="showPage('chat')">
-    <span class="sidebar-nav-icon">🤖</span> Consultar IA
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z"/></svg></span> Consultar IA
   </div>
   <div class="sidebar-nav-item" id="snav-deu" onclick="showPage('deu')">
-    <span class="sidebar-nav-icon">💳</span> Deudas
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M3 6h18a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1zM2 10h20M6 15h4"/></svg></span> Deudas
   </div>
   <div class="sidebar-nav-item" id="snav-conc" onclick="showPage('conc')">
-    <span class="sidebar-nav-icon">🧾</span> Conciliación
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M5 3h14v18l-3.5-2-3.5 2-3.5-2L5 21zM9 11l2 2 4-4"/></svg></span> Conciliación
   </div>
   <div class="sidebar-nav-item" id="snav-cfg" onclick="showPage('cfg')">
-    <span class="sidebar-nav-icon">⚙</span> Configuración
+    <span class="sidebar-nav-icon"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9M15 4v6M9 14v6"/></svg></span> Configuración
   </div>
   <div class="sidebar-user">
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;font-weight:700;margin-bottom:8px;">Usuario activo</div>
+    <div class="side-user-l">Quién captura</div>
     <div style="display:flex;gap:6px;">
-      <div class="user-btn active" onclick="setUser('Eugenio',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👨 Eugenio</div>
-      <div class="user-btn" onclick="setUser('Andrea',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">👩 Andrea</div>
+      <div class="user-btn active" onclick="setUser('Eugenio',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">Eugenio</div>
+      <div class="user-btn" onclick="setUser('Andrea',this)" style="flex:1;text-align:center;padding:7px 0;border-radius:8px;font-size:12px;">Andrea</div>
     </div>
   </div>
 </div>
@@ -671,7 +734,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver">v4.2</span></div>
+    <div class="r-title">Resumen <span class="r-ver">v4.3</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -700,16 +763,23 @@ body { padding-bottom: 150px; }
       </div>
     </div>
 
-    <div class="r-hero-label">Patrimonio neto</div>
-    <div class="r-hero-num privacy-num" id="dash-total">—</div>
-    <div class="r-pillrow"><span class="pill pos privacy-num" id="dash-bal">—</span><span id="dash-cutoff-label">este mes</span></div>
+    <div class="sec-h"><h2>Disponible</h2><span class="privacy-num" id="dash-cash-2" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);"></span></div>
+    <div class="card" id="wallets-cash" style="margin-bottom:26px;"></div>
+
+    <div class="sec-h"><h2>Tarjetas</h2><span id="tdc-summary"></span></div>
+    <div class="card" id="wallets-tdc" style="margin-bottom:26px;"></div>
 
     <div class="r-tiles">
       <div class="r-tile"><div class="r-tile-l">Disponible</div><div class="r-tile-v privacy-num" id="dash-cash">—</div></div>
       <div class="r-tile"><div class="r-tile-l">Tarjetas</div><div class="r-tile-v privacy-num" id="dash-tdc">—</div></div>
       <div class="r-tile"><div class="r-tile-l">Créditos</div><div class="r-tile-v neg privacy-num" id="pn-deudas-total">—</div></div>
     </div>
-    <div class="r-line"><span>Patrimonio contando créditos</span><b class="privacy-num" id="pn-con-deudas">—</b></div>
+
+    <div class="card r-pn">
+      <div class="r-pn-l">Patrimonio neto</div>
+      <div class="r-pn-main"><span class="r-pn-v privacy-num" id="dash-total">—</span><span class="pill pos privacy-num" id="dash-bal">—</span><span class="r-pn-cut" id="dash-cutoff-label">este mes</span></div>
+      <div class="r-pn-line"><span>Contando créditos</span><b class="privacy-num" id="pn-con-deudas">—</b></div>
+    </div>
 
     <div class="card r-chart">
       <div class="r-chart-h">
@@ -719,12 +789,6 @@ body { padding-bottom: 150px; }
       <div class="r-bars" id="dash-bars"></div>
       <div class="r-chart-foot"><span id="dash-mes-lbl">Este mes</span><span>Entró <b class="privacy-num" id="dash-ing">—</b>, salió <b class="privacy-num" id="dash-gas">—</b></span></div>
     </div>
-
-    <div class="sec-h"><h2>Tarjetas</h2><span id="tdc-summary"></span></div>
-    <div class="card" id="wallets-tdc" style="margin-bottom:26px;"></div>
-
-    <div class="sec-h"><h2>Disponible</h2><span class="privacy-num" id="dash-cash-2" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);"></span></div>
-    <div class="card" id="wallets-cash"></div>
   </div>
 
   <!-- Desktop: columna derecha (oculta en móvil via CSS) -->
@@ -990,19 +1054,14 @@ body { padding-bottom: 150px; }
   <div id="chat-messages" style="padding:0 16px 120px;display:flex;flex-direction:column;gap:10px;min-height:100px;"></div>
 
   <!-- Input -->
-  <div style="position:fixed;bottom:max(80px,env(safe-area-inset-bottom));left:220px;right:0;padding:12px 16px;background:var(--bg);border-top:0.5px solid var(--border);">
-    <div style="display:flex;gap:8px;align-items:flex-end;max-width:900px;margin:0 auto;">
-      <textarea id="chat-input" placeholder="Pregunta sobre tus finanzas..."
-        rows="1"
-        style="flex:1;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:12px 14px;color:var(--text);font-family:var(--font);font-size:14px;outline:none;resize:none;line-height:1.5;max-height:120px;overflow-y:auto;"
-        onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();enviarConsulta();}">
-      </textarea>
-      <div onclick="enviarConsulta()" id="chat-send-btn"
-        style="width:44px;height:44px;border-radius:50%;background:var(--green);color:#000;display:flex;align-items:center;justify-content:center;font-size:20px;cursor:pointer;flex-shrink:0;transition:opacity 0.15s;">
-        ↑
-      </div>
+  <div class="chat-bar">
+    <div class="chat-bar-in">
+      <textarea id="chat-input" placeholder="Pregunta sobre tus finanzas…" rows="3"
+        oninput="this.style.height='auto';this.style.height=Math.min(this.scrollHeight, window.innerHeight*0.4)+'px';"
+        onkeydown="if(event.key==='Enter'&&!event.shiftKey&&window.innerWidth>=768){event.preventDefault();enviarConsulta();}"></textarea>
+      <button onclick="enviarConsulta()" id="chat-send-btn" aria-label="Enviar pregunta"><svg class="ico" viewBox="0 0 24 24"><path d="M12 19V5M6 11l6-6 6 6"/></svg></button>
     </div>
-    <div style="font-size:10px;color:var(--text3);text-align:center;margin-top:6px;">Claude analiza tus registros reales</div>
+    <div class="chat-foot">Claude analiza tus registros reales</div>
   </div>
 </div>
 
@@ -1158,7 +1217,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.2</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.3</span>
       </div>
     </div>
 
@@ -1361,6 +1420,7 @@ function showPage(p) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
   const n = document.getElementById('nav-' + p); if (n) n.classList.add('active');
+  document.querySelectorAll('[id^="snav-"]').forEach(el => el.classList.toggle('active', el.id === 'snav-' + p));
   document.body.className = document.body.className.replace(/\bon-\w+\b/g, '').trim();
   document.body.classList.add('on-' + p);
   window.scrollTo(0, 0);
@@ -1838,6 +1898,21 @@ const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct
 const MESES_LARGOS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 function mesLargo(ym) { const [y, m] = ym.split('-').map(Number); const t = MESES_LARGOS[m - 1]; return t.charAt(0).toUpperCase() + t.slice(1) + ' ' + y; }
 function formatDateLargo(iso) { const [y, m, d] = iso.split('-').map(Number); return d + ' de ' + MESES_LARGOS[m - 1]; }
+// ★ v4.3: desglose de una tarjeta que siempre suma al saldo total.
+//   Saldo total  = todo lo que debes hoy (incluye lo que se paga en meses siguientes)
+//   Después del 24 = cargos que caen en pagos posteriores (MSI y compras después del corte)
+//   Para el 24   = Saldo total − Después del 24 → lo que tienes que pagar para quedar al corriente
+function tdcDesglose(cartera, saldo, pagoISO) {
+  const st = statsTDC(cartera, pagoISO);
+  const total = Math.max(0, -saldo);
+  const aFavor = saldo > 0.5 ? saldo : 0;
+  const para24 = Math.max(0, total - st.diferido);
+  const despues = total - para24;
+  const estado = st.pagoMonto;
+  const abonado = estado > 0.5 ? Math.max(0, Math.min(estado, estado - para24)) : 0;
+  const anterior = Math.max(0, para24 - estado);
+  return { pago: st.pago, total, aFavor, para24, despues, estado, abonado, anterior };
+}
 // Lo que ya se abonó a una tarjeta desde el pago anterior (cuenta para el siguiente 24)
 function pagadoCiclo(cartera, pagoISO) {
   const desde = pagoAnterior(pagoISO), today = hoy();
@@ -1943,33 +2018,34 @@ function renderDashboard() {
     </button>`;
   }).join('');
 
-  // TARJETAS: saldo, barra del pago del 24 y lo diferido
-  const saldosTdcTotal = {};
-  CARTERAS_TDC.forEach(c => saldosTdcTotal[c] = saldosHoy[c] || 0);
+  // TARJETAS: saldo total, lo del 24 y lo de después (★ v4.3)
   const pagoProx = proximoPago24();
-  let sumFaltan = 0, sumPago = 0;
+  const f24 = formatDateShort(pagoProx);
+  let sumPara24 = 0;
   const conSaldo = [], sinSaldo = [];
   CARTERAS_TDC.forEach(c => {
-    const s = saldosTdcTotal[c];
-    const st = statsTDC(c, pagoProx);
-    const pagado = pagadoCiclo(c, pagoProx);
-    const faltan = Math.max(0, st.pagoMonto - pagado);
-    sumFaltan += faltan; sumPago += st.pagoMonto;
-    const pct = st.pagoMonto > 0.5 ? Math.min(100, pagado / st.pagoMonto * 100) : 100;
-    let izq;
-    if (st.pagoMonto <= 0.5) izq = 'Sin pago este ciclo';
-    else if (faltan < 1) izq = 'Pago del ' + formatDateShort(pagoProx) + ' cubierto';
-    else izq = `Faltan <span class="privacy-num">$${fmt0(faltan)}</span> de <span class="privacy-num">$${fmt0(st.pagoMonto)}</span>`;
-    const der = st.diferido > 0.5 ? `A meses <span class="privacy-num">$${fmt0(st.diferido)}</span>` : '';
-    const html = `<div class="row" onclick="openWalletDetail('${c}')">
+    const s = saldosHoy[c] || 0;
+    const d = tdcDesglose(c, s, pagoProx);
+    sumPara24 += d.para24;
+    const pct = d.estado > 0.5 ? d.abonado / d.estado * 100 : 0;
+    let nota = '';
+    if (d.estado > 0.5 && d.para24 < 1) nota = '<div class="t-note">Pago del ' + f24 + ' cubierto</div>';
+    else if (d.anterior > 1) nota = `<div class="t-note warn">Incluye <span class="privacy-num">$${fmt0(d.anterior)}</span> de pagos anteriores sin cubrir</div>`;
+    else if (d.estado > 0.5 && d.abonado > 1) nota = `<div class="t-note">Ya abonaste <span class="privacy-num">$${fmt0(d.abonado)}</span> de <span class="privacy-num">$${fmt0(d.estado)}</span></div>`;
+    const html = `<div class="row t-row" onclick="openWalletDetail('${c}')">
       <div class="w-ico" style="background:${colorCartera(c)}">${svgIco(ICO.card)}</div>
-      <div class="row-main">
-        <div class="row-top"><span class="row-name">${nombreCartera(c)}</span><span class="row-amt wallet-amount${s < -0.5 ? ' neg' : ''}">${money0(s)}</span></div>
-        ${st.pagoMonto > 0.5 ? `<div class="bar"><i style="width:${pct.toFixed(0)}%"></i></div>` : ''}
-        <div class="row-sub"><span>${izq}</span><span>${der}</span></div>
+      <div class="row-main" style="gap:6px;">
+        <span class="row-name">${nombreCartera(c)}</span>
+        ${d.aFavor > 0.5
+          ? `<div class="t-kv main"><span>Saldo a favor</span><b class="privacy-num">$${fmt0(d.aFavor)}</b></div>`
+          : `<div class="t-kv main"><span>Saldo total</span><b class="privacy-num${d.total > 0.5 ? ' neg' : ''}">${money0(-d.total)}</b></div>
+        <div class="t-kv"><span>Para el ${f24}</span><b class="privacy-num">$${fmt0(d.para24)}</b></div>
+        ${d.estado > 0.5 ? `<div class="bar"><i style="width:${pct.toFixed(0)}%"></i></div>` : ''}
+        ${nota}
+        ${d.despues > 0.5 ? `<div class="t-kv"><span>Después del ${f24}</span><b class="dim privacy-num">$${fmt0(d.despues)}</b></div>` : ''}`}
       </div>
     </div>`;
-    if (Math.abs(s) < 0.5 && st.pagoMonto < 0.5 && st.diferido < 0.5) sinSaldo.push(html); else conSaldo.push(html);
+    if (Math.abs(s) < 0.5 && d.estado < 0.5) sinSaldo.push(html); else conSaldo.push(html);
   });
   const gt = document.getElementById('wallets-tdc');
   gt.innerHTML = conSaldo.join('') + (sinSaldo.length ? `
@@ -1977,10 +2053,9 @@ function renderDashboard() {
       <span>${sinSaldo.length} ${sinSaldo.length === 1 ? 'tarjeta sin saldo' : 'tarjetas sin saldo'}</span>${svgIco(ICO.chevD)}
     </button>
     <div id="tdc-cero-box" style="display:${dashTdcCeroAbiertas ? 'block' : 'none'};border-top:1px solid var(--hair);">${sinSaldo.join('')}</div>` : '');
-  const tdcSum = document.getElementById('tdc-summary');
-  tdcSum.innerHTML = sumPago < 0.5 ? '' : sumFaltan < 1
-    ? 'Pago del ' + formatDateShort(pagoProx) + ' cubierto'
-    : `Faltan <b class="privacy-num">$${fmt0(sumFaltan)}</b> para el ${formatDateShort(pagoProx)}`;
+  document.getElementById('tdc-summary').innerHTML = sumPara24 < 1
+    ? 'Nada pendiente para el ' + f24
+    : `Para el ${f24}: <b class="privacy-num">$${fmt0(sumPara24)}</b>`;
 
   // DISPONIBLE: saldo real a hoy (el dinero futuro en cash aún no se mueve)
   const gc = document.getElementById('wallets-cash');
@@ -2207,8 +2282,10 @@ function renderRecords() {
   // PASADO agrupado por día (más reciente arriba)
   const byDate = {};
   past.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha] = []; byDate[r.fecha].push(r); });
-  // Transferencias: si las dos mitades están en la lista, se muestra un solo renglón (el de salida)
-  const salidas = new Set(records.filter(r => r.tipo === 'TRANSFERENCIA' && r.idTransferencia).map(r => r.idTransferencia));
+  // Transferencias: un renglón por transferencia (el de salida). La entrada solo se muestra
+  // sola si su salida no está en esta lista (filtro por cartera) o no existe.
+  construirIndiceTransfer();
+  const enLista = new Set(records.map(r => r.id));
   Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(date => {
     const recs = ordenarRegistros(byDate[date]); // ★ más reciente arriba dentro del día
     const grp = document.createElement('div'); grp.className = 'day-group';
@@ -2218,7 +2295,7 @@ function renderRecords() {
     grp.appendChild(hdr);
     const cardEl = document.createElement('div'); cardEl.className = 'day-card';
     recs.forEach(r => {
-      if (r.tipo === 'INGRESO POR TRANSFERENCIA' && r.idTransferencia && salidas.has(r.idTransferencia)) return;
+      if (r.tipo === 'INGRESO POR TRANSFERENCIA') { const a = analizarTransfer(r); if (a.salida && enLista.has(a.salida.id)) return; }
       cardEl.appendChild(buildRecordItem(r, false));
     });
     grp.appendChild(cardEl);
@@ -2243,6 +2320,57 @@ function toggleRecGroup(key, elId, headerEl) {
   collapsedRecGroups[key] = !wasCollapsed;
   el.classList.toggle('show', wasCollapsed);
   ch.classList.toggle('open', wasCollapsed);
+}
+
+// ★ v4.3: índice de transferencias. Cada transferencia debe tener exactamente
+// una salida y una entrada con el mismo monto. Aquí se detecta lo que no cumple.
+let xferIdx = null;
+function esLegTransfer(r) { return r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA'; }
+function esSalidaT(r) { return r.tipo === 'TRANSFERENCIA'; }
+function construirIndiceTransfer() {
+  const porId = {}, outSinId = {}, inSinId = {};
+  allRecords.forEach(r => {
+    if (!esLegTransfer(r)) return;
+    if (r.idTransferencia) { (porId[r.idTransferencia] = porId[r.idTransferencia] || []).push(r); return; }
+    // Transferencias viejas sin id: se emparejan por fecha, monto y cartera que recibe
+    const m = Math.abs(parseFloat(r.monto) || 0).toFixed(2);
+    const k = r.fecha + '|' + m + '|' + (esSalidaT(r) ? r.carteraDestino : r.cartera);
+    const b = esSalidaT(r) ? outSinId : inSinId;
+    (b[k] = b[k] || []).push(r);
+  });
+  const pareja = new Map();
+  Object.keys(outSinId).forEach(k => {
+    const ins = inSinId[k] || [];
+    outSinId[k].forEach((o, i) => { if (ins[i]) { pareja.set(o.id, ins[i]); pareja.set(ins[i].id, o); } });
+  });
+  // Repetidas: mismas fecha, origen, destino y monto
+  const cuenta = {};
+  const clave = (sal, ent) => [ (sal || ent).fecha, sal ? sal.cartera : '?', sal ? sal.carteraDestino : ent.cartera, Math.abs(parseFloat((sal || ent).monto) || 0).toFixed(2) ].join('|');
+  xferIdx = { porId, pareja, cuenta, clave };
+  allRecords.forEach(r => {
+    if (!esLegTransfer(r)) return;
+    const a = analizarTransfer(r);
+    if (esSalidaT(r) || !a.salida) { const k = clave(a.salida, a.entrada); cuenta[k] = (cuenta[k] || 0) + 1; }
+  });
+}
+function analizarTransfer(r) {
+  if (!xferIdx) construirIndiceTransfer();
+  let salida = null, entrada = null, extra = 0;
+  if (r.idTransferencia && xferIdx.porId[r.idTransferencia]) {
+    const legs = xferIdx.porId[r.idTransferencia];
+    const outs = legs.filter(esSalidaT), ins = legs.filter(x => !esSalidaT(x));
+    salida = esSalidaT(r) ? r : (outs[0] || null);
+    entrada = esSalidaT(r) ? (ins[0] || null) : r;
+    if (legs.length > 2) extra = legs.length;
+  } else {
+    const p = xferIdx.pareja.get(r.id) || null;
+    if (esSalidaT(r)) { salida = r; entrada = p; } else { entrada = r; salida = p; }
+  }
+  const ms = salida ? Math.abs(parseFloat(salida.monto) || 0) : 0;
+  const me = entrada ? Math.abs(parseFloat(entrada.monto) || 0) : 0;
+  const montos = salida && entrada && Math.abs(ms - me) > 0.005;
+  const iguales = (xferIdx.cuenta[xferIdx.clave(salida, entrada)] || 0);
+  return { salida, entrada, extra, montos, ms, me, iguales };
 }
 
 function buildRecordItem(r, isFuture) {
@@ -2271,6 +2399,40 @@ function buildRecordItem(r, isFuture) {
   const badge = u === 'andrea' ? '<span class="u-badge" aria-label="Capturado por Andrea">A</span>'
     : (u && u !== 'eugenio' ? '<span class="u-badge" style="background:var(--bg5);color:var(--text);">' + usuarioDisplay.charAt(0).toUpperCase() + '</span>' : '');
   const msi = r.msiNum && r.msiPlazo ? '<span class="msi-chip">MSI ' + r.msiNum + '/' + r.msiPlazo + '</span>' : '';
+  if (isTraOut || isTraIn) {
+    const a = analizarTransfer(r);
+    const sal = a.salida, ent = a.entrada;
+    const origen = sal ? nombreCartera(sal.cartera) : '';
+    const destino = sal ? nombreCartera(sal.carteraDestino) : nombreCartera(ent.cartera);
+    const esPagoTdc = CARTERAS_TDC.includes(sal ? sal.carteraDestino : (ent && ent.cartera));
+    const monto = a.ms || a.me;
+    const legOut = sal
+      ? `<div class="x-leg"><span class="x-dot out"></span><span>Sale de ${origen}</span><b class="privacy-num">−$${fmtSmart(a.ms)}</b></div>`
+      : `<div class="x-leg miss"><span class="x-dot"></span><span>Salida no registrada</span><b>Falta</b></div>`;
+    const legIn = ent
+      ? `<div class="x-leg"><span class="x-dot in"></span><span>Entra a ${nombreCartera(ent.cartera)}</span><b class="privacy-num">+$${fmtSmart(a.me)}</b></div>`
+      : `<div class="x-leg miss"><span class="x-dot"></span><span>Entra a ${destino}</span><b>Falta</b></div>`;
+    const avisos = [];
+    if (!sal) avisos.push('Falta la salida: se registró que entró dinero a ' + destino + ' pero no de dónde salió.');
+    if (!ent) avisos.push('Falta la entrada: el saldo de ' + destino + ' no incluye este dinero.');
+    if (a.montos) avisos.push('Los montos no coinciden: salió $' + fmtSmart(a.ms) + ' y entró $' + fmtSmart(a.me) + '.');
+    if (a.extra) avisos.push('Esta transferencia tiene ' + a.extra + ' movimientos ligados; debería tener 2.');
+    if (a.iguales > 1) avisos.push('Hay ' + a.iguales + ' transferencias iguales este día. Si solo hiciste una, abre las demás y bórralas.');
+    const chip = a.iguales > 1 ? '<span class="warn-chip">¿Repetida?</span>' : (avisos.length ? '<span class="warn-chip">Revisar</span>' : '');
+    const extraMeta = (badge || r.nota || isFuture) ? `<div class="record-meta">${badge}<span>${[r.nota, isFuture ? formatDateShort(r.fecha) : ''].filter(Boolean).join(' · ')}</span></div>` : '';
+    item.className += avisos.length ? ' has-warn' : '';
+    item.innerHTML = `
+    <div class="record-icon" style="background:${hexA(v.c, 0.16)};color:${v.c}">${svgIco(v.d)}</div>
+    <div class="record-body">
+      <div class="record-cat"><span>${esPagoTdc ? 'Pago de tarjeta' : 'Transferencia'}</span>${chip}</div>
+      <div class="x-legs">${legOut}${legIn}</div>
+      ${extraMeta}
+      ${avisos.length ? `<div class="x-warn">${avisos.join(' ')}</div>` : ''}
+    </div>
+    <div class="record-amount tra-out privacy-num">$${fmtSmart(monto)}</div>`;
+    item.onclick = () => openEditModal(r);
+    return item;
+  }
   item.innerHTML = `
     <div class="record-icon" style="background:${hexA(v.c, 0.16)};color:${v.c}">${svgIco(v.d)}</div>
     <div class="record-body">
@@ -2415,7 +2577,11 @@ function eliminarRegistro() {
   // Detectar si es parte de una transferencia
   const esTransferencia = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
   const idTransferencia = r.idTransferencia;
-  const parejo = idTransferencia ? allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia) : null;
+  const signo = Math.sign(parseFloat(r.monto) || 0);
+  const parejo = idTransferencia
+    ? (allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia && Math.sign(parseFloat(x.monto) || 0) === -signo)
+       || allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia))
+    : null;
 
   // Detectar si es recurrente pendiente de cash (guardado en Sheet con _pendiente flag)
   const esRecPendiente = r._pendiente === true;
@@ -3962,13 +4128,12 @@ function actualizarSaldoBar() {
     const s = calcSaldo(cartera);
     const esTdc = CARTERAS_TDC.includes(cartera);
     if (esTdc) {
-      const st = statsTDC(cartera);
-      const pagado = pagadoCiclo(cartera, st.pago);
-      const faltan = Math.max(0, st.pagoMonto - pagado);
+      const d = tdcDesglose(cartera, s, proximoPago24());
+      const f = formatDateShort(d.pago);
       bar.innerHTML = `<div class="sb">
-        <div><div class="sb-l">Saldo ${nombreCartera(cartera)}</div>${v(s)}</div>
-        <div><div class="sb-l">Falta para el ${formatDateShort(st.pago)}</div>${v(-faltan)}</div>
-        <div><div class="sb-l">A meses</div><div class="sb-v privacy-num">$${fmt0(st.diferido)}</div></div>
+        <div><div class="sb-l">Saldo total</div>${v(s)}</div>
+        <div><div class="sb-l">Para el ${f}</div><div class="sb-v privacy-num">$${fmt0(d.para24)}</div></div>
+        <div><div class="sb-l">Después del ${f}</div><div class="sb-v privacy-num">$${fmt0(d.despues)}</div></div>
       </div>`;
     } else {
       bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">

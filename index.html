@@ -734,7 +734,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver">v4.3</span></div>
+    <div class="r-title">Resumen <span class="r-ver">v4.5</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -1217,7 +1217,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.3</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.5</span>
       </div>
     </div>
 
@@ -1366,6 +1366,10 @@ let currentUser = 'Eugenio', currentType = 'GASTO';
 let selectedCartera = '', selectedCarteraDest = '', selectedCategoria = '';
 let allRecords = [], editingId = null, currentFilter = 'todos';
 let recurrentOn = false;
+// ★ v4.4: candado contra ejecuciones encimadas de recurrentes.
+//   Sin él, dos llamadas simultáneas leían la MISMA lista de pendientes
+//   y la subían dos veces al Sheet. Ese era el origen de los duplicados.
+let recEjecutando = false;
 let listAdvOpen = false, dashAdvOpen = false;
 let listFilters = {}, dashFilters = {};
 let dashCutoffDate = hoy();
@@ -1397,7 +1401,10 @@ document.addEventListener('DOMContentLoaded', () => {
   CARTERAS.forEach(c => { const o = document.createElement('option'); o.value = c; o.textContent = c; mc.appendChild(o); });
 
   renderChipsCartera(); renderChipsCategoria(); loadRecords();
-  ejecutarRecurrentesPendientes();
+  // ★ v4.5: al arrancar ya no se ejecuta nada desde aquí. Solo se suben a
+  //   la sala de espera del Sheet los programados que todavía estuvieran
+  //   atrapados en el localStorage de este dispositivo.
+  migrarPendientesAlSheet();
 
   // Auto-refresh cada 10 segundos con protección contra operaciones en curso
   // (2s saturaba las cuotas de Apps Script y provocaba fallas de sync)
@@ -1600,7 +1607,7 @@ function enviarAlSheet(regs, btn) {
   const today = hoy();
   const esCash = CARTERAS_CASH.includes(selectedCartera);
 
-  // Recurrentes futuros de cash: NO van al Sheet, solo a localStorage
+  // Recurrentes futuros de cash: no van a REGISTROS, van a la sala de espera
   let paraSheet = regs;
   let soloLocal = [];
   if (esCash && recurrentOn) {
@@ -1608,16 +1615,19 @@ function enviarAlSheet(regs, btn) {
     soloLocal = regs.filter(r => r.fecha > today);
   }
 
-  // Guardar futuros de cash en localStorage marcados como _pendiente
+  // ★ v4.5: los recurrentes futuros de cash ya NO viven solo en este
+  //   dispositivo. Se mandan a la hoja PENDIENTES_REC del Sheet, que no es
+  //   REGISTROS — las fórmulas de REAL ni se enteran de que existe. Desde
+  //   ahí los ejecuta un trigger diario, abras la app o no, y se ven desde
+  //   cualquier dispositivo. El localStorage queda solo como espejo, para
+  //   que la pantalla responda al instante y para poder capturar sin señal.
   if (soloLocal.length > 0) {
     soloLocal.forEach(r => { r._pendiente = true; });
-    let pendientesRec = [];
-    try { pendientesRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
-    soloLocal.forEach(r => {
-      if (!pendientesRec.find(x => x.id === r.id)) pendientesRec.push(r);
-    });
-    localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientesRec));
+    const espejo = getPendientesLocal();
+    soloLocal.forEach(r => { if (!espejo.find(x => x.id === r.id)) espejo.push(r); });
+    setPendientesLocal(espejo);
     soloLocal.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+    subirPendientes(soloLocal);
   }
 
   // ══ GUARDADO OPTIMISTA (v4) ═══════════════════════════════════════
@@ -1668,44 +1678,94 @@ function enviarAlSheet(regs, btn) {
     });
 }
 
-// EJECUTAR RECURRENTES PENDIENTES DE CASH — corre al abrir la app y en cada sync
-function ejecutarRecurrentesPendientes() {
-  const today = hoy();
-  const ahora = new Date();
-  const horaActual = ahora.getHours() * 60 + ahora.getMinutes();
-  const seisAM = 6 * 60;
+// ═══ RECURRENTES PENDIENTES DE CASH (v4.5) ═══════════════════════
+// Antes esta sección EJECUTABA los recurrentes desde el navegador: leía
+// localStorage y los escribía en REGISTROS. De ahí venían los duplicados
+// (dos llamadas encimadas subiendo la misma lista) y el "ayer no pasó
+// nada" (si no abrías esta computadora, nadie los disparaba).
+//
+// Ahora la app NO los ejecuta. Solo los deja en la sala de espera del
+// Sheet (hoja PENDIENTES_REC) y los muestra. Quien los ejecuta es el
+// trigger diario del Apps Script, a las 6 am, corra o no la app.
 
-  let pendientes = [];
-  try { pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); } catch(e) {}
-  if (!pendientes.length) return;
+function getPendientesLocal() {
+  try { return JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]'); }
+  catch (e) { return []; }
+}
 
-  // Ejecutar solo los que ya pasó su fecha (o son hoy después de 6am)
-  const aEjecutar = pendientes.filter(r => {
-    if (r.fecha < today) return true;
-    if (r.fecha === today && horaActual >= seisAM) return true;
-    return false;
-  });
-  const restantes = pendientes.filter(r => !aEjecutar.find(x => x.id === r.id));
+function setPendientesLocal(arr) {
+  try { localStorage.setItem('flujos_rec_pendientes', JSON.stringify(arr || [])); } catch (e) {}
+}
 
-  if (!aEjecutar.length) return;
-
-  // Quitar _pendiente y guardar en Sheet
-  aEjecutar.forEach(r => { r._pendiente = false; });
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: aEjecutar }) })
+// Manda programados a la sala de espera. Reintenta solo en el siguiente
+// sync si falla; el Apps Script descarta IDs repetidos, así que insistir
+// nunca duplica.
+function subirPendientes(rows) {
+  if (!rows || !rows.length) return Promise.resolve();
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addPendientes', rows }) })
     .then(r => r.json())
-    .then(() => {
-      localStorage.setItem('flujos_rec_pendientes', JSON.stringify(restantes));
-      // Actualizar en allRecords
-      aEjecutar.forEach(r => {
-        const idx = allRecords.findIndex(x => x.id === r.id);
-        if (idx >= 0) allRecords[idx]._pendiente = false;
-        else { allRecords.unshift(r); pendingIds.add(r.id); }
-      });
-      saveLocal();
-      showToast(`${aEjecutar.length} recurrente${aEjecutar.length!==1?'s':''} ejecutado${aEjecutar.length!==1?'s':''}`, 'success');
-      renderDashboard();
+    .then(resp => {
+      if (!resp || !resp.ok) throw new Error('rechazado');
+      rows.forEach(r => { r._subido = true; });
+      const espejo = getPendientesLocal();
+      espejo.forEach(e => { if (rows.find(x => x.id === e.id)) e._subido = true; });
+      setPendientesLocal(espejo);
     })
     .catch(() => {});
+}
+
+// Reintento: lo que quedó en el espejo sin confirmar se vuelve a ofrecer.
+function reintentarPendientesNoSubidos() {
+  const faltantes = getPendientesLocal().filter(r => !r._subido);
+  if (faltantes.length) subirPendientes(faltantes);
+}
+
+// La lista que manda es la del servidor. El espejo local solo se usa
+// mientras no haya respuesta, o cuando se captura sin señal.
+function aplicarPendientesDelServidor(data) {
+  if (!data || !data.pendientes || !Array.isArray(data.pendientes.rows)) return;
+  const lista = expandirCompacto(data.pendientes).map(parseSheetRow).filter(r => r.id && r.fecha);
+  lista.forEach(r => { r._pendiente = true; r._subido = true; });
+
+  // Conservar lo capturado aquí que todavía no llega al Sheet (sin señal, o
+  // el POST aún en vuelo). Si se pisara con la lista del servidor, un
+  // programado creado sin internet se perdería en el siguiente sync.
+  getPendientesLocal()
+    .filter(r => !r._subido && !lista.find(x => x.id === r.id))
+    .forEach(r => { r._pendiente = true; lista.push(r); });
+
+  setPendientesLocal(lista);
+  allRecords = allRecords.filter(r => !r._pendiente);
+  lista.forEach(r => { if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
+}
+
+// Mezcla el espejo local (arranque, o sin conexión) en la lista visible.
+function mezclarPendientesLocales() {
+  getPendientesLocal().forEach(r => {
+    r._pendiente = true;
+    if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r);
+  });
+}
+
+// Migración de una sola vez: los programados que quedaron atrapados en el
+// localStorage de esta computadora se suben a la sala de espera, para que
+// el trigger pueda verlos. Es idempotente: se puede correr mil veces.
+function migrarPendientesAlSheet() {
+  const locales = getPendientesLocal();
+  if (!locales.length) return;
+  const sinSubir = locales.filter(r => !r._subido);
+  if (!sinSubir.length) return;
+  subirPendientes(sinSubir).then(() => {
+    showToast(`${sinSubir.length} programado${sinSubir.length !== 1 ? 's' : ''} respaldado${sinSubir.length !== 1 ? 's' : ''} en el Sheet`, 'success');
+  });
+}
+
+// Se conserva el nombre viejo porque hay llamadas regadas en el código,
+// pero ya no ejecuta nada: solo empuja lo que falte por respaldar.
+function ejecutarRecurrentesPendientes() {
+  if (recEjecutando) return;
+  recEjecutando = true;
+  try { reintentarPendientesNoSubidos(); } finally { recEjecutando = false; }
 }
 
 function resetForm() {
@@ -2604,16 +2664,21 @@ function eliminarRegistro() {
     .catch(() => showToast('Error al eliminar', 'error'));
 
   } else if (esRecPendiente) {
-    // Recurrente pendiente de cash — solo en localStorage, no llamar al Sheet
+    // ★ v4.5: el programado vive en la sala de espera del Sheet, así que
+    //   hay que quitarlo de ahí también — si no, el trigger lo ejecutaría
+    //   mañana aunque aquí ya no se vea.
     const id = r.id;
     allRecords.splice(idx, 1);
-    try {
-      let pendientes = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
-      pendientes = pendientes.filter(x => x.id !== id);
-      localStorage.setItem('flujos_rec_pendientes', JSON.stringify(pendientes));
-    } catch(e) {}
+    setPendientesLocal(getPendientesLocal().filter(x => x.id !== id));
     saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-    showToast('Recurrente programado eliminado ✓', 'error');
+    showToast('Eliminando programado...', '');
+    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deletePendiente', id }) })
+      .then(r => r.json())
+      .then(resp => {
+        if (!resp || !resp.ok) throw new Error('rechazado');
+        showToast('Recurrente programado eliminado ✓', 'error');
+      })
+      .catch(() => showToast('No se pudo quitar del Sheet — vuelve a intentarlo', 'error'));
 
   } else {
     const id = r.id;
@@ -2646,11 +2711,9 @@ function openWalletDetail(cartera) {
 // STORAGE
 function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
-  // Cargar recurrentes pendientes de cash desde localStorage y mezclar con allRecords
-  try {
-    const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
-    pendRec.forEach(r => { r._pendiente = true; if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
-  } catch(e) {}
+  // Programados: se pintan desde el espejo local para que la pantalla no
+  // salga vacía; el primer sync los reemplaza por la lista del Sheet.
+  mezclarPendientesLocales();
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
   loadDeudas();
@@ -2950,11 +3013,11 @@ function autoSync(forzarCompleto) {
       ultimoSync = data.servidor || ultimoSync;
       if (typeof data.total === 'number') totalServidor = data.total;
 
-      // Re-agregar recurrentes pendientes de cash (no están en el Sheet)
-      try {
-        const pendRec = JSON.parse(localStorage.getItem('flujos_rec_pendientes') || '[]');
-        pendRec.forEach(r => { r._pendiente = true; if (!allRecords.find(x => x.id === r.id)) allRecords.unshift(r); });
-      } catch(e) {}
+      // ★ v4.5: los programados ahora los manda el servidor (hoja
+      //   PENDIENTES_REC). Si por lo que sea no vinieron, se usa el espejo
+      //   local para no dejar la lista de futuros en blanco.
+      if (data.pendientes) aplicarPendientesDelServidor(data);
+      else mezclarPendientesLocales();
 
       ordenarRegistros(allRecords);
 

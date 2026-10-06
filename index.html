@@ -734,7 +734,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver">v4.5</span></div>
+    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.5.1 ⟳</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -1217,7 +1217,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.5</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.5.1</span>
       </div>
     </div>
 
@@ -2779,7 +2779,11 @@ function cargarSnapshotInicial() {
         //   de transferencia. Ahora hay una sola fuente de verdad.
         const sheetRecs = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera);
         const sheetIds = new Set(sheetRecs.map(r => r.id));
-        const pending = allRecords.filter(r => !sheetIds.has(r.id));
+        // ★ v4.5.1: antes conservaba CUALQUIER registro local que no viniera
+        //   del Sheet — incluso los que se habían quitado de REGISTROS (p. ej.
+        //   movidos a PAPELERA), que así reaparecían. Ahora solo se conservan
+        //   los que de verdad están en camino: subidas pendientes y programados.
+        const pending = allRecords.filter(r => !sheetIds.has(r.id) && (pendingIds.has(r.id) || r._pendiente));
         allRecords = [...pending, ...sheetRecs];
         ordenarRegistros(allRecords);
         ultimoSync = data.servidor || ultimoSync;
@@ -2801,6 +2805,16 @@ function cargarSnapshotInicial() {
 // Revisión completa en segundo plano: atrapa cambios hechos directo en el
 // Sheet y refresca carteras/metas/deudas. No bloquea: ya estás viendo
 // datos al día gracias al incremental.
+// ★ v4.5.1: tocar la etiqueta de versión en Resumen baja todo de nuevo
+//   desde el Sheet. Útil después de mover filas a PAPELERA o de corregir
+//   algo directo en REGISTROS. No toca los programados ni lo pendiente.
+function forzarSyncCompleto() {
+  showToast('Sincronizando todo desde el Sheet…', '');
+  indicadorSync('actualizando');
+  const intentar = () => { if (syncBusy) { setTimeout(intentar, 1000); return; } autoSync(true); };
+  intentar();
+}
+
 function programarSnapshotCompleto() {
   let ult = 0;
   try { ult = Number(localStorage.getItem('flujos_ultimo_full') || 0); } catch (e) {}
@@ -2860,6 +2874,8 @@ const deletedIds = new Set(); // IDs borrados localmente, esperando confirmació
 const pendingIds = new Set(); // IDs recién agregados, esperando que lleguen al Sheet
 const pendingConc = new Map(); // id → true/false de conciliado, esperando confirmación del Sheet
 let syncBusy = false;
+// ★ v4.5.1: evita pedir el snapshot completo en bucle si algo no cuadra.
+let ultimoFullForzadoMs = 0;
 let ultimoSyncOkMs = 0; // ★ v4.1: hora del último sync exitoso
 
 // ── Estado del sync incremental (v4) ──
@@ -3000,6 +3016,18 @@ function autoSync(forzarCompleto) {
         const nuevosIds = new Set(recibidos.map(r => r.id));
         allRecords = [...recibidos, ...allRecords.filter(r => !nuevosIds.has(r.id))];
         recibidos.forEach(r => pendingIds.delete(r.id));
+
+        // ★ v4.5.1: el chequeo de arriba solo detectaba filas quitadas del
+        //   Sheet cuando NO llegaba ningún cambio en esa vuelta. Si coincidía
+        //   con un movimiento nuevo, lo borrado se quedaba en este dispositivo
+        //   (así sobrevivían los duplicados movidos a PAPELERA). Ahora se
+        //   compara también después de mezclar.
+        const confirmados = allRecords.filter(r => !r._pendiente && !pendingIds.has(r.id)).length;
+        if (typeof data.total === 'number' && data.total !== confirmados &&
+            Date.now() - ultimoFullForzadoMs > 120000) {
+          ultimoFullForzadoMs = Date.now();
+          reintentarCompleto = true;
+        }
       } else {
         const sheetIds = new Set(recibidos.map(r => r.id));
         deletedIds.forEach(id => { if (!sheetIds.has(id)) deletedIds.delete(id); });
@@ -3008,6 +3036,7 @@ function autoSync(forzarCompleto) {
         const sheetFiltered = recibidos.filter(r => !deletedIds.has(r.id));
         allRecords = [...localPending, ...sheetFiltered];
         try { localStorage.setItem('flujos_ultimo_full', String(Date.now())); } catch (e) {}
+        setTimeout(() => showToast(sheetFiltered.length + ' registros sincronizados ✓', 'success'), 300);
       }
 
       ultimoSync = data.servidor || ultimoSync;

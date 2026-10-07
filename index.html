@@ -680,6 +680,20 @@ body { padding-bottom: 150px; }
   .chat-bar { left: 220px; }
   .dash-left-col.r-wrap { padding: 32px 20px; }
 }
+
+/* ═══ v4.6 ═══ */
+.l-seg { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; margin: 0 20px 8px; }
+.l-seg-btn { min-height: 38px; border-radius: 11px; background: none; border: 0; color: var(--text2); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+.l-seg-btn.active { background: #2A2A33; color: var(--text); font-weight: 700; }
+.y-month { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: column; gap: 3px; margin: 22px -20px 10px !important; padding: 10px 24px; background: var(--bg); border-bottom: 1px solid var(--hair); }
+.y-month-n { font-family: var(--display); font-size: 17px; font-weight: 700; color: var(--text); }
+.y-month-v { font-size: 12px; color: var(--text2); }
+.y-month-v b { color: var(--text); font-weight: 600; }
+.y-month-v b.pos { color: var(--green); }
+.y-month-v b.neg { color: #FF7A7A; }
+.r-tile-v:not(.neg) { color: var(--text); }
+/* En el celular la que se desplaza es la página: el contenedor no debe declararse desplazable (rompe los encabezados fijos) */
+@supports (overflow: clip) { @media (max-width: 767px) { .main-content { overflow-y: visible; overflow-x: clip; } } }
 </style>
 </head>
 <body>
@@ -734,7 +748,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.5.1 ⟳</span></div>
+    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.6 ⟳</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -745,7 +759,7 @@ body { padding-bottom: 150px; }
   </div>
 
   <div class="dash-left-col r-wrap">
-    <div class="dash-desktop-title">Resumen</div>
+    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.6 ⟳</span></div>
 
     <div class="r-tools">
       <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()">Filtros</div>
@@ -763,12 +777,6 @@ body { padding-bottom: 150px; }
       </div>
     </div>
 
-    <div class="sec-h"><h2>Disponible</h2><span class="privacy-num" id="dash-cash-2" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);"></span></div>
-    <div class="card" id="wallets-cash" style="margin-bottom:26px;"></div>
-
-    <div class="sec-h"><h2>Tarjetas</h2><span id="tdc-summary"></span></div>
-    <div class="card" id="wallets-tdc" style="margin-bottom:26px;"></div>
-
     <div class="r-tiles">
       <div class="r-tile"><div class="r-tile-l">Disponible</div><div class="r-tile-v privacy-num" id="dash-cash">—</div></div>
       <div class="r-tile"><div class="r-tile-l">Tarjetas</div><div class="r-tile-v privacy-num" id="dash-tdc">—</div></div>
@@ -780,6 +788,12 @@ body { padding-bottom: 150px; }
       <div class="r-pn-main"><span class="r-pn-v privacy-num" id="dash-total">—</span><span class="pill pos privacy-num" id="dash-bal">—</span><span class="r-pn-cut" id="dash-cutoff-label">este mes</span></div>
       <div class="r-pn-line"><span>Contando créditos</span><b class="privacy-num" id="pn-con-deudas">—</b></div>
     </div>
+
+    <div class="sec-h"><h2>Disponible</h2><span class="privacy-num" id="dash-cash-2" style="font-family:var(--display);font-size:15px;font-weight:700;color:var(--text);"></span></div>
+    <div class="card" id="wallets-cash" style="margin-bottom:26px;"></div>
+
+    <div class="sec-h"><h2>Tarjetas</h2><span id="tdc-summary"></span></div>
+    <div class="card" id="wallets-tdc" style="margin-bottom:26px;"></div>
 
     <div class="card r-chart">
       <div class="r-chart-h">
@@ -896,10 +910,14 @@ body { padding-bottom: 150px; }
     </div>
   </div>
   <div id="list-month-block">
+    <div class="l-seg" role="tablist" aria-label="Periodo">
+      <button class="l-seg-btn active" id="l-seg-mes" onclick="setPeriodoLista('mes')">Mes</button>
+      <button class="l-seg-btn" id="l-seg-anio" onclick="setPeriodoLista('anio')">Año</button>
+    </div>
     <div class="l-month">
-      <button class="l-month-btn" onclick="moverMesLista(-1)" aria-label="Mes anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <button class="l-month-btn" onclick="moverMesLista(-1)" aria-label="Periodo anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
       <div class="l-month-lbl" id="list-month-lbl">—</div>
-      <button class="l-month-btn" onclick="moverMesLista(1)" aria-label="Mes siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+      <button class="l-month-btn" onclick="moverMesLista(1)" aria-label="Periodo siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
     </div>
     <div class="l-hero">
       <div class="l-hero-num privacy-num" id="list-mes-bal">—</div>
@@ -1217,7 +1235,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.5.1</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.6</span>
       </div>
     </div>
 
@@ -2133,7 +2151,7 @@ function renderDashboard() {
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 
-function irAMesRegistros(ym) { listMonth = ym; showPage('list'); }
+function irAMesRegistros(ym) { listMonth = ym; if (listPeriodo !== 'mes') setPeriodoLista('mes'); showPage('list'); }
 
 // DATE PICKER
 function openDatePicker() { document.getElementById('datepick-overlay').classList.add('show'); }
@@ -2209,9 +2227,18 @@ function setFilter(f, el) {
 // ★ v4.2: Registros se ve mes por mes (antes pintaba los 4,000+ registros a la vez).
 //   Si hay búsqueda o rango Desde/Hasta, se ignora el mes y se busca en todo.
 let listMonth = hoy().slice(0, 7);
+let listPeriodo = 'mes';   // ★ v4.6: 'mes' o 'anio'
+let turnoLista = 0;
+function setPeriodoLista(p) {
+  listPeriodo = p;
+  document.getElementById('l-seg-mes').classList.toggle('active', p === 'mes');
+  document.getElementById('l-seg-anio').classList.toggle('active', p === 'anio');
+  renderRecords();
+}
 function moverMesLista(d) {
   let [y, m] = listMonth.split('-').map(Number);
-  m += d; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; }
+  if (listPeriodo === 'anio') y += d;
+  else { m += d; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } }
   listMonth = y + '-' + String(m).padStart(2, '0');
   renderRecords();
 }
@@ -2255,7 +2282,7 @@ function renderRecords() {
       ].join(' ').toLowerCase();
       if (!haystack.includes(searchTerm)) return false;
     }
-    if (modoMes && (!r.fecha || r.fecha.slice(0, 7) !== listMonth)) return false;
+    if (modoMes && (!r.fecha || (listPeriodo === 'anio' ? r.fecha.slice(0, 4) !== listMonth.slice(0, 4) : r.fecha.slice(0, 7) !== listMonth))) return false;
     return true;
   });
 
@@ -2276,7 +2303,7 @@ function renderRecords() {
       if (m < 0 && r.tipo !== 'TRANSFERENCIA') gas += m;
     });
     const bal = ing + gas;
-    document.getElementById('list-month-lbl').textContent = mesLargo(listMonth);
+    document.getElementById('list-month-lbl').textContent = listPeriodo === 'anio' ? 'Todo ' + listMonth.slice(0, 4) : mesLargo(listMonth);
     document.getElementById('list-mes-bal').textContent = (bal >= 0 ? '+' : '−') + '$' + fmt0(bal);
     document.getElementById('list-mes-ing').textContent = 'Entró $' + fmt0(ing);
     document.getElementById('list-mes-gas').textContent = 'Salió $' + fmt0(gas);
@@ -2284,7 +2311,7 @@ function renderRecords() {
 
   if (!records.length) {
     list.innerHTML = '<div class="coming-soon" style="min-height:30vh"><div style="font-size:14px;color:var(--text2)">' +
-      (modoMes ? 'Sin movimientos en ' + MESES_LARGOS[parseInt(listMonth.slice(5)) - 1] : 'Nada coincide con tu búsqueda') + '</div></div>';
+      (modoMes ? 'Sin movimientos en ' + (listPeriodo === 'anio' ? listMonth.slice(0, 4) : MESES_LARGOS[parseInt(listMonth.slice(5)) - 1]) : 'Nada coincide con tu búsqueda') + '</div></div>';
     return;
   }
 
@@ -2295,7 +2322,7 @@ function renderRecords() {
   if (future.length > 0) {
     const futTotal = future.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
     // En un mes que todavía no llega, todo es futuro: se muestra abierto.
-    const mesFuturo = modoMes && listMonth > today.slice(0, 7);
+    const mesFuturo = modoMes && listPeriodo === 'mes' && listMonth > today.slice(0, 7);
     const masterCollapsed = collapsedRecGroups['__future_master__'] === undefined ? !mesFuturo : collapsedRecGroups['__future_master__'] !== false;
 
     const masterWrap = document.createElement('div');
@@ -2346,7 +2373,25 @@ function renderRecords() {
   // sola si su salida no está en esta lista (filtro por cartera) o no existe.
   construirIndiceTransfer();
   const enLista = new Set(records.map(r => r.id));
-  Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(date => {
+  const verAnio = modoMes && listPeriodo === 'anio';
+  const flujoMes = {};
+  if (verAnio) past.forEach(r => {
+    const k = r.fecha.slice(0, 7), m = parseFloat(r.monto) || 0;
+    if (!flujoMes[k]) flujoMes[k] = { ing: 0, gas: 0 };
+    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') flujoMes[k].ing += m;
+    if (m < 0 && r.tipo !== 'TRANSFERENCIA') flujoMes[k].gas += m;
+  });
+  let mesActualLista = '';
+  const fechasLista = Object.keys(byDate).sort((a, b) => b.localeCompare(a));
+  const pintarFecha = date => {
+    if (verAnio && date.slice(0, 7) !== mesActualLista) {
+      mesActualLista = date.slice(0, 7);
+      const f = flujoMes[mesActualLista], bal = f.ing + f.gas;
+      const mh = document.createElement('div'); mh.className = 'y-month';
+      mh.innerHTML = `<span class="y-month-n">${mesLargo(mesActualLista)}</span>
+        <span class="y-month-v privacy-num">Entró <b>$${fmt0(f.ing)}</b> · Salió <b>$${fmt0(f.gas)}</b> · <b class="${bal >= 0 ? 'pos' : 'neg'}">${bal >= 0 ? '+' : '−'}$${fmt0(bal)}</b></span>`;
+      list.appendChild(mh);
+    }
     const recs = ordenarRegistros(byDate[date]); // ★ más reciente arriba dentro del día
     const grp = document.createElement('div'); grp.className = 'day-group';
     const dt = recs.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
@@ -2360,7 +2405,20 @@ function renderRecords() {
     });
     grp.appendChild(cardEl);
     list.appendChild(grp);
-  });
+  };
+  const turno = ++turnoLista;
+  if (!verAnio) fechasLista.forEach(pintarFecha);
+  else {
+    let k = 0;
+    const tanda = () => {
+      if (turno !== turnoLista) return;             // ya se pidió otra lista: esta se descarta
+      let filas = 0;
+      while (k < fechasLista.length && filas < 250) { filas += byDate[fechasLista[k]].length; pintarFecha(fechasLista[k++]); }
+      if (privacyOn) applyPrivacyToPage();
+      if (k < fechasLista.length) setTimeout(tanda, 0);
+    };
+    tanda();
+  }
   if (privacyOn) setTimeout(applyPrivacyToPage, 10);
 }
 
@@ -3613,7 +3671,7 @@ function actualizarPatrimonioConDeudas() {
     elConDeu.textContent = (netoConDeu < 0 ? '−' : '') + '$' + fmt0(netoConDeu);
     elConDeu.style.color = netoConDeu >= 0 ? '' : 'var(--red)';
   }
-  if (elTotalDeu) elTotalDeu.textContent = (totalDeudas > 0.5 ? '−' : '') + '$' + fmt0(totalDeudas);
+  if (elTotalDeu) { elTotalDeu.textContent = (totalDeudas > 0.5 ? '−' : '') + '$' + fmt0(totalDeudas); elTotalDeu.classList.toggle('neg', totalDeudas > 0.5); }
 }
 
 function abrirFormDeuda(id) {

@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Flujos Andrea">
+<meta name="theme-color" content="#0a0a0c">
 <title>Flujos Andrea</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
 <style>
@@ -114,106 +115,231 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
 .toast.success { color: var(--pink); }
 .toast.error { color: var(--red); }
 select.field-input { cursor: pointer; }
+
+/* ═══ v2.0 — diseño nuevo (mismo lenguaje que la app de Eugenio, acento rosa) ═══ */
+:root { --text3: #8A8AA2; --surface: #16161C; --surface2: #202028; --hair: rgba(255,255,255,0.07); }
+body { padding-bottom: 130px; }
+.ico { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.card { background: var(--surface); border-radius: 20px; }
+.a-top { padding: 52px 20px 18px; }
+.a-hello { font-family: var(--display); font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+.a-ver { font-size: 11px; color: var(--text3); margin-top: 4px; }
+#cola-badge { color: #F5B942; font-weight: 600; }
+.a-hero { margin: 0 20px 22px; padding: 18px 18px 16px; border: 1px solid var(--pink-border); background: linear-gradient(160deg, rgba(244,114,182,0.12), var(--surface) 62%); }
+.a-hero-l { display: flex; align-items: center; gap: 9px; font-size: 14px; color: var(--text2); margin-bottom: 10px; }
+.a-hero-ico { width: 30px; height: 30px; border-radius: 9px; background: #F08BBE; color: #0B0B0F; display: flex; align-items: center; justify-content: center; }
+.a-hero-ico .ico { width: 17px; height: 17px; stroke-width: 2; }
+.a-hero-v { font-family: var(--display); font-size: 40px; font-weight: 700; letter-spacing: -1.6px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.a-hero-v.neg { color: #FF7A7A; }
+.a-hero-s { font-size: 12px; color: var(--text3); margin-top: 6px; }
+.seg { display: flex; gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; margin: 0 20px 6px; }
+.seg-btn { flex: 1 1 0; min-width: 0; min-height: 38px; border-radius: 11px; background: none; border: 0; color: var(--text2); font-family: var(--font); font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; padding: 0 4px; }
+.seg-btn.active { background: #2A2A33; color: var(--text); font-weight: 700; }
+.pnav { display: flex; align-items: center; justify-content: space-between; margin: 0 12px 12px; }
+.pnav-btn { width: 44px; height: 44px; border-radius: 22px; background: none; border: 0; color: var(--text2); display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.pnav-lbl { font-size: 15px; font-weight: 600; text-align: center; }
+.a-custom { display: none; gap: 8px; margin: 0 20px 14px; align-items: flex-end; }
+.a-custom label { flex: 1 1 0; min-width: 0; font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; }
+.a-custom input, .a-adv input { width: 100%; background: var(--surface2); border: 1px solid var(--hair); border-radius: 12px; padding: 10px; color: var(--text); font-family: var(--font); font-size: 15px; }
+.btn-pink { min-height: 44px; padding: 0 18px; border-radius: 12px; background: var(--pink); color: #fff; border: 0; font-family: var(--font); font-size: 14px; font-weight: 700; cursor: pointer; }
+.btn-soft { min-height: 44px; padding: 0 18px; border-radius: 12px; background: var(--surface2); color: var(--text2); border: 0; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+.a-gas { margin: 0 20px 14px; padding: 16px 18px; }
+.a-gas-l { font-size: 13px; color: var(--text2); margin-bottom: 6px; }
+.a-gas-v { font-family: var(--display); font-size: 32px; font-weight: 700; letter-spacing: -1px; font-variant-numeric: tabular-nums; }
+.a-pills { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 5px 11px; border-radius: 20px; background: var(--surface2); color: var(--text2); font-size: 12px; font-weight: 600; }
+.pill b { color: var(--text); font-weight: 700; }
+.a-chart { margin: 0 20px 24px; padding: 16px 14px 12px; }
+.a-chart-h { display: flex; justify-content: space-between; align-items: baseline; margin: 0 2px 12px; }
+.h2 { font-size: 16px; font-weight: 700; }
+.a-chart-h span { font-size: 12px; color: var(--text3); }
+.a-bars { display: flex; justify-content: space-between; align-items: flex-end; height: 136px; }
+.a-bar { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 6px; background: none; border: 0; cursor: pointer; font-family: var(--font); padding: 0; height: 100%; }
+.a-bar-col { width: 24px; border-radius: 6px; background: rgba(244,114,182,0.30); }
+.a-bar.cur .a-bar-col { background: var(--pink); }
+.a-bar-m { font-size: 12px; color: var(--text3); }
+.a-bar.cur .a-bar-m { color: var(--text); font-weight: 700; }
+.a-bar-v { font-size: 10px; color: var(--text3); font-variant-numeric: tabular-nums; }
+.a-bar.cur .a-bar-v { color: var(--text2); }
+.sec-h { display: flex; justify-content: space-between; align-items: baseline; margin: 0 24px 10px; }
+.sec-h h2 { font-size: 18px; font-weight: 700; }
+.sec-h span { font-size: 13px; color: var(--text2); }
+.a-cats { margin: 0 20px 24px; overflow: hidden; }
+.cat-row { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-bottom: 1px solid var(--hair); cursor: pointer; }
+.cat-row:last-child { border-bottom: 0; }
+.cat-ico { width: 38px; height: 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.cat-main { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.cat-top { display: flex; justify-content: space-between; gap: 8px; }
+.cat-n { font-size: 14px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-v { font-family: var(--display); font-size: 14px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.cat-bar { height: 5px; border-radius: 3px; background: #26262F; overflow: hidden; }
+.cat-bar i { display: block; height: 100%; border-radius: 3px; background: var(--pink); }
+.cat-p { font-size: 11px; color: var(--text3); }
+.empty { padding: 28px 16px; text-align: center; color: var(--text3); font-size: 14px; }
+/* Mis registros */
+.l-top { padding: 52px 20px 14px; display: flex; align-items: center; justify-content: space-between; }
+.l-title { font-family: var(--display); font-size: 24px; font-weight: 700; letter-spacing: -0.4px; }
+.btn-ghost { min-height: 40px; padding: 0 16px; border-radius: 20px; background: var(--surface); border: 1px solid rgba(255,255,255,0.1); color: var(--text); font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; }
+.a-adv { margin: 0 20px 12px; padding: 14px; }
+.a-adv-g { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.a-adv-g label { font-size: 12px; color: var(--text2); display: flex; flex-direction: column; gap: 6px; }
+.a-adv-b { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.l-search { display: flex; align-items: center; gap: 8px; height: 46px; margin: 0 20px 12px; padding: 0 14px; border-radius: 23px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); color: var(--text3); }
+.l-search input { flex: 1; min-width: 0; background: none; border: 0; outline: none; color: var(--text); font-family: var(--font); font-size: 16px; }
+.l-hero { display: flex; flex-direction: column; align-items: center; gap: 8px; margin: 0 20px 16px; }
+.l-hero-l { font-size: 13px; color: var(--text2); }
+.l-hero-v { font-family: var(--display); font-size: 36px; font-weight: 700; letter-spacing: -1.4px; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.l-note { margin: 0 20px 12px; font-size: 13px; color: var(--text2); text-align: center; }
+.filter-row { padding: 0 20px 14px; gap: 8px; }
+.filter-pill { padding: 0 16px; min-height: 36px; display: inline-flex; align-items: center; border-radius: 18px; border: 1px solid rgba(255,255,255,0.08); background: var(--surface); color: #C9C9DA; font-weight: 600; }
+.filter-pill.active { background: #F4F4F8; color: #0B0B0F; border-color: #F4F4F8; }
+.records-list { padding: 0 20px; }
+.day-group { margin-bottom: 18px; }
+.day-header { padding: 0 4px 8px; }
+.day-date { font-size: 14px; font-weight: 600; color: var(--text2); }
+.day-total { font-family: var(--font); font-size: 14px; font-weight: 600; color: var(--text2); font-variant-numeric: tabular-nums; }
+.day-total.pos { color: var(--green); }
+.day-card { background: var(--surface); border-radius: 20px; overflow: hidden; }
+.day-card .record-item { background: none; border: 0; border-bottom: 1px solid var(--hair); border-radius: 0; margin: 0; padding: 12px 14px; align-items: flex-start; }
+.day-card .record-item:last-child { border-bottom: 0; }
+.record-icon { width: 40px; height: 40px; border-radius: 20px; }
+.record-cat { font-size: 15px; font-weight: 700; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.record-cat span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.record-meta { font-size: 12px; color: var(--text2); margin-top: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.record-amount { font-size: 15px; padding-top: 1px; font-variant-numeric: tabular-nums; }
+.record-amount.neg { color: var(--text); }
+.record-amount.pos { color: var(--green); }
+.record-amount.tra { color: var(--text2); }
+.x-legs { display: flex; flex-direction: column; gap: 3px; margin-top: 4px; }
+.x-leg { display: flex; align-items: center; gap: 7px; font-size: 12px; color: var(--text2); min-width: 0; }
+.x-leg > span:nth-child(2) { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.x-leg b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text2); flex-shrink: 0; }
+.x-dot { width: 7px; height: 7px; border-radius: 4px; flex-shrink: 0; }
+.x-dot.out { background: #FF7A7A; }
+.x-dot.in { background: var(--green); }
+.x-leg.miss, .x-leg.miss b { color: #F5B942; }
+.x-leg.miss .x-dot { background: none; border: 1.5px dashed #F5B942; width: 5px; height: 5px; }
+.y-month { position: sticky; top: 0; z-index: 5; display: flex; flex-direction: column; gap: 3px; margin: 22px -20px 10px; padding: 10px 24px; background: var(--bg); border-bottom: 1px solid var(--hair); }
+.y-month-n { font-family: var(--display); font-size: 17px; font-weight: 700; }
+.y-month-v { font-size: 12px; color: var(--text2); }
+.y-month-v b { color: var(--text); font-weight: 600; }
+/* Formulario */
+.form-page { padding: 52px 20px 24px; }
+.form-title { font-size: 24px; letter-spacing: -0.4px; }
+.type-tabs { gap: 4px; background: var(--surface); border-radius: 14px; padding: 4px; }
+.type-tab { padding: 0; min-height: 42px; display: flex; align-items: center; justify-content: center; border-radius: 11px; border: 0; background: none; color: var(--text2); font-size: 14px; }
+.type-tab.gas.active { background: rgba(255,99,99,0.16); color: #FF8A8A; border: 0; }
+.type-tab.ing.active { background: rgba(0,224,150,0.14); color: var(--green); border: 0; }
+.type-tab.tra.active { background: rgba(108,182,255,0.16); color: #8CC6FF; border: 0; }
+.field-label { font-size: 13px; text-transform: none; letter-spacing: 0; font-weight: 600; color: var(--text2); }
+.field-input { background: var(--surface); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; }
+.field-input:focus { border-color: var(--pink-border); }
+.chip { padding: 0 14px; min-height: 38px; display: inline-flex; align-items: center; border-radius: 19px; background: var(--surface); border: 1px solid rgba(255,255,255,0.08); color: #C9C9DA; font-weight: 600; }
+.chip.active { background: #F4F4F8; color: #0B0B0F; border-color: #F4F4F8; }
+.submit-btn { border-radius: 16px; min-height: 56px; padding: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(244,114,182,0.30); }
+/* Barra de abajo y botón + */
+.nav { padding: 8px 6px max(14px, env(safe-area-inset-bottom)); background: #0F0F14; border-top: 1px solid var(--hair); }
+.nav-item { background: none; border: 0; font-family: var(--font); font-size: 11px; color: #8A8AA2; gap: 4px; }
+.nav-item.active { color: var(--pink); font-weight: 700; }
+.nav-item .ico { width: 23px; height: 23px; }
+.fab { position: fixed; z-index: 101; right: max(20px, calc(50% - 195px)); bottom: calc(80px + env(safe-area-inset-bottom)); width: 58px; height: 58px; border-radius: 29px; background: var(--pink); color: #fff; border: 0; display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 24px rgba(244,114,182,0.40); cursor: pointer; }
+.fab .ico { width: 26px; height: 26px; stroke-width: 2.4; }
+body.on-form .fab { display: none; }
+/* Ventana de edición y avisos */
+.modal { background: var(--surface); border-radius: 24px 24px 0 0; border: 0; border-top: 1px solid rgba(255,255,255,0.08); }
+.modal-btn { border-radius: 14px; min-height: 48px; padding: 0 6px; display: flex; align-items: center; justify-content: center; }
+.toast { bottom: calc(156px + env(safe-area-inset-bottom)); border-radius: 14px; background: #2A2A33; max-width: calc(100% - 40px); white-space: normal; text-align: center; }
 </style>
 </head>
 <body>
 
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
-  <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.5</span> <span id="cola-badge" style="font-size:11px;color:#F5B942;font-weight:600;"></span></div>
-  </div>
-  <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
-    <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
-    <div class="filter-pill active" id="a-rng-mes" onclick="setAndreaRango('mes',this)">Mes</div>
-    <div class="filter-pill" id="a-rng-tri" onclick="setAndreaRango('tri',this)">Trimestre</div>
-    <div class="filter-pill" id="a-rng-ano" onclick="setAndreaRango('ano',this)">Año</div>
-    <div class="filter-pill" id="a-rng-custom" onclick="setAndreaRango('custom',this)">Personalizado</div>
-  </div>
-  <div id="a-rng-nav" style="display:flex;align-items:center;gap:10px;padding:0 16px 10px;">
-    <div onclick="navAndreaRango(-1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">←</div>
-    <div id="a-rng-label" style="flex:1;text-align:center;font-size:13px;font-weight:600;color:var(--text);">Cargando...</div>
-    <div onclick="navAndreaRango(1)" style="padding:6px 14px;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:14px;cursor:pointer;color:var(--text2);">→</div>
-  </div>
-  <div id="a-custom-row" style="display:none;padding:0 16px 10px;gap:8px;flex-wrap:wrap;" class="filter-row">
-    <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:11px;color:var(--text2);">Desde</span>
-      <input type="date" id="a-rng-desde" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
-    </div>
-    <div style="display:flex;align-items:center;gap:6px;">
-      <span style="font-size:11px;color:var(--text2);">Hasta</span>
-      <input type="date" id="a-rng-hasta" style="background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:7px 10px;color:var(--text);font-family:var(--font);font-size:12px;outline:none;">
-    </div>
-    <div onclick="renderDash()" style="padding:7px 16px;background:var(--pink);border-radius:var(--radius-sm);font-size:12px;font-weight:700;color:#fff;cursor:pointer;">Aplicar</div>
+  <div class="a-top">
+    <div class="a-hello">Hola, Andrea</div>
+    <div class="a-ver">v2.0 <span id="cola-badge"></span></div>
   </div>
 
-  <!-- KPI gastos del mes -->
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0 16px 12px;">
-    <div class="an-kpi" style="grid-column:1/-1;background:var(--bg3);border:0.5px solid var(--pink-border);">
-      <div class="an-kpi-label" style="color:var(--pink);">💵 EFECTIVO ANDREA</div>
-      <div class="an-kpi-val" id="a-saldo" style="color:var(--green);">—</div>
-    </div>
-    <div class="an-kpi" style="grid-column:1/-1;">
-      <div class="an-kpi-label">↓ Gastos del mes</div>
-      <div class="an-kpi-val neg" id="a-gas">—</div>
-    </div>
-    <div class="an-kpi">
-      <div class="an-kpi-label">Registros</div>
-      <div class="an-kpi-val" id="a-count" style="color:var(--pink);">—</div>
-    </div>
-    <div class="an-kpi">
-      <div class="an-kpi-label">Mayor gasto</div>
-      <div class="an-kpi-val neg" id="a-max">—</div>
-    </div>
+  <div class="card a-hero">
+    <div class="a-hero-l"><span class="a-hero-ico"><svg class="ico" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2zM16 14h.01"/></svg></span>Tu efectivo</div>
+    <div class="a-hero-v" id="a-saldo">—</div>
+    <div class="a-hero-s">Saldo de EFECTIVO ANDREA al día de hoy</div>
   </div>
 
-  <!-- Tendencia 6 meses -->
-  <div class="an-section" style="padding:14px;">
-    <div class="an-section-title" style="padding:0 0 10px;border:none;">Tendencia 6 meses</div>
-    <div style="position:relative;height:140px;"><canvas id="a-trend-chart"></canvas></div>
+  <div class="seg" role="tablist" aria-label="Periodo">
+    <button class="seg-btn" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</button>
+    <button class="seg-btn active" id="a-rng-mes" onclick="setAndreaRango('mes',this)">Mes</button>
+    <button class="seg-btn" id="a-rng-tri" onclick="setAndreaRango('tri',this)">Trimestre</button>
+    <button class="seg-btn" id="a-rng-ano" onclick="setAndreaRango('ano',this)">Año</button>
+    <button class="seg-btn" id="a-rng-custom" onclick="setAndreaRango('custom',this)">Fechas</button>
+  </div>
+  <div class="pnav" id="a-rng-nav">
+    <button class="pnav-btn" onclick="navAndreaRango(-1)" aria-label="Periodo anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+    <div class="pnav-lbl" id="a-rng-label">Cargando…</div>
+    <button class="pnav-btn" onclick="navAndreaRango(1)" aria-label="Periodo siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+  </div>
+  <div class="a-custom" id="a-custom-row">
+    <label>Desde<input type="date" id="a-rng-desde"></label>
+    <label>Hasta<input type="date" id="a-rng-hasta"></label>
+    <button class="btn-pink" onclick="renderDash()">Ver</button>
   </div>
 
-  <!-- Dona distribución gastos -->
-  <div class="an-section" style="padding:14px;">
-    <div class="an-section-title" style="padding:0 0 10px;border:none;">Distribución de gastos</div>
-    <div style="display:flex;gap:12px;align-items:flex-start;">
-      <div style="position:relative;width:140px;height:140px;flex-shrink:0;"><canvas id="a-donut-chart"></canvas></div>
-      <div id="a-donut-legend" style="flex:1;display:flex;flex-direction:column;gap:4px;padding-top:4px;"></div>
-    </div>
+  <div class="card a-gas">
+    <div class="a-gas-l">Gastaste</div>
+    <div class="a-gas-v" id="a-gas">—</div>
+    <div class="a-pills"><span class="pill" id="a-count">—</span><span class="pill" id="a-max">—</span></div>
   </div>
 
-  <!-- Tabla gastos por categoría -->
-  <div class="an-section" style="overflow:hidden;margin-bottom:20px;">
-    <div class="an-section-title">Gastos por categoría</div>
-    <div id="a-cats" style="padding:0;"></div>
+  <div class="card a-chart">
+    <div class="a-chart-h"><div class="h2">Gastos por mes</div><span>Toca un mes para verlo</span></div>
+    <div class="a-bars" id="a-bars"></div>
   </div>
+
+  <div class="sec-h"><h2>En qué se fue</h2><span id="a-cats-total"></span></div>
+  <div class="card a-cats" id="a-cats"></div>
 </div>
 
 <!-- MIS REGISTROS -->
 <div id="page-list" class="page">
-  <div class="list-topbar">
-    <div class="list-title">Mis registros</div>
-    <div class="filter-toggle-btn" id="a-list-adv-btn" onclick="toggleAndreaFilters()" style="font-size:13px;padding:9px 16px;border-radius:22px;border:0.5px solid var(--border2);color:var(--text2);background:var(--bg2);cursor:pointer;">⚙ Filtros</div>
+  <div class="l-top">
+    <div class="l-title">Mis registros</div>
+    <button class="btn-ghost" id="a-list-adv-btn" onclick="toggleAndreaFilters()">Fechas</button>
   </div>
-  <div id="a-adv-filters" style="display:none;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius);margin:0 16px 10px;padding:14px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;">
-      <div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Desde</div><input class="adv-input" type="date" id="a-filt-desde" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;"></div>
-      <div><div style="font-size:10px;color:var(--text3);font-weight:700;text-transform:uppercase;letter-spacing:0.8px;margin-bottom:5px;">Hasta</div><input class="adv-input" type="date" id="a-filt-hasta" style="width:100%;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;"></div>
+  <div id="a-adv-filters" class="card a-adv" style="display:none;">
+    <div class="a-adv-g">
+      <label>Desde<input class="adv-input" type="date" id="a-filt-desde"></label>
+      <label>Hasta<input class="adv-input" type="date" id="a-filt-hasta"></label>
     </div>
-    <div style="display:flex;gap:6px;">
-      <div onclick="clearAndreaFilters()" style="flex:1;padding:10px;background:var(--bg3);border:0.5px solid var(--border2);border-radius:var(--radius-sm);font-size:13px;font-weight:600;color:var(--text2);text-align:center;cursor:pointer;">Limpiar</div>
-      <div onclick="applyAndreaFilters()" style="flex:1;padding:10px;background:var(--pink);border-radius:var(--radius-sm);font-size:13px;font-weight:700;color:#fff;text-align:center;cursor:pointer;">Aplicar</div>
+    <div class="a-adv-b">
+      <button class="btn-soft" onclick="clearAndreaFilters()">Limpiar</button>
+      <button class="btn-pink" onclick="applyAndreaFilters()">Aplicar</button>
     </div>
   </div>
-  <!-- Buscador -->
-  <div style="padding:0 16px 10px;">
-    <input type="text" id="a-search" placeholder="🔍  Buscar..." oninput="renderRecords()"
-      style="width:100%;background:var(--bg2);border:0.5px solid var(--border2);border-radius:var(--radius-sm);padding:11px 14px;color:var(--text);font-family:var(--font);font-size:13px;outline:none;-webkit-appearance:none;">
+  <label class="l-search"><svg class="ico" viewBox="0 0 24 24"><path d="M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14zM20 20l-4-4"/></svg><input type="text" id="a-search" placeholder="Buscar nota, categoría o monto" oninput="renderRecords()"></label>
+
+  <div id="l-periodo">
+    <div class="seg" role="tablist" aria-label="Periodo de la lista">
+      <button class="seg-btn active" id="l-seg-mes" onclick="setPeriodoLista('mes')">Mes</button>
+      <button class="seg-btn" id="l-seg-anio" onclick="setPeriodoLista('anio')">Año</button>
+    </div>
+    <div class="pnav">
+      <button class="pnav-btn" onclick="moverMesLista(-1)" aria-label="Periodo anterior"><svg class="ico" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      <div class="pnav-lbl" id="l-lbl">—</div>
+      <button class="pnav-btn" onclick="moverMesLista(1)" aria-label="Periodo siguiente"><svg class="ico" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    </div>
+    <div class="l-hero">
+      <div class="l-hero-l">Gastaste</div>
+      <div class="l-hero-v" id="l-gas">—</div>
+      <span class="pill" id="l-count">—</span>
+    </div>
   </div>
+  <div class="l-note" id="l-note" style="display:none;"></div>
+
   <div class="filter-row">
     <div class="filter-pill active" onclick="setFilter('todos',this)">Todos</div>
     <div class="filter-pill" onclick="setFilter('GASTO',this)">Gastos</div>
     <div class="filter-pill" onclick="setFilter('INGRESO',this)">Ingresos</div>
+    <div class="filter-pill" onclick="setFilter('TRANSFERENCIA',this)">Transferencias</div>
   </div>
   <div class="records-list" id="records-list"></div>
 </div>
@@ -223,9 +349,9 @@ select.field-input { cursor: pointer; }
   <div class="form-page">
     <div class="form-title">Nuevo movimiento</div>
     <div class="type-tabs">
-      <div class="type-tab gas active" onclick="setType('GASTO',this)">↓ Gasto</div>
-      <div class="type-tab ing" onclick="setType('INGRESO',this)">↑ Ingreso</div>
-      <div class="type-tab tra" onclick="setType('TRANSFERENCIA',this)">⇄ Transfer</div>
+      <div class="type-tab gas active" onclick="setType('GASTO',this)">Gasto</div>
+      <div class="type-tab ing" onclick="setType('INGRESO',this)">Ingreso</div>
+      <div class="type-tab tra" onclick="setType('TRANSFERENCIA',this)">Transferencia</div>
     </div>
     <div class="field">
       <div class="field-label">Monto</div>
@@ -256,12 +382,11 @@ select.field-input { cursor: pointer; }
 </div>
 
 <!-- NAV -->
-<div class="nav">
-  <div class="nav-item active" id="nav-dash" onclick="showPage('dash')"><div class="nav-icon">◈</div><span>Resumen</span></div>
-  <div class="nav-item" id="nav-list" onclick="showPage('list')"><div class="nav-icon">≡</div><span>Mis registros</span></div>
-  <div class="nav-add" onclick="showPage('form')">+</div>
-  <div class="nav-item" style="flex:2;"></div>
-</div>
+<nav class="nav">
+  <button class="nav-item active" id="nav-dash" onclick="showPage('dash')"><svg class="ico" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg><span>Resumen</span></button>
+  <button class="nav-item" id="nav-list" onclick="showPage('list')"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3.5 6h.01M3.5 12h.01M3.5 18h.01"/></svg><span>Mis registros</span></button>
+</nav>
+<button class="fab" onclick="showPage('form')" aria-label="Nuevo movimiento"><svg class="ico" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
 
 <!-- EDIT MODAL -->
 <div class="modal-overlay" id="edit-modal" onclick="if(event.target===this)closeModal()">
@@ -269,7 +394,7 @@ select.field-input { cursor: pointer; }
     <div class="modal-handle"></div>
     <div class="modal-title" id="modal-title">Editar</div>
     <div id="m-transfer-banner" style="display:none;background:var(--pink-dim);border:0.5px solid var(--pink-border);border-radius:12px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--pink);">
-      🔄 <b>Transferencia entre cuentas.</b> Editas las dos partes a la vez: sale de una cuenta y entra en la otra. Se guardan juntas.
+      <b>Transferencia entre cuentas.</b> Editas las dos partes a la vez: sale de una cuenta y entra en la otra. Se guardan juntas.
     </div>
     <div class="field">
       <div class="field-label">Monto</div>
@@ -332,6 +457,8 @@ function showPage(p) {
   document.querySelectorAll('.nav-item').forEach(e => e.classList.remove('active'));
   document.getElementById('page-' + p).classList.add('active');
   const n = document.getElementById('nav-' + p); if (n) n.classList.add('active');
+  document.body.classList.toggle('on-form', p === 'form');
+  window.scrollTo(0, 0);
   if (p === 'list') renderRecords();
   if (p === 'dash') renderDash();
 }
@@ -361,141 +488,229 @@ function loadRecords() {
 let aTrendChart = null, aDonutChart = null;
 const PINK_COLORS = ['#f472b6','#a855f7','#4da6ff','#ffb547','#00e096','#ff5050','#06b6d4','#f97316'];
 
+// ★ v2.0: piezas visuales compartidas con la app de Eugenio
+const ICO = {
+  bank:   'M3 10l9-6 9 6M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 20h18',
+  wallet: 'M3 7a2 2 0 0 1 2-2h13v4M3 7v10a2 2 0 0 0 2 2h15V9H5a2 2 0 0 1-2-2zM16 14h.01',
+  cart:   'M3 4h2l2.4 11h11L21 7H6.2M9 20h.01M18 20h.01',
+  globe:  'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM3 12h18M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z',
+  home:   'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z',
+  fuel:   'M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M14 9h2a2 2 0 0 1 2 2v5a1.5 1.5 0 0 0 3 0V8l-3-3M7 7h4',
+  car:    'M5 16l1.5-5A2 2 0 0 1 8.4 9.5h7.2a2 2 0 0 1 1.9 1.5L19 16M4 16h16v3H4zM7 19v1.5M17 19v1.5',
+  heart:  'M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z',
+  shirt:  'M8 4l-5 3 2 4 2-1v10h10V10l2 1 2-4-5-3a4 4 0 0 1-8 0z',
+  food:   'M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M16 3c-2 1-3 4-3 7h3v11',
+  screen: 'M3 5h18v12H3zM8 21h8M12 17v4',
+  gift:   'M4 10h16v10H4zM3 7h18v3H3zM12 7v13M12 7c-1-3-5-3-5-1s5 1 5 1zm0 0c1-3 5-3 5-1s-5 1-5 1z',
+  flame:  'M12 3c1 4 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-3.5 2-5 1 1.5 2 2 2 2s-.5-4 1-7z',
+  book:   'M4 5a2 2 0 0 1 2-2h14v16H6a2 2 0 0 0-2 2zM4 21V5M8 7h8',
+  user:   'M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 21a8 8 0 0 1 16 0',
+  shield: 'M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6z',
+  receipt:'M6 3h12v18l-3-2-3 2-3-2-3 2zM9 8h6M9 12h6',
+  trend:  'M3 17l6-6 4 4 8-8M15 7h6v6',
+  coin:   'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18zM12 7v10M14.5 9.5H11a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9.5',
+  brief:  'M4 8h16v11H4zM9 8V5h6v3M4 13h16',
+  xfer:   'M7 7h13l-3-3M17 17H4l3 3',
+  tag:    'M3 12V4h8l10 10-8 8zM7.5 7.5h.01'
+};
+function svgIco(d) { return '<svg class="ico" viewBox="0 0 24 24"><path d="' + d + '"/></svg>'; }
+const VISUAL_CAT = {
+  'SUPER': ['cart', '#3DDC97'], 'VIAJES': ['globe', '#6CB6FF'], 'RENTA': ['home', '#A78BFA'],
+  'GASTOS DEPARTAMENTO': ['home', '#A78BFA'], 'GASOLINA': ['fuel', '#F59E5B'],
+  'TRANSPORTE / MOVILIDAD': ['car', '#6CB6FF'], 'UBER': ['car', '#6CB6FF'],
+  'SALUD / DEPORTE': ['heart', '#F08BBE'], 'SEGURO GASTOS MEDICOS': ['shield', '#F08BBE'],
+  'ROPA / ACCESORIOS': ['shirt', '#B9A5FB'], 'FIESTA / COMIDA / RECREACIÓN': ['food', '#F08BBE'],
+  'DIGITALES': ['screen', '#F2B84B'], 'REGALOS': ['gift', '#F08BBE'], 'GAS': ['flame', '#F59E5B'],
+  'COLEGIO': ['book', '#6CB6FF'], 'CLASES EXTRACURRICULARES': ['book', '#6CB6FF'],
+  'ENFERMERA / MUCHACHA': ['user', '#5ED3C4'], 'SEGURO COCHES': ['shield', '#5ED3C4'],
+  'IMPUESTOS': ['receipt', '#B4B9C6'], 'INVERSIÓN': ['trend', '#3DDC97'], 'AHORRO GNP': ['trend', '#3DDC97'],
+  'AHORRO HIPERPACK': ['trend', '#3DDC97'], 'CRYPTOS': ['trend', '#3DDC97'],
+  'PAGO CREDITO BANCOS': ['bank', '#5ED3C4'], 'PAGO CREDITO GENERAL': ['bank', '#5ED3C4'],
+  'PAGO CREDITO HIPOTECARIO': ['bank', '#5ED3C4'], 'PRÉSTAMOS': ['coin', '#F2B84B'],
+  'NOMINA HIPERPACK': ['brief', '#00E096'], 'KUBEL': ['brief', '#00E096'], 'COMISIÓN FACT': ['brief', '#00E096'],
+  'BONOS / COMISIONES HIPERPACK': ['brief', '#00E096'], 'UTILIDADES HIPERPACK': ['brief', '#00E096'],
+  'FILTROS': ['brief', '#00E096'], 'UTILIDADES DE INVERSIÓN': ['trend', '#00E096'],
+  'PAGO DE PRÉSTAMOS': ['coin', '#00E096'], 'PEDI PRESTADO': ['coin', '#00E096'], 'OTROS': ['coin', '#00E096']
+};
+function catVisual(r) {
+  if (r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA') return { d: ICO.xfer, c: '#C9C9DA' };
+  const v = VISUAL_CAT[r.categoria];
+  if (v) return { d: ICO[v[0]], c: v[1] };
+  return (parseFloat(r.monto) || 0) > 0 ? { d: ICO.coin, c: '#00E096' } : { d: ICO.tag, c: '#B4B9C6' };
+}
+function hexA(hex, a) { const n = parseInt(hex.replace('#', ''), 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+function fmt0(n) { return Math.round(Math.abs(n)).toLocaleString('es-MX'); }
+function fmtSmart(n) { const a = Math.abs(n); return Math.abs(a - Math.round(a)) < 0.005 ? fmt0(a) : fmtN(a); }
+function fmtK(n) { n = Math.abs(n); if (n < 1000) return '$' + Math.round(n); return '$' + (n / 1000).toFixed(n < 10000 ? 1 : 0).replace('.0', '') + 'k'; }
+function nombreCartera(c) { return String(c || '').replace(/^TDC\s+/, ''); }
+function escHtml(s) { return String(s || '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
+const MESES_CORTOS = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_LARGOS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function mesLargo(ym) { const [y, m] = ym.split('-').map(Number); const t = MESES_LARGOS[m - 1]; return t.charAt(0).toUpperCase() + t.slice(1) + ' ' + y; }
+function fechaDia(iso) {
+  const d = new Date(iso + 'T12:00:00');
+  const dia = d.toLocaleDateString('es-MX', { weekday: 'long' });
+  const today = hoy();
+  const ayer = toLocalDate(new Date(new Date(today + 'T12:00:00').getTime() - 86400000));
+  if (iso === today) return 'Hoy, ' + dia + ' ' + d.getDate();
+  if (iso === ayer) return 'Ayer, ' + dia + ' ' + d.getDate();
+  return dia.charAt(0).toUpperCase() + dia.slice(1) + ' ' + d.getDate();
+}
+
 function renderDash() {
   const today = hoy();
-  const now = new Date(), mes = now.getMonth(), anio = now.getFullYear();
-  const mNames = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
-
   const { desde, hasta, label } = getAndreaRango();
   const labelEl = document.getElementById('a-rng-label');
   if (labelEl) labelEl.textContent = label;
-  const today2 = hoy();
-  const hastaReal = hasta > today2 ? today2 : hasta;
-  const resMes = myRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hastaReal);
+  const hastaReal = hasta > today ? today : hasta;
+  const resRango = myRecords.filter(r => r.fecha && r.fecha >= desde && r.fecha <= hastaReal);
 
-  // Saldo EFECTIVO ANDREA
+  // Saldo EFECTIVO ANDREA (mismo cálculo de siempre)
   const carteraAndrea = 'EFECTIVO ANDREA';
   let saldoAndrea = 0;
-  // Buscar saldo inicial de carteras si está disponible
   try {
     const carteras = JSON.parse(localStorage.getItem('flujos_carteras') || '[]');
     const cfg = carteras.find(x => x.cartera === carteraAndrea);
     saldoAndrea = cfg ? (parseFloat(cfg.saldoInicial) || 0) : 0;
   } catch(e) {}
-  // Sumar todos los movimientos de EFECTIVO ANDREA hasta hoy
-  allRecords.forEach(r => {
-    if (r.cartera === carteraAndrea && r.fecha <= today) {
-      saldoAndrea += parseFloat(r.monto) || 0;
-    }
-  });
+  allRecords.forEach(r => { if (r.cartera === carteraAndrea && r.fecha <= today) saldoAndrea += parseFloat(r.monto) || 0; });
   const saldoEl = document.getElementById('a-saldo');
-  if (saldoEl) {
-    saldoEl.textContent = (saldoAndrea < 0 ? '−' : '') + '$' + fmtN(Math.abs(saldoAndrea));
-    saldoEl.style.color = saldoAndrea >= 0 ? 'var(--green)' : 'var(--red)';
-  }
+  if (saldoEl) { saldoEl.textContent = (saldoAndrea < 0 ? '−' : '') + '$' + fmtN(saldoAndrea); saldoEl.classList.toggle('neg', saldoAndrea < 0); }
 
-  let gas = 0, maxGasto = 0;
+  // Gastos del periodo
+  let gas = 0, maxGasto = 0, nGastos = 0;
   const bycat = {};
-  resMes.forEach(r => {
+  resRango.forEach(r => {
     const m = parseFloat(r.monto) || 0;
     if (m < 0 && r.tipo !== 'TRANSFERENCIA') {
-      gas += Math.abs(m);
-      if (Math.abs(m) > maxGasto) maxGasto = Math.abs(m);
-      if (r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) + Math.abs(m);
+      gas += -m; nGastos++;
+      if (-m > maxGasto) maxGasto = -m;
+      if (r.categoria) bycat[r.categoria] = (bycat[r.categoria] || 0) - m;
     }
   });
+  document.getElementById('a-gas').textContent = '$' + fmtN(gas);
+  document.getElementById('a-count').innerHTML = '<b>' + nGastos + '</b>' + (nGastos === 1 ? ' gasto' : ' gastos');
+  document.getElementById('a-max').innerHTML = maxGasto > 0 ? 'El mayor: <b>$' + fmtSmart(maxGasto) + '</b>' : 'Sin gastos';
 
-  const gasEl = document.getElementById('a-gas');
-  if (gasEl) gasEl.textContent = '$' + fmtN(gas);
-  const countEl = document.getElementById('a-count');
-  if (countEl) countEl.textContent = resMes.filter(r => parseFloat(r.monto) < 0).length;
-  const maxEl = document.getElementById('a-max');
-  if (maxEl) maxEl.textContent = maxGasto > 0 ? '$' + fmtN(maxGasto) : '—';
+  // Gastos por mes: los 6 meses que terminan en el mes que estás viendo
+  const ref = new Date(aRefDate);
+  const ahora = new Date();
+  const meses = [];
+  for (let i = 5; i >= 0; i--) { let m = ref.getMonth() - i, y = ref.getFullYear(); if (m < 0) { m += 12; y--; } meses.push({ y, m, g: 0 }); }
+  myRecords.forEach(r => {
+    const mm = parseFloat(r.monto) || 0;
+    if (!r.fecha || mm >= 0 || r.tipo === 'TRANSFERENCIA') return;
+    const y = +r.fecha.slice(0, 4), m = +r.fecha.slice(5, 7) - 1;
+    const x = meses.find(z => z.y === y && z.m === m); if (x) x.g -= mm;
+  });
+  const maxG = Math.max(1, ...meses.map(x => x.g));
+  document.getElementById('a-bars').innerHTML = meses.map((x, i) => {
+    const cur = aRango === 'mes' ? i === 5 : (x.y === ahora.getFullYear() && x.m === ahora.getMonth());
+    const h = Math.max(4, Math.round(x.g / maxG * 92));
+    return `<button class="a-bar${cur ? ' cur' : ''}" onclick="irMesAndrea(${x.y},${x.m})" aria-label="${MESES_LARGOS[x.m]} ${x.y}: $${fmt0(x.g)}">
+      <span class="a-bar-v">${x.g > 0 ? fmtK(x.g) : ''}</span><span class="a-bar-col" style="height:${h}px"></span><span class="a-bar-m">${MESES_CORTOS[x.m]}</span></button>`;
+  }).join('');
 
-  // Tendencia 6 meses
-  const tLabels = [], tData = [];
-  for (let i = 5; i >= 0; i--) {
-    let m = mes - i, a = anio;
-    if (m < 0) { m += 12; a--; }
-    let g = 0;
-    myRecords.forEach(r => {
-      const p = r.fecha ? r.fecha.split('-') : [];
-      if (parseInt(p[0]) === a && parseInt(p[1]) - 1 === m && parseFloat(r.monto) < 0 && r.tipo !== 'TRANSFERENCIA')
-        g += Math.abs(parseFloat(r.monto) || 0);
-    });
-    tLabels.push(mNames[m]);
-    tData.push(Math.round(g));
-  }
-  const tCtx = document.getElementById('a-trend-chart');
-  if (tCtx && typeof Chart !== 'undefined') {
-    if (aTrendChart) aTrendChart.destroy();
-    aTrendChart = new Chart(tCtx, {
-      type: 'bar',
-      data: { labels: tLabels, datasets: [{ data: tData, backgroundColor: 'rgba(244,114,182,0.75)', borderRadius: 4, barPercentage: 0.6 }] },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          x: { ticks: { color: '#7e7e94', font: { size: 10 } }, grid: { display: false } },
-          y: { ticks: { color: '#7e7e94', font: { size: 9 }, callback: v => '$' + (v/1000).toFixed(0) + 'k', maxTicksLimit: 4 }, grid: { color: 'rgba(255,255,255,0.04)' } }
-        }
-      }
-    });
-  }
-
-  // Dona
-  const sorted = Object.entries(bycat).sort((a,b) => b[1]-a[1]);
-  const dCtx = document.getElementById('a-donut-chart');
-  if (dCtx && typeof Chart !== 'undefined') {
-    if (aDonutChart) aDonutChart.destroy();
-    if (sorted.length) {
-      aDonutChart = new Chart(dCtx, {
-        type: 'doughnut',
-        data: { labels: sorted.map(x=>x[0]), datasets: [{ data: sorted.map(x=>Math.round(x[1])), backgroundColor: PINK_COLORS, borderWidth: 0 }] },
-        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, cutout: '62%' }
-      });
-    }
-  }
-  const leg = document.getElementById('a-donut-legend');
-  if (leg) {
-    leg.innerHTML = sorted.slice(0, 6).map(([cat, val], i) =>
-      `<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:11px;padding:3px 0;border-bottom:0.5px solid var(--border);">
-        <div style="display:flex;align-items:center;gap:5px;min-width:0;"><div style="width:8px;height:8px;border-radius:50%;background:${PINK_COLORS[i]};flex-shrink:0;"></div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text2);">${cat}</span></div>
-        <span style="font-weight:700;color:var(--red);flex-shrink:0;">-$${fmtN(val)}</span>
-      </div>`
-    ).join('');
-  }
-
-  // Tabla por categoría
-  const catsEl = document.getElementById('a-cats');
-  if (catsEl) {
-    const maxVal = sorted[0] ? sorted[0][1] : 1;
-    catsEl.innerHTML = sorted.length ? sorted.map(([cat, val]) =>
-      `<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;border-bottom:0.5px solid var(--border);">
-        <div style="flex:1;min-width:0;">
-          <div style="font-size:12px;font-weight:500;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${cat}</div>
-          <div style="height:3px;background:rgba(255,255,255,0.05);border-radius:2px;overflow:hidden;">
-            <div style="height:100%;width:${Math.round(val/maxVal*100)}%;background:var(--pink);border-radius:2px;"></div>
-          </div>
-        </div>
-        <div style="font-size:13px;font-weight:700;color:var(--red);font-family:var(--display);flex-shrink:0;">-$${fmtN(val)}</div>
-      </div>`).join('')
-    : '<div style="padding:16px;font-size:12px;color:var(--text3);text-align:center;">Sin gastos este mes</div>';
-  }
+  // En qué se fue: categorías de mayor a menor
+  const cats = Object.entries(bycat).sort((a, b) => b[1] - a[1]);
+  document.getElementById('a-cats-total').textContent = cats.length ? cats.length + (cats.length === 1 ? ' categoría' : ' categorías') : '';
+  document.getElementById('a-cats').innerHTML = cats.length ? cats.map(([c, v]) => {
+    const vis = catVisual({ categoria: c, tipo: 'GASTO', monto: -1 });
+    const p = gas > 0 ? v / gas * 100 : 0;
+    return `<div class="cat-row" onclick="verCategoriaAndrea(this.dataset.cat)" data-cat="${escHtml(c)}">
+      <div class="cat-ico" style="background:${hexA(vis.c, 0.16)};color:${vis.c}">${svgIco(vis.d)}</div>
+      <div class="cat-main">
+        <div class="cat-top"><span class="cat-n">${escHtml(c)}</span><span class="cat-v">$${fmtSmart(v)}</span></div>
+        <div class="cat-bar"><i style="width:${p.toFixed(1)}%"></i></div>
+        <div class="cat-p">${p < 1 && p > 0 ? 'menos de 1' : Math.round(p)}% de lo que gastaste</div>
+      </div></div>`;
+  }).join('') : '<div class="empty">Sin gastos en este periodo</div>';
 }
+function irMesAndrea(y, m) {
+  aRefDate = new Date(y, m, 15);
+  setAndreaRango('mes', document.getElementById('a-rng-mes'));
+}
+function verCategoriaAndrea(cat) {
+  const s = document.getElementById('a-search'); if (s) s.value = cat;
+  showPage('list');
+}
+
 function setFilter(f, el) {
   currentFilter = f;
-  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#page-list .filter-pill').forEach(p => p.classList.remove('active'));
   el.classList.add('active');
   renderRecords();
 }
 
+let listPeriodo = 'mes';
+let listMonth = hoy().slice(0, 7);
+function setPeriodoLista(p) {
+  listPeriodo = p;
+  document.getElementById('l-seg-mes').classList.toggle('active', p === 'mes');
+  document.getElementById('l-seg-anio').classList.toggle('active', p === 'anio');
+  renderRecords();
+}
+function moverMesLista(d) {
+  let [y, m] = listMonth.split('-').map(Number);
+  if (listPeriodo === 'anio') y += d;
+  else { m += d; if (m < 1) { m = 12; y--; } if (m > 12) { m = 1; y++; } }
+  listMonth = y + '-' + String(m).padStart(2, '0');
+  renderRecords();
+}
+// Las dos partes de una transferencia (salida y entrada)
+function legsTransfer(r) {
+  if (!r.idTransferencia) {
+    // Transferencias viejas sin id: se emparejan por fecha, monto y cartera que recibe
+    const m = Math.abs(parseFloat(r.monto) || 0).toFixed(2);
+    const igual = x => !x.idTransferencia && x.fecha === r.fecha && Math.abs(parseFloat(x.monto) || 0).toFixed(2) === m;
+    if (r.tipo === 'TRANSFERENCIA') return { salida: r, entrada: allRecords.find(x => x.tipo === 'INGRESO POR TRANSFERENCIA' && x.cartera === r.carteraDestino && igual(x)) || null, sinId: true };
+    return { salida: allRecords.find(x => x.tipo === 'TRANSFERENCIA' && x.carteraDestino === r.cartera && igual(x)) || null, entrada: r, sinId: true };
+  }
+  const legs = allRecords.filter(x => x.idTransferencia === r.idTransferencia);
+  return { salida: legs.find(x => x.tipo === 'TRANSFERENCIA') || null, entrada: legs.find(x => x.tipo === 'INGRESO POR TRANSFERENCIA') || null, sinId: false };
+}
+function filaRegistro(r) {
+  const m = parseFloat(r.monto) || 0;
+  const vis = catVisual(r);
+  const item = document.createElement('div'); item.className = 'record-item';
+  const icono = `<div class="record-icon" style="background:${hexA(vis.c, 0.16)};color:${vis.c}">${svgIco(vis.d)}</div>`;
+  if (r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA') {
+    const t = legsTransfer(r);
+    const monto = Math.abs(parseFloat((t.salida || t.entrada).monto) || 0);
+    const destino = t.salida ? t.salida.carteraDestino : (t.entrada ? t.entrada.cartera : '');
+    const out = t.salida
+      ? `<div class="x-leg"><span class="x-dot out"></span><span>Sale de ${escHtml(nombreCartera(t.salida.cartera))}</span><b>−$${fmtSmart(monto)}</b></div>`
+      : (t.sinId ? '' : `<div class="x-leg miss"><span class="x-dot"></span><span>Salida no registrada</span><b>Falta</b></div>`);
+    const inn = t.entrada
+      ? `<div class="x-leg"><span class="x-dot in"></span><span>Entra a ${escHtml(nombreCartera(t.entrada.cartera))}</span><b>+$${fmtSmart(Math.abs(parseFloat(t.entrada.monto) || 0))}</b></div>`
+      : (t.sinId ? `<div class="x-leg"><span class="x-dot in"></span><span>Hacia ${escHtml(nombreCartera(destino))}</span><b></b></div>`
+                 : `<div class="x-leg miss"><span class="x-dot"></span><span>Entra a ${escHtml(nombreCartera(destino))}</span><b>Falta</b></div>`);
+    item.innerHTML = `${icono}
+      <div class="record-body">
+        <div class="record-cat"><span>Transferencia</span></div>
+        <div class="x-legs">${out}${inn}</div>
+        ${r.nota ? `<div class="record-meta">${escHtml(r.nota)}</div>` : ''}
+      </div>
+      <div class="record-amount tra">$${fmtSmart(monto)}</div>`;
+  } else {
+    item.innerHTML = `${icono}
+      <div class="record-body">
+        <div class="record-cat"><span>${escHtml(r.categoria || r.tipo)}</span></div>
+        <div class="record-meta">${escHtml(nombreCartera(r.cartera))}${r.nota ? ' · ' + escHtml(r.nota) : ''}</div>
+      </div>
+      <div class="record-amount ${m > 0 ? 'pos' : 'neg'}">${m > 0 ? '+' : '−'}$${fmtSmart(m)}</div>`;
+  }
+  item.onclick = () => openEditModal(r);
+  return item;
+}
 function renderRecords() {
   const list = document.getElementById('records-list'); list.innerHTML = '';
   const today = hoy();
   const search = (document.getElementById('a-search')?.value || '').toLowerCase().trim();
-  let recs = myRecords.filter(r => r.fecha <= today);
-  if (currentFilter !== 'todos') recs = recs.filter(r => r.tipo === currentFilter);
+  const modoPeriodo = !search && !aListFilters.desde && !aListFilters.hasta;
+  let recs = myRecords.filter(r => r.fecha && r.fecha <= today);
+  if (currentFilter === 'TRANSFERENCIA') recs = recs.filter(r => r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA');
+  else if (currentFilter !== 'todos') recs = recs.filter(r => r.tipo === currentFilter);
   if (aListFilters.desde) recs = recs.filter(r => r.fecha >= aListFilters.desde);
   if (aListFilters.hasta) recs = recs.filter(r => r.fecha <= aListFilters.hasta);
   if (search) recs = recs.filter(r =>
@@ -505,30 +720,51 @@ function renderRecords() {
     String(Math.abs(r.monto||0)).includes(search) ||
     (r.fecha||'').includes(search)
   );
-  if (!recs.length) { list.innerHTML = '<div style="text-align:center;padding:40px 20px;color:var(--text3);font-size:14px;">Sin registros</div>'; return; }
+  if (modoPeriodo) recs = recs.filter(r => listPeriodo === 'anio' ? r.fecha.slice(0, 4) === listMonth.slice(0, 4) : r.fecha.slice(0, 7) === listMonth);
+
+  // Encabezado: periodo o resultado de búsqueda
+  document.getElementById('l-periodo').style.display = modoPeriodo ? 'block' : 'none';
+  const note = document.getElementById('l-note');
+  note.style.display = modoPeriodo ? 'none' : 'block';
+  note.textContent = recs.length + (recs.length === 1 ? ' movimiento' : ' movimientos') + (search ? ' encontrados en todos los meses' : ' en las fechas elegidas');
+  const enLista = new Set(recs.map(r => r.id));
+  const oculta = r => r.tipo === 'INGRESO POR TRANSFERENCIA' && (t => t.salida && enLista.has(t.salida.id))(legsTransfer(r));
+  const gastoDe = rs => rs.reduce((s, r) => { const m = parseFloat(r.monto) || 0; return s + (m < 0 && r.tipo !== 'TRANSFERENCIA' ? -m : 0); }, 0);
+  if (modoPeriodo) {
+    const nG = recs.filter(r => (parseFloat(r.monto) || 0) < 0 && r.tipo !== 'TRANSFERENCIA').length;
+    const nV = recs.filter(r => !oculta(r)).length;
+    document.getElementById('l-lbl').textContent = listPeriodo === 'anio' ? 'Todo ' + listMonth.slice(0, 4) : mesLargo(listMonth);
+    document.getElementById('l-gas').textContent = '$' + fmtN(gastoDe(recs));
+    document.getElementById('l-count').innerHTML = '<b>' + nV + '</b>' + (nV === 1 ? ' movimiento' : ' movimientos') + (nG !== nV ? ' · ' + nG + (nG === 1 ? ' gasto' : ' gastos') : '');
+  }
+  if (!recs.length) {
+    list.innerHTML = '<div class="empty">' + (modoPeriodo ? 'Sin movimientos en ' + (listPeriodo === 'anio' ? listMonth.slice(0, 4) : MESES_LARGOS[parseInt(listMonth.slice(5)) - 1]) : 'Nada coincide con tu búsqueda') + '</div>';
+    return;
+  }
 
   const byDate = {};
-  recs.forEach(r => { if (!byDate[r.fecha]) byDate[r.fecha]=[]; byDate[r.fecha].push(r); });
-  Object.keys(byDate).sort((a,b) => b.localeCompare(a)).forEach(date => {
-    const rs = ordenarRegistros(byDate[date]); // ★ más reciente arriba
-    const dt = rs.reduce((s,r) => s+(parseFloat(r.monto)||0), 0);
-    const grp = document.createElement('div');
-    grp.innerHTML = `<div class="day-header"><span class="day-date">${formatDate(date)}</span><span class="day-total" style="color:${dt>=0?'var(--green)':'var(--red)'}">${dt>=0?'+':'−'}$${fmtN(Math.abs(dt))}</span></div>`;
+  recs.forEach(r => { (byDate[r.fecha] = byDate[r.fecha] || []).push(r); });
+  const verAnio = modoPeriodo && listPeriodo === 'anio';
+  let mesActual = '';
+  Object.keys(byDate).sort((a, b) => b.localeCompare(a)).forEach(date => {
+    if (verAnio && date.slice(0, 7) !== mesActual) {
+      mesActual = date.slice(0, 7);
+      const g = gastoDe(recs.filter(r => r.fecha.slice(0, 7) === mesActual));
+      const mh = document.createElement('div'); mh.className = 'y-month';
+      mh.innerHTML = `<span class="y-month-n">${mesLargo(mesActual)}</span><span class="y-month-v">Gastaste <b>$${fmtN(g)}</b></span>`;
+      list.appendChild(mh);
+    }
+    const rs = ordenarRegistros(byDate[date]); // más reciente arriba
+    const dt = rs.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
+    const grp = document.createElement('div'); grp.className = 'day-group';
+    grp.innerHTML = `<div class="day-header"><span class="day-date">${fechaDia(date)}</span><span class="day-total${dt > 0.005 ? ' pos' : ''}">${Math.abs(dt) < 0.005 ? '$0' : (dt > 0 ? '+' : '−') + '$' + fmtSmart(dt)}</span></div>`;
+    const card = document.createElement('div'); card.className = 'day-card';
     rs.forEach(r => {
-      const m = parseFloat(r.monto)||0;
-      const item = document.createElement('div'); item.className = 'record-item';
-      const iconcls = m>0?'ing':'gas', icon = m>0?'↑':'↓';
-      const amtcls = m>0?'pos':'neg';
-      item.innerHTML = `
-        <div class="record-icon ${iconcls}">${icon}</div>
-        <div class="record-body">
-          <div class="record-cat">${r.categoria||r.tipo}</div>
-          <div class="record-meta">${r.cartera}${r.nota?' · '+r.nota:''}</div>
-        </div>
-        <div class="record-amount ${amtcls}">${m>=0?'+':'−'}$${fmtN(Math.abs(m))}</div>`;
-      item.onclick = () => openEditModal(r);
-      grp.appendChild(item);
+      // Una transferencia se muestra una sola vez: en su salida, si está en la lista
+      if (oculta(r)) return;
+      card.appendChild(filaRegistro(r));
     });
+    grp.appendChild(card);
     list.appendChild(grp);
   });
 }
@@ -552,7 +788,7 @@ function renderChipsCartera() {
     const el = document.createElement('div');
     const colorCls = currentType==='INGRESO'?' ing':currentType==='GASTO'?' gas':' tra';
     el.className = 'chip'+(selectedCartera===c?' active'+colorCls:'');
-    el.textContent = (CARTERAS_TDC.includes(c)?'💳 ':'')+c;
+    el.textContent = c;
     el.onclick = () => { selectedCartera=c; renderChipsCartera(); if(currentType==='TRANSFERENCIA') renderChipsCarteraDest(); };
     wrap.appendChild(el);
   });
@@ -563,7 +799,7 @@ function renderChipsCarteraDest() {
   CARTERAS.filter(c => c!==selectedCartera).forEach(c => {
     const el = document.createElement('div');
     el.className = 'chip tra'+(selectedCarteraDest===c?' active':'');
-    el.textContent = (CARTERAS_TDC.includes(c)?'💳 ':'')+c;
+    el.textContent = c;
     el.onclick = () => { selectedCarteraDest=c; renderChipsCarteraDest(); };
     wrap.appendChild(el);
   });
@@ -674,7 +910,7 @@ function openEditModal(r) {
   document.getElementById('m-field-dest').style.display = isTransfer ? 'block' : 'none';
   document.getElementById('m-field-cat').style.display = isTransfer ? 'none' : 'block';
   const delBtn = document.querySelector('.modal-btn.delete');
-  if (delBtn) delBtn.textContent = isTransfer ? '🗑 Eliminar transferencia' : 'Eliminar';
+  if (delBtn) delBtn.textContent = isTransfer ? 'Eliminar transferencia' : 'Eliminar';
 
   renderEditCarteraChips(isTransfer);
   if (isTransfer) renderEditDestChips();
@@ -1119,6 +1355,5 @@ function formatSheetDate(val){
 }
 function showToast(msg,type){const t=document.getElementById('toast');t.textContent=msg;t.className='toast show '+(type||'');setTimeout(()=>{t.className='toast';},2800);}
 </script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 </body>
 </html>

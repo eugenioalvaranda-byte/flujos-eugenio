@@ -121,7 +121,7 @@ select.field-input { cursor: pointer; }
 <!-- DASHBOARD ANDREA -->
 <div id="page-dash" class="page active">
   <div class="topbar" style="flex-wrap:wrap;gap:8px;">
-    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.4</span></div>
+    <div class="topbar-title">Hola Andrea 👩 <span style="font-size:10px;color:var(--text3);font-weight:500;">v1.5</span> <span id="cola-badge" style="font-size:11px;color:#F5B942;font-weight:600;"></span></div>
   </div>
   <div style="display:flex;gap:6px;padding:0 16px 12px;overflow-x:auto;scrollbar-width:none;">
     <div class="filter-pill" id="a-rng-sem" onclick="setAndreaRango('sem',this)">Semana</div>
@@ -338,6 +338,9 @@ function showPage(p) {
 
 function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records_andrea') || '[]'); } catch(e) { allRecords = []; }
+  // ★ v1.5: lo que no alcanzó a subir sigue pendiente aunque se haya cerrado la app
+  leerCola().forEach(r => { pendingIds.add(r.id); if (!allRecords.some(x => x.id === r.id)) allRecords.unshift(r); });
+  pintarBadgeCola();
   myRecords = allRecords.filter(r => r.usuario === USUARIO);
   renderDash();
 
@@ -626,13 +629,15 @@ function guardarRegistro() {
   showPage('dash');
 
   // Enviar al Sheet en background
+  encolar(regs);
+  const pendienteMsg = () => showToast('Guardado en tu celular. Se sube solo en cuanto haya señal', '');
   fetch(APPS_SCRIPT_URL, {method:'POST', body:JSON.stringify({action:'addRows', rows:regs})})
     .then(r => r.json())
     .then(data => {
-      if (data.ok) showToast('Registro guardado ✓', 'success');
-      else showToast('Error al guardar en Sheet', 'error');
+      if (data.ok) { quitarDeCola(regs.map(r => r.id)); showToast('Registro guardado ✓', 'success'); }
+      else pendienteMsg();
     })
-    .catch(() => showToast('Sin conexión — guardado local', 'error'));
+    .catch(pendienteMsg);
 }
 
 // EDIT MODAL
@@ -738,6 +743,7 @@ function actualizarRegistro() {
 
     myRecords=allRecords.filter(x=>x.usuario===USUARIO);
     localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
+    refrescarCola([salida, entrada]);
     closeModal(); renderRecords(); renderDash();
     showToast('Actualizando transferencia...','');
     Promise.all([
@@ -757,6 +763,7 @@ function actualizarRegistro() {
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
   closeModal(); renderRecords(); renderDash();
+  refrescarCola([r]);
   fetch(APPS_SCRIPT_URL,{method:'POST',body:JSON.stringify({action:'updateRow',id:r.id,data:r})})
     .then(r=>r.json())
     .then(()=>{ showToast('Actualizado ✓','success'); })
@@ -768,11 +775,15 @@ function eliminarRegistro() {
   const idx=allRecords.findIndex(x=>x.id===editingId); if(idx<0) return;
   const r=allRecords[idx];
   const isTransfer = r.tipo === 'TRANSFERENCIA' || r.tipo === 'INGRESO POR TRANSFERENCIA';
-  const parejo = (isTransfer && r.idTransferencia) ? allRecords.find(x=>x.id!==r.id && x.idTransferencia===r.idTransferencia) : null;
+  const signo = Math.sign(parseFloat(r.monto) || 0);
+  const parejo = (isTransfer && r.idTransferencia)
+    ? (allRecords.find(x=>x.id!==r.id && x.idTransferencia===r.idTransferencia && Math.sign(parseFloat(x.monto)||0)===-signo)
+       || allRecords.find(x=>x.id!==r.id && x.idTransferencia===r.idTransferencia))
+    : null;
 
   if (isTransfer && parejo) {
     const id1=r.id, id2=parejo.id;
-    deletedIds.add(id1); deletedIds.add(id2);
+    deletedIds.add(id1); deletedIds.add(id2); quitarDeCola([id1, id2]); pendingIds.delete(id1); pendingIds.delete(id2);
     [id1,id2].forEach(id=>{ const i=allRecords.findIndex(x=>x.id===id); if(i>=0) allRecords.splice(i,1); });
     myRecords=allRecords.filter(x=>x.usuario===USUARIO);
     localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
@@ -787,7 +798,7 @@ function eliminarRegistro() {
   }
 
   const id=r.id;
-  deletedIds.add(id);
+  deletedIds.add(id); quitarDeCola([id]); pendingIds.delete(id);
   allRecords.splice(idx,1);
   myRecords=allRecords.filter(r=>r.usuario===USUARIO);
   localStorage.setItem('flujos_records_andrea',JSON.stringify(allRecords));
@@ -968,7 +979,7 @@ function indicadorSync(estado) {
     indicadorActivo = true; el.textContent = 'Actualizando\u2026'; el.style.opacity = '1';
   } else if (estado === 'ok') {
     if (!indicadorActivo) return;
-    indicadorActivo = false; el.textContent = 'Al d\u00eda'; el.style.opacity = '1';
+    indicadorActivo = false; const nCola = leerCola().length; el.textContent = nCola ? 'Conectado \u00b7 ' + nCola + ' por subir' : 'Al d\u00eda'; el.style.opacity = '1';
     el._t = setTimeout(() => { el.style.opacity = '0'; }, 1800);
   } else if (estado === 'error') {
     if (!indicadorActivo) return;
@@ -977,9 +988,56 @@ function indicadorSync(estado) {
   }
 }
 
+// ★ v1.5: cola de subida. Todo lo que se captura entra aquí ANTES de mandarse,
+//   y solo sale cuando el servidor confirma que lo guardó. Vive en el celular,
+//   así que sobrevive aunque se cierre la app sin señal. Mandar algo dos veces
+//   no duplica: el servidor rechaza cualquier ID que ya tenga.
+const COLA_KEY = 'flujos_cola_andrea';
+let subiendoCola = false;
+function leerCola() { try { return JSON.parse(localStorage.getItem(COLA_KEY) || '[]'); } catch (e) { return []; } }
+function guardarCola(c) { try { localStorage.setItem(COLA_KEY, JSON.stringify(c)); } catch (e) {} pintarBadgeCola(); }
+function encolar(rows) {
+  const c = leerCola();
+  rows.forEach(r => { const i = c.findIndex(x => x.id === r.id); if (i >= 0) c[i] = Object.assign({}, r); else c.push(Object.assign({}, r)); });
+  guardarCola(c);
+}
+function quitarDeCola(ids) {
+  const c = leerCola(); if (!c.length) return;
+  const s = new Set(ids); const queda = c.filter(x => !s.has(x.id));
+  if (queda.length !== c.length) guardarCola(queda);
+}
+// Si se edita algo que todavía no sube, la cola se queda con la versión nueva
+function refrescarCola(rows) {
+  const c = leerCola(); if (!c.length) return;
+  let cambio = false;
+  rows.forEach(r => { const i = c.findIndex(x => x.id === r.id); if (i >= 0) { c[i] = Object.assign({}, r); cambio = true; } });
+  if (cambio) guardarCola(c);
+}
+function pintarBadgeCola() {
+  const el = document.getElementById('cola-badge'); if (!el) return;
+  const n = leerCola().length;
+  el.textContent = n ? '· ' + n + ' por subir' : '';
+}
+function subirCola() {
+  if (subiendoCola) return Promise.resolve();
+  const cola = leerCola(); if (!cola.length) return Promise.resolve();
+  subiendoCola = true;
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: cola }) })
+    .then(r => r.json())
+    .then(resp => {
+      if (resp && resp.ok) {
+        quitarDeCola(cola.map(x => x.id));
+        showToast(cola.length === 1 ? 'Movimiento pendiente subido ✓' : cola.length + ' movimientos pendientes subidos ✓', 'success');
+      }
+    })
+    .catch(() => {})
+    .finally(() => { subiendoCola = false; });
+}
+
 function autoSync(showMsg) {
   if (syncBusy) return;
   syncBusy = true;
+  subirCola();
   let okCiclo = false, reintentarCompleto = false;
   // ★ v4: incremental — solo lo que cambió desde el último corte.
   const usarIncremental = !!ultimoSync;
@@ -994,10 +1052,11 @@ function autoSync(showMsg) {
       }
       const incremental = data.modo === 'incremental';
       const sheetRecs = expandirCompacto(data).map(parseSheetRow).filter(r => r.fecha && r.cartera && r.id);
+      quitarDeCola(sheetRecs.map(r => r.id));
 
       if (incremental) {
         if (sheetRecs.length === 0) {
-          const mios = allRecords.length;
+          const mios = allRecords.filter(r => !pendingIds.has(r.id)).length;
           if (typeof data.total === 'number' && data.total !== mios) { ultimoSync = ''; okCiclo = false; reintentarCompleto = true; return; }
           ultimoSync = data.servidor || ultimoSync;
           return;

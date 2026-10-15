@@ -748,7 +748,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.6 ⟳</span></div>
+    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.7 ⟳</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -759,7 +759,7 @@ body { padding-bottom: 150px; }
   </div>
 
   <div class="dash-left-col r-wrap">
-    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.6 ⟳</span></div>
+    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.7 ⟳</span></div>
 
     <div class="r-tools">
       <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()">Filtros</div>
@@ -1104,8 +1104,9 @@ body { padding-bottom: 150px; }
     <button class="link-btn" id="pdf-retomar" onclick="retomarPDF()" style="display:none;width:100%;color:var(--blue);">Retomar la última lectura del PDF</button>
     <div id="pdf-status" style="margin-top:8px;font-size:12px;color:var(--text3);"></div>
   </div>
+  <div id="conc-orden" style="display:flex;align-items:center;gap:6px;margin:0 20px 12px;flex-wrap:wrap;"></div>
   <div id="pdf-resultados" style="margin:0 20px 14px;display:none;"></div>
-  <div class="sec-h" style="margin:0 24px 10px;"><h2>Cargos del ciclo</h2><span>Del más grande al más chico</span></div>
+  <div class="sec-h" style="margin:0 24px 10px;"><h2>Cargos del ciclo</h2><span id="conc-orden-lbl">Del más grande al más chico</span></div>
   <div class="card" style="margin:0 20px 6px;">
     <div id="conc-lista"></div>
     <button class="more-btn" id="conc-vermas" onclick="toggleConcVerTodos()" style="display:none;justify-content:center;color:var(--green);font-weight:600;"></button>
@@ -1235,7 +1236,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.6</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.7</span>
       </div>
     </div>
 
@@ -4315,6 +4316,7 @@ function initConciliacion() {
   poblarCiclos(true);
   renderConciliacion();
   actualizarBotonRetomar();
+  cargarEquivalencias();
 }
 
 function setConcCartera(c) {
@@ -4372,6 +4374,39 @@ function registrosDelCiclo() {
 
 let concVerTodos = false;
 const CONC_LIMITE = 8;
+
+// ★ v4.7: orden de la conciliación. Se recuerda en este dispositivo y
+//   aplica igual a la lista del ciclo y a los resultados del PDF.
+let concOrden = (function () { try { return localStorage.getItem('flujos_conc_orden') || 'viejo'; } catch (e) { return 'viejo'; } })();
+const CONC_ORDENES = { viejo: 'Más viejo primero', nuevo: 'Más nuevo primero', monto: 'Del más grande al más chico' };
+
+function setConcOrden(o) {
+  concOrden = o;
+  try { localStorage.setItem('flujos_conc_orden', o); } catch (e) {}
+  concVerTodos = false;
+  renderConciliacion();
+  if (pdfConc) renderPDFConc();
+}
+
+function renderConcOrden() {
+  const box = document.getElementById('conc-orden');
+  if (!box) return;
+  const et = { viejo: '↑ Más viejo', nuevo: '↓ Más nuevo', monto: '$ Monto' };
+  box.innerHTML = '<span style="font-size:12px;color:var(--text3);margin-right:2px;">Ordenar:</span>'
+    + Object.keys(et).map(k => '<div class="filter-pill' + (concOrden === k ? ' active' : '') + '" onclick="setConcOrden(\'' + k + '\')" style="padding:6px 12px;font-size:12px;">' + et[k] + '</div>').join('');
+  const lbl = document.getElementById('conc-orden-lbl');
+  if (lbl) lbl.textContent = CONC_ORDENES[concOrden];
+}
+
+// Ordena cualquier lista; fFecha y fMonto dicen de dónde sacar cada dato.
+function ordenarConc(arr, fFecha, fMonto) {
+  const out = arr.slice();
+  if (concOrden === 'monto') return out.sort((a, b) => fMonto(b) - fMonto(a) || String(fFecha(a)).localeCompare(String(fFecha(b))));
+  const dir = concOrden === 'nuevo' ? -1 : 1;
+  return out.sort((a, b) => dir * String(fFecha(a) || '').localeCompare(String(fFecha(b) || '')) || fMonto(b) - fMonto(a));
+}
+const _fR = r => (r.fecha || '') + ' ' + String(r.hora || '');
+const _mR = r => Math.abs(parseFloat(r.monto) || 0);
 function moverCicloConc(d) {
   const sel = document.getElementById('conc-ciclo');
   if (!sel || !sel.options.length) return;
@@ -4413,14 +4448,17 @@ function renderConciliacion() {
   const dif = difConc(recs);
   // Un cargo que mide exactamente lo que sobra probablemente es el culpable
   const objetivo = dif !== null && dif < -0.5 ? Math.abs(dif) : null;
-  const orden = recs.slice().sort((a, b) => Math.abs(parseFloat(b.monto) || 0) - Math.abs(parseFloat(a.monto) || 0));
-  const visibles = concVerTodos ? orden : orden.slice(0, CONC_LIMITE);
+  renderConcOrden();
+  const orden = ordenarConc(recs, _fR, _mR);
+  // El límite de 8 solo tiene sentido viendo "los más grandes"; por fecha se ven todos.
+  const conLimite = concOrden === 'monto';
+  const visibles = (concVerTodos || !conLimite) ? orden : orden.slice(0, CONC_LIMITE);
   lista.innerHTML = visibles.length
     ? visibles.map(r => filaConc(r, objetivo)).join('')
     : '<div style="text-align:center;padding:30px;color:var(--text2);font-size:13px;">Sin cargos en este ciclo</div>';
   const vm = document.getElementById('conc-vermas');
   if (vm) {
-    vm.style.display = recs.length > CONC_LIMITE ? 'flex' : 'none';
+    vm.style.display = (conLimite && recs.length > CONC_LIMITE) ? 'flex' : 'none';
     vm.textContent = concVerTodos ? 'Ver solo los más grandes' : 'Ver los ' + recs.length + ' cargos';
   }
   actualizarTotalesConc();
@@ -4520,6 +4558,57 @@ function marcarTodosConc(valor) {
 // todo es editable y lo faltante se importa con un clic.
 // ══════════════════════════════════════════
 let pdfConc = null;
+
+// ══════════════════════════════════════════
+// ★ v4.7 EQUIVALENCIAS — la app aprende cómo nombra el banco tus cargos.
+// Cada vez que vinculas a mano un cargo del estado de cuenta con un
+// registro tuyo, se guarda la regla en la hoja EQUIVALENCIAS del Sheet:
+//   "APPLE COM BILL"  se registra como  "Fitbod"
+// La siguiente vez, si el monto y la fecha andan cerca, se empareja sola.
+// ══════════════════════════════════════════
+let equivs = (function () { try { return JSON.parse(localStorage.getItem('flujos_equivs') || '[]'); } catch (e) { return []; } })();
+
+function normTxtEq(s) {
+  return String(s || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^A-Z0-9]+/g, ' ').trim();
+}
+// Clave del cargo del banco: primeras 3 palabras sin números
+// ("APPLE.COM/BILL CUPERTINO CA 866-712" → "APPLE COM BILL").
+function claveEC(desc) {
+  return normTxtEq(desc).split(' ').filter(w => w && !/\d/.test(w)).slice(0, 3).join(' ');
+}
+function nombreApp(r) { return String(r.nota || r.categoria || '').replace(/\s*·\s*EC$/, '').trim(); }
+
+function cargarEquivalencias() {
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'getEquivalencias' }) })
+    .then(r => r.json())
+    .then(d => {
+      if (!d.ok || !Array.isArray(d.equivalencias)) return;
+      equivs = d.equivalencias;
+      try { localStorage.setItem('flujos_equivs', JSON.stringify(equivs)); } catch (e) {}
+      if (pdfConc) renderPDFConc();
+    }).catch(() => {});
+}
+
+function aprenderEquivalencia(m, r) {
+  const clave = claveEC(m.desc), como = nombreApp(r);
+  if (!clave || !como) return;
+  const ya = equivs.find(e => e.clave === clave && normTxtEq(e.como) === normTxtEq(como));
+  if (ya) ya.veces = (ya.veces || 1) + 1;
+  else equivs.push({ clave: clave, como: como, categoria: r.categoria || '', veces: 1 });
+  try { localStorage.setItem('flujos_equivs', JSON.stringify(equivs)); } catch (e) {}
+  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'saveEquivalencia', clave: clave, como: como, categoria: r.categoria || '' }) })
+    .then(x => x.json())
+    .then(d => { if (d.ok) showToast('✓ Aprendido: ' + clave + ' = ' + como, 'success'); })
+    .catch(() => {});
+}
+
+// Reglas que aplican a un cargo del banco.
+function reglasPara(m) {
+  const k = claveEC(m.desc);
+  if (!k) return [];
+  return equivs.filter(e => e.clave && (k === e.clave || k.indexOf(e.clave) === 0 || e.clave.indexOf(k) === 0));
+}
 
 function escAttr(s) {
   return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -4662,7 +4751,8 @@ function calcularMatchPDF() {
     else m.linkId = null;
   });
 
-  // 2) Matching automático
+  // 2) Matching automático: monto exacto y fecha cercana
+  const sinPareja = [];
   pdfConc.movs.forEach(m => {
     if (m.linkId) return;
     if (pdfConc.broken.indexOf(m.k) !== -1) { faltantes.push(m); return; }
@@ -4678,6 +4768,35 @@ function calcularMatchPDF() {
       if (dd <= 4 && dd < mejorDias) { mejor = r; mejorDias = dd; }
     });
     if (mejor) { usados.add(mejor.id); matches.push({ m: m, r: mejor, manual: false }); }
+    else sinPareja.push(m);
+  });
+
+  // 3) ★ v4.7 Por regla aprendida: el nombre coincide con lo que tú
+  //    capturas, y el monto/fecha andan cerca (tipo de cambio, cargos
+  //    que el banco aplica días después).
+  sinPareja.forEach(m => {
+    const reglas = reglasPara(m);
+    if (!reglas.length) { faltantes.push(m); return; }
+    const nombres = reglas.map(e => normTxtEq(e.como));
+    const buscaNeg = m.tipo === 'C';
+    const tol = Math.max(5, m.monto * 0.15);
+    let mejor = null, mejorScore = 1e9, regla = null;
+    regs.forEach(r => {
+      if (usados.has(r.id)) return;
+      const rm = parseFloat(r.monto) || 0;
+      if (buscaNeg && rm >= 0) return;
+      if (!buscaNeg && rm <= 0) return;
+      const dm = Math.abs(Math.abs(rm) - m.monto);
+      if (dm > tol) return;
+      const dd = diasEntre(r.fecha, m.fecha);
+      if (dd > 10) return;
+      const n = normTxtEq(nombreApp(r));
+      const i = nombres.findIndex(x => x && n && (n.indexOf(x) !== -1 || x.indexOf(n) !== -1));
+      if (i === -1) return;
+      const score = dm + dd;
+      if (score < mejorScore) { mejor = r; mejorScore = score; regla = reglas[i]; }
+    });
+    if (mejor) { usados.add(mejor.id); matches.push({ m: m, r: mejor, manual: false, regla: regla.como }); }
     else faltantes.push(m);
   });
 
@@ -4704,6 +4823,10 @@ function pdfVincular(k, regId) {
   const m = pdfConc.movs.find(x => x.k === k);
   if (!m) return;
   m.linkId = regId || null;
+  if (regId) {
+    const r = allRecords.find(x => x.id === regId);
+    if (r) aprenderEquivalencia(m, r);
+  }
   const bi = pdfConc.broken.indexOf(k);
   if (regId && bi !== -1) pdfConc.broken.splice(bi, 1);
   guardarPDFConc();
@@ -4771,7 +4894,10 @@ function renderPDFConc() {
   const box = document.getElementById('pdf-resultados');
   if (!box || !pdfConc) return;
   const res = calcularMatchPDF();
-  const matches = res.matches, faltantes = res.faltantes, soloSistema = res.soloSistema;
+  const _fM = m => m.fecha, _mM = m => m.monto;
+  const matches = ordenarConc(res.matches, x => x.m.fecha, x => x.m.monto);
+  const faltantes = ordenarConc(res.faltantes, _fM, _mM);
+  const soloSistema = ordenarConc(res.soloSistema, _fR, _mR);
   const cargosFalt = faltantes.filter(m => m.tipo === 'C');
   const abonosFalt = faltantes.filter(m => m.tipo === 'A');
   const sumaEC = pdfConc.movs.filter(m => m.tipo === 'C').reduce((s, m) => s + m.monto, 0);
@@ -4799,9 +4925,12 @@ function renderPDFConc() {
       + '<div onclick="importarFaltantesPDF()" style="padding:7px 12px;background:var(--green);border-radius:8px;font-size:11px;font-weight:700;color:#000;cursor:pointer;">＋ Importar (' + aImportar + ')</div></div>';
     h += '<div style="font-size:10px;color:var(--text3);margin:0 2px 8px;">Edita lo que necesites antes de importar. Si en realidad sí lo tienes con otro monto/fecha, usa "vincular con…".</div>';
     cargosFalt.forEach(m => {
-      const cands = soloSistema.filter(r => (parseFloat(r.monto) || 0) < 0);
-      const opciones = '<option value="">— importar como nuevo —</option>' + cands.map(r =>
-        '<option value="' + escAttr(r.id) + '">' + formatDateShort(r.fecha) + ' · $' + fmtN(Math.abs(r.monto)) + ' · ' + escAttr(String(r.nota || r.categoria || '').substring(0, 16)) + '</option>').join('');
+      // ★ v4.7: los candidatos más parecidos en monto (y luego en fecha) van primero
+      const cands = soloSistema.filter(r => (parseFloat(r.monto) || 0) < 0).slice().sort((a, b) =>
+        Math.abs(_mR(a) - m.monto) - Math.abs(_mR(b) - m.monto) || diasEntre(a.fecha, m.fecha) - diasEntre(b.fecha, m.fecha));
+      const opciones = '<option value="">— vincular con un registro mío… (o importar como nuevo) —</option>' + cands.map(r =>
+        '<option value="' + escAttr(r.id) + '">$' + fmtN(Math.abs(r.monto)) + ' · ' + formatDateShort(r.fecha) + ' · ' + escAttr(String(r.nota || r.categoria || '').substring(0, 24)) + '</option>').join('');
+      const reglasM = reglasPara(m);
       h += '<div style="background:var(--bg2);border:0.5px solid rgba(255,80,80,0.25);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:6px;">'
         + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
         + '<input type="checkbox" ' + (m.incluir ? 'checked' : '') + ' onchange="pdfEditYRecalcular(' + m.k + ',\'incluir\',this.checked)" style="width:17px;height:17px;accent-color:var(--green);flex-shrink:0;">'
@@ -4819,6 +4948,7 @@ function renderPDFConc() {
         + '<option value="Andrea"' + (m.usuario === 'Andrea' ? ' selected' : '') + '>👩 Andrea</option></select>'
         + '</div>'
         + '<select onchange="pdfVincular(' + m.k + ',this.value)" style="width:100%;background:var(--bg3);border:0.5px dashed var(--border2);border-radius:6px;padding:6px 8px;font-size:11px;color:var(--text3);font-family:var(--font);">' + opciones + '</select>'
+        + (reglasM.length ? '<div style="font-size:10px;color:var(--blue);margin-top:5px;">Normalmente lo registras como: ' + reglasM.map(e => escAttr(e.como)).join(' / ') + ' (no encontré uno cerca en monto y fecha)</div>' : '')
         + (m.titular ? '<div style="font-size:10px;color:var(--text3);margin-top:5px;">Titular en el EC: ' + escAttr(m.titular) + '</div>' : '')
         + '</div>';
     });
@@ -4845,7 +4975,7 @@ function renderPDFConc() {
         + '<span style="color:var(--green);font-weight:700;flex-shrink:0;">✓</span>'
         + '<div style="flex:1;min-width:0;">'
         + '<div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + escAttr(x.m.desc) + '</div>'
-        + '<div style="font-size:10px;color:var(--text3);">EC ' + formatDateShort(x.m.fecha) + ' ↔ App ' + formatDateShort(x.r.fecha) + ' · ' + (x.r.usuario === 'Andrea' ? '👩' : '👨') + ' ' + escAttr(String(x.r.nota || x.r.categoria || '').substring(0, 22)) + (x.manual ? ' · vínculo manual' : '') + (x.r.conciliado ? ' · palomeado ✓' : '') + '</div></div>'
+        + '<div style="font-size:10px;color:var(--text3);">EC ' + formatDateShort(x.m.fecha) + ' ↔ App ' + formatDateShort(x.r.fecha) + ' · ' + (x.r.usuario === 'Andrea' ? '👩' : '👨') + ' ' + escAttr(String(x.r.nota || x.r.categoria || '').substring(0, 22)) + (x.manual ? ' · vínculo manual' : '') + (x.regla ? ' · por regla: ' + escAttr(x.regla) + ' ($' + fmtN(_mR(x.r)) + ')' : '') + (x.r.conciliado ? ' · palomeado ✓' : '') + '</div></div>'
         + '<div class="privacy-num" style="font-family:var(--display);font-weight:700;font-size:13px;flex-shrink:0;">$' + fmtN(x.m.monto) + '</div>'
         + '<div onclick="pdfDesvincular(' + x.m.k + ')" title="Quitar vínculo" style="color:var(--text3);cursor:pointer;padding:4px;flex-shrink:0;">✕</div></div>';
     });

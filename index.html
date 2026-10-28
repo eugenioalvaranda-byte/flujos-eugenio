@@ -607,6 +607,8 @@ body { padding-bottom: 150px; }
 .sb-l { font-size: 12px; color: var(--text2); margin-bottom: 3px; }
 .sb-v { font-family: var(--display); font-size: 15px; font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .sb-v.neg { color: #FF7A7A; }
+/* ★ v4.8: con centavos el monto es más largo; se achica un poco para que nunca se corte */
+.sb.cts .sb-v { font-size: 13.5px; letter-spacing: -0.2px; }
 @media (min-width: 768px) {
   body { padding-bottom: 0; }
   .fab { display: none; }
@@ -748,7 +750,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.7 ⟳</span></div>
+    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.8 ⟳</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -759,7 +761,7 @@ body { padding-bottom: 150px; }
   </div>
 
   <div class="dash-left-col r-wrap">
-    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.7 ⟳</span></div>
+    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.8 ⟳</span></div>
 
     <div class="r-tools">
       <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()">Filtros</div>
@@ -1236,7 +1238,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.7</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.8</span>
       </div>
     </div>
 
@@ -1889,6 +1891,9 @@ function fmt0(n) { return Math.round(Math.abs(n)).toLocaleString('es-MX'); }
 function money0(n) { return (n < -0.5 ? '−' : '') + '$' + fmt0(n); }
 // Centavos solo cuando existen: $186 / $1,284.50
 function fmtSmart(n) { const a = Math.abs(n); return Math.abs(a - Math.round(a)) < 0.005 ? fmt0(a) : fmtN(a); }
+// ★ v4.8: tarjetas con centavos. Lo que se deposita al banco tiene que ser exacto.
+const CENTAVO = 0.005;
+function money2(n) { return (n < -CENTAVO ? '−' : '') + '$' + fmtN(n); }
 function nombreCartera(c) { return String(c || '').replace(/^TDC\s+/, ''); }
 function hexA(hex, a) { const h = hex.replace('#', ''); const n = parseInt(h, 16); return 'rgba(' + ((n >> 16) & 255) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
 const ICO = {
@@ -1984,11 +1989,11 @@ function formatDateLargo(iso) { const [y, m, d] = iso.split('-').map(Number); re
 function tdcDesglose(cartera, saldo, pagoISO) {
   const st = statsTDC(cartera, pagoISO);
   const total = Math.max(0, -saldo);
-  const aFavor = saldo > 0.5 ? saldo : 0;
+  const aFavor = saldo > CENTAVO ? saldo : 0;
   const para24 = Math.max(0, total - st.diferido);
   const despues = total - para24;
   const estado = st.pagoMonto;
-  const abonado = estado > 0.5 ? Math.max(0, Math.min(estado, estado - para24)) : 0;
+  const abonado = estado > CENTAVO ? Math.max(0, Math.min(estado, estado - para24)) : 0;
   const anterior = Math.max(0, para24 - estado);
   return { pago: st.pago, total, aFavor, para24, despues, estado, abonado, anterior };
 }
@@ -2106,25 +2111,25 @@ function renderDashboard() {
     const s = saldosHoy[c] || 0;
     const d = tdcDesglose(c, s, pagoProx);
     sumPara24 += d.para24;
-    const pct = d.estado > 0.5 ? d.abonado / d.estado * 100 : 0;
+    const pct = d.estado > CENTAVO ? d.abonado / d.estado * 100 : 0;
     let nota = '';
-    if (d.estado > 0.5 && d.para24 < 1) nota = '<div class="t-note">Pago del ' + f24 + ' cubierto</div>';
-    else if (d.anterior > 1) nota = `<div class="t-note warn">Incluye <span class="privacy-num">$${fmt0(d.anterior)}</span> de pagos anteriores sin cubrir</div>`;
-    else if (d.estado > 0.5 && d.abonado > 1) nota = `<div class="t-note">Ya abonaste <span class="privacy-num">$${fmt0(d.abonado)}</span> de <span class="privacy-num">$${fmt0(d.estado)}</span></div>`;
+    if (d.estado > CENTAVO && d.para24 < CENTAVO) nota = '<div class="t-note">Pago del ' + f24 + ' cubierto</div>';
+    else if (d.anterior > CENTAVO) nota = `<div class="t-note warn">Incluye <span class="privacy-num">$${fmtN(d.anterior)}</span> de pagos anteriores sin cubrir</div>`;
+    else if (d.estado > CENTAVO && d.abonado > CENTAVO) nota = `<div class="t-note">Ya abonaste <span class="privacy-num">$${fmtN(d.abonado)}</span> de <span class="privacy-num">$${fmtN(d.estado)}</span></div>`;
     const html = `<div class="row t-row" onclick="openWalletDetail('${c}')">
       <div class="w-ico" style="background:${colorCartera(c)}">${svgIco(ICO.card)}</div>
       <div class="row-main" style="gap:6px;">
         <span class="row-name">${nombreCartera(c)}</span>
-        ${d.aFavor > 0.5
-          ? `<div class="t-kv main"><span>Saldo a favor</span><b class="privacy-num">$${fmt0(d.aFavor)}</b></div>`
-          : `<div class="t-kv main"><span>Saldo total</span><b class="privacy-num${d.total > 0.5 ? ' neg' : ''}">${money0(-d.total)}</b></div>
-        <div class="t-kv"><span>Para el ${f24}</span><b class="privacy-num">$${fmt0(d.para24)}</b></div>
-        ${d.estado > 0.5 ? `<div class="bar"><i style="width:${pct.toFixed(0)}%"></i></div>` : ''}
+        ${d.aFavor > CENTAVO
+          ? `<div class="t-kv main"><span>Saldo a favor</span><b class="privacy-num">$${fmtN(d.aFavor)}</b></div>`
+          : `<div class="t-kv main"><span>Saldo total</span><b class="privacy-num${d.total > CENTAVO ? ' neg' : ''}">${money2(-d.total)}</b></div>
+        <div class="t-kv"><span>Para el ${f24}</span><b class="privacy-num">$${fmtN(d.para24)}</b></div>
+        ${d.estado > CENTAVO ? `<div class="bar"><i style="width:${pct.toFixed(0)}%"></i></div>` : ''}
         ${nota}
-        ${d.despues > 0.5 ? `<div class="t-kv"><span>Después del ${f24}</span><b class="dim privacy-num">$${fmt0(d.despues)}</b></div>` : ''}`}
+        ${d.despues > CENTAVO ? `<div class="t-kv"><span>Después del ${f24}</span><b class="dim privacy-num">$${fmtN(d.despues)}</b></div>` : ''}`}
       </div>
     </div>`;
-    if (Math.abs(s) < 0.5 && d.estado < 0.5) sinSaldo.push(html); else conSaldo.push(html);
+    if (Math.abs(s) < CENTAVO && d.estado < CENTAVO) sinSaldo.push(html); else conSaldo.push(html);
   });
   const gt = document.getElementById('wallets-tdc');
   gt.innerHTML = conSaldo.join('') + (sinSaldo.length ? `
@@ -2132,9 +2137,9 @@ function renderDashboard() {
       <span>${sinSaldo.length} ${sinSaldo.length === 1 ? 'tarjeta sin saldo' : 'tarjetas sin saldo'}</span>${svgIco(ICO.chevD)}
     </button>
     <div id="tdc-cero-box" style="display:${dashTdcCeroAbiertas ? 'block' : 'none'};border-top:1px solid var(--hair);">${sinSaldo.join('')}</div>` : '');
-  document.getElementById('tdc-summary').innerHTML = sumPara24 < 1
+  document.getElementById('tdc-summary').innerHTML = sumPara24 < CENTAVO
     ? 'Nada pendiente para el ' + f24
-    : `Para el ${f24}: <b class="privacy-num">$${fmt0(sumPara24)}</b>`;
+    : `Para el ${f24}: <b class="privacy-num">$${fmtN(sumPara24)}</b>`;
 
   // DISPONIBLE: saldo real a hoy (el dinero futuro en cash aún no se mueve)
   const gc = document.getElementById('wallets-cash');
@@ -3902,8 +3907,10 @@ function enviarConsulta() {
   const loadId = 'load-' + Date.now();
   agregarMensajeCargando(loadId);
 
-  // Construir contexto financiero
-  const contexto = buildContextoFinanciero();
+  // Construir contexto financiero (★ v4.8: con la pregunta y las 2 anteriores,
+  // para que "¿y en marzo?" siga sabiendo que hablábamos de VIAJES)
+  const previas = chatHistory.filter(m => m.role === 'user').slice(-2).map(m => m.content);
+  const contexto = buildContextoFinanciero([...previas, pregunta].join(' '));
 
   // Agregar al historial
   chatHistory.push({ role: 'user', content: pregunta });
@@ -3914,7 +3921,7 @@ function enviarConsulta() {
     body: JSON.stringify({
       action: 'claudeQuery',
       pregunta,
-      contexto: buildContextoFinanciero(),
+      contexto,
       historial: chatHistory.slice(0, -1) // sin el último que acabamos de agregar
     })
   })
@@ -3938,75 +3945,144 @@ function enviarConsulta() {
   });
 }
 
-function buildContextoFinanciero() {
+// ★ v4.8: el contexto de la IA ahora trae gastos e ingresos por categoría MES POR MES
+//   (todo el historial) y el detalle de los movimientos relacionados con la pregunta.
+//   Antes solo iban el mes actual y el acumulado del año por categoría, así que la IA
+//   no podía contestar cosas como "gastos de VIAJES por mes".
+const TIPOS_TRANSF_IA = ['TRANSFERENCIA', 'INGRESO POR TRANSFERENCIA', 'INCOMING TRANSFER', 'OUTGOING TRANSFER'];
+const MAX_DETALLE_IA = 400;
+// Palabras de las categorías que son demasiado genéricas para buscar con ellas
+const CAT_PALABRAS_GENERICAS = new Set(['GASTOS', 'PAGO', 'DE', 'OTROS', 'GENERAL']);
+// Palabras comunes de una pregunta que no sirven para buscar en las notas
+const PREG_PALABRAS_VACIAS = new Set(('CUANTO CUANTOS CUANTA CUANTAS GASTO GASTOS GASTE GASTADO GASTAMOS GASTAR ' +
+  'INGRESO INGRESOS INGRESE PAGOS PAGUE PAGAR PAGADO DEBO DEBEMOS MESES MENSUAL MENSUALES SEMANA SEMANAS SEMANAL ' +
+  'ULTIMO ULTIMOS ULTIMA ULTIMAS DURANTE DESDE HASTA ENTRE TOTAL TOTALES CATEGORIA CATEGORIAS CARTERA CARTERAS ' +
+  'TARJETA TARJETAS MOVIMIENTO MOVIMIENTOS REGISTRO REGISTROS CUALES DONDE QUIERO QUIERES SABER PUEDES PODRIAS ' +
+  'MUESTRA MUESTRAME DESGLOSE DESGLOSA DESGLOSADO DESGLOSADOS PROMEDIO COMPARA COMPARADO COMPARAR ANTERIOR PASADO ' +
+  'PASADA MONTO MONTOS TODOS TODAS HACER TENGO TENEMOS FUERON SIGUIENTE ACTUAL AHORA DINERO PESOS LISTA TABLA ' +
+  'RESUMEN RESUMEME DETALLE ENERO FEBRERO MARZO ABRIL JUNIO JULIO AGOSTO SEPTIEMBRE SETIEMBRE OCTUBRE NOVIEMBRE ' +
+  'DICIEMBRE').split(' '));
+
+function _normIA(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase(); }
+function _palabrasIA(t) { return _normIA(t).split(/[^A-ZÑ]+/).filter(Boolean); }
+// "viajes" ↔ VIAJES, "colegiatura" ↔ COLEGIO, "depa" ↔ DEPARTAMENTO; palabras de 3 letras solo exactas (GAS)
+function _coincideIA(wq, wc) {
+  const k = Math.min(5, wq.length, wc.length);
+  if (k < 4) return wq === wc && wq.length >= 3;
+  return wq.slice(0, k) === wc.slice(0, k);
+}
+function _esTransfIA(r) { return TIPOS_TRANSF_IA.includes(String(r.tipo || '').toUpperCase()); }
+
+function buildContextoFinanciero(pregunta) {
   const today = hoy();
   const now = new Date();
   const mesActual = now.getMonth(), anioActual = now.getFullYear();
   const mNames = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
 
+  // Solo movimientos reales hasta hoy (sin programados de la sala de espera)
+  const reales = allRecords.filter(r => !r._pendiente && r.fecha && r.fecha <= today);
+
   // Saldos por cartera (todos los registros hasta hoy)
   const saldos = {};
   CARTERAS.forEach(c => saldos[c] = getSaldoInicial(c));
-  allRecords.forEach(r => {
-    if (r.fecha <= today && saldos[r.cartera] !== undefined)
-      saldos[r.cartera] += parseFloat(r.monto) || 0;
+  reales.forEach(r => {
+    if (saldos[r.cartera] !== undefined) saldos[r.cartera] += parseFloat(r.monto) || 0;
   });
 
-  // Gastos e ingresos por categoría — POR AÑO (todos los registros del año actual)
-  const gastosPorCatAnio = {}, ingresosPorCatAnio = {};
-  allRecords.forEach(r => {
-    const p = r.fecha ? r.fecha.split('-') : [];
-    if (parseInt(p[0]) !== anioActual) return;
+  // Gastos e ingresos por categoría: MES POR MES, el año actual y el mes actual salen de lo mismo
+  const ymActual = anioActual + '-' + String(mesActual + 1).padStart(2, '0');
+  const porMesGas = {}, porMesIng = {};
+  const gastosPorCatAnio = {}, ingresosPorCatAnio = {}, gastosPorCatMes = {}, ingresosPorCatMes = {};
+  reales.forEach(r => {
+    if (_esTransfIA(r)) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
-      gastosPorCatAnio[r.categoria] = (gastosPorCatAnio[r.categoria] || 0) + Math.abs(m);
+    if (!m) return;
+    const ym = r.fecha.slice(0, 7);
+    const cat = r.categoria || '(SIN CATEGORÍA)';
+    const v = Math.abs(m);
+    const mat = m < 0 ? porMesGas : porMesIng;
+    if (!mat[cat]) mat[cat] = {};
+    mat[cat][ym] = (mat[cat][ym] || 0) + v;
+    if (parseInt(r.fecha.slice(0, 4)) === anioActual) {
+      const a = m < 0 ? gastosPorCatAnio : ingresosPorCatAnio;
+      a[cat] = (a[cat] || 0) + v;
     }
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
-      ingresosPorCatAnio[r.categoria] = (ingresosPorCatAnio[r.categoria] || 0) + m;
+    if (ym === ymActual) {
+      const b = m < 0 ? gastosPorCatMes : ingresosPorCatMes;
+      b[cat] = (b[cat] || 0) + v;
     }
   });
-
-  // Gastos e ingresos por categoría — MES ACTUAL
-  const gastosPorCatMes = {}, ingresosPorCatMes = {};
-  allRecords.forEach(r => {
-    const p = r.fecha ? r.fecha.split('-') : [];
-    if (parseInt(p[0]) !== anioActual || parseInt(p[1]) - 1 !== mesActual) return;
-    if (r.fecha > today) return;
-    const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA' && r.categoria) {
-      gastosPorCatMes[r.categoria] = (gastosPorCatMes[r.categoria] || 0) + Math.abs(m);
-    }
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA' && r.categoria) {
-      ingresosPorCatMes[r.categoria] = (ingresosPorCatMes[r.categoria] || 0) + m;
-    }
-  });
+  const lineasMatriz = (mat) => Object.keys(mat)
+    .map(cat => ({ cat, tot: Object.values(mat[cat]).reduce((a, b) => a + b, 0) }))
+    .sort((a, b) => b.tot - a.tot)
+    .map(({ cat, tot }) => `${cat} (total $${fmtN(tot)}): ` +
+      Object.keys(mat[cat]).sort().map(ym => `${ym} $${fmtN(mat[cat][ym])}`).join(' | '))
+    .join('\n') || 'Sin datos';
 
   // Resumen mensual (últimos 12 meses)
   const resumenMensual = [];
   for (let i = 11; i >= 0; i--) {
     let m = mesActual - i, a = anioActual;
     if (m < 0) { m += 12; a--; }
+    const ym = a + '-' + String(m + 1).padStart(2, '0');
     let ing = 0, gas = 0;
-    allRecords.forEach(r => {
-      const p = r.fecha ? r.fecha.split('-') : [];
-      if (parseInt(p[0]) !== a || parseInt(p[1]) - 1 !== m) return;
+    reales.forEach(r => {
+      if (r.fecha.slice(0, 7) !== ym || _esTransfIA(r)) return;
       const mv = parseFloat(r.monto) || 0;
-      if (mv > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') ing += mv;
-      if (mv < 0 && r.tipo !== 'TRANSFERENCIA') gas += Math.abs(mv);
+      if (mv > 0) ing += mv; else gas += Math.abs(mv);
     });
-    resumenMensual.push(`${mNames[m]} ${a}: Ingresos $${fmtN(ing)}, Gastos $${fmtN(gas)}, Balance ${ing-gas >= 0 ? '+' : ''}$${fmtN(ing-gas)}`);
+    resumenMensual.push(`${mNames[m]} ${a}: Ingresos $${fmtN(ing)}, Gastos $${fmtN(gas)}, Balance ${ing-gas >= 0 ? '+' : '-'}$${fmtN(ing-gas)}`);
   }
 
   // Totales globales
   let totalGastadoHoy = 0, totalIngresadoHoy = 0;
-  allRecords.forEach(r => {
-    if (r.fecha > today) return;
+  reales.forEach(r => {
+    if (_esTransfIA(r)) return;
     const m = parseFloat(r.monto) || 0;
-    if (m < 0 && r.tipo !== 'TRANSFERENCIA') totalGastadoHoy += Math.abs(m);
-    if (m > 0 && r.tipo !== 'INGRESO POR TRANSFERENCIA') totalIngresadoHoy += m;
+    if (m < 0) totalGastadoHoy += Math.abs(m); else totalIngresadoHoy += m;
   });
 
-  return `=== INFORMACIÓN GENERAL ===
+  // Detalle relacionado con la pregunta: categorías que menciona y notas que contienen sus palabras
+  const palabras = [...new Set(_palabrasIA(pregunta))];
+  const catsTodas = [...new Set([...CAT_GASTO, ...CAT_INGRESO, ...reales.map(r => r.categoria).filter(Boolean)])];
+  const catsPregunta = catsTodas.filter(cat =>
+    _palabrasIA(cat).some(wc => !CAT_PALABRAS_GENERICAS.has(wc) && palabras.some(wq => _coincideIA(wq, wc))));
+  const raicesNota = palabras
+    .filter(w => w.length >= 5 && !PREG_PALABRAS_VACIAS.has(w))
+    .map(w => w.length > 5 ? w.slice(0, -1) : w);
+  let detalle = [];
+  if (catsPregunta.length || raicesNota.length) {
+    detalle = reales.filter(r => {
+      if (_esTransfIA(r)) return false;
+      if (catsPregunta.includes(r.categoria)) return true;
+      const n = _normIA(r.nota);
+      return n && raicesNota.some(w => n.includes(w));
+    }).sort((a, b) => b.fecha.localeCompare(a.fecha));
+  }
+  // Si la pregunta menciona meses ("marzo", "marzo 2026"), el detalle se enfoca en esos meses
+  const MESES_IA = ['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SEPTIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+  const txtPreg = _normIA(pregunta).replace('SETIEMBRE', 'SEPTIEMBRE');
+  const mesesPreg = MESES_IA.map((n, i) => new RegExp('\\b' + n + '\\b').test(txtPreg) ? String(i + 1).padStart(2, '0') : null).filter(Boolean);
+  const aniosPreg = (txtPreg.match(/\b20\d\d\b/g) || []);
+  if (mesesPreg.length) {
+    const enMes = detalle.filter(r => mesesPreg.includes(r.fecha.slice(5, 7)) &&
+      (!aniosPreg.length || aniosPreg.includes(r.fecha.slice(0, 4))));
+    if (enMes.length) detalle = enMes;
+  }
+  const detalleTotal = detalle.length;
+  if (detalle.length > MAX_DETALLE_IA) detalle = detalle.slice(0, MAX_DETALLE_IA);
+
+  const hace90 = (() => { const d = new Date(now); d.setDate(d.getDate() - 90); return toLocalDate(d); })();
+  const fila = r => `${r.fecha}|${r.tipo}|${r.cartera}|${r.categoria||''}|${r.monto}|${r.nota||''}|${r.usuario||''}`;
+
+  return `=== CÓMO LEER ESTE CONTEXTO ===
+- Los gastos se muestran en positivo: es lo que salió. Las transferencias entre carteras NO cuentan como gasto ni ingreso.
+- Todo es por FECHA DE OPERACIÓN y solo hasta hoy (no incluye movimientos programados a futuro).
+- Para cualquier pregunta de una categoría por mes, por año o en un periodo, usa la sección "GASTOS POR CATEGORÍA, MES POR MES" (cubre todo el historial). Ahí está la respuesta aunque el detalle de movimientos no alcance a cubrir el periodo.
+- El "DETALLE RELACIONADO CON LA PREGUNTA" sirve para explicar en qué se fue el dinero. Si incluye movimientos de otras categorías (porque la nota coincide), no los sumes al total de la categoría a menos que te lo pidan.
+- Escribe los montos con centavos ($1,234.56). Cuando des varios meses, preséntalos en lista o tabla y da el total.
+
+=== INFORMACIÓN GENERAL ===
 Fecha hoy: ${today}
 Mes actual: ${mNames[mesActual]} ${anioActual}
 Usuario activo: ${currentUser}
@@ -4015,12 +4091,18 @@ Total histórico gastado: $${fmtN(totalGastadoHoy)}
 Total histórico ingresos: $${fmtN(totalIngresadoHoy)}
 
 === SALDOS ACTUALES POR CARTERA (al día de hoy) ===
-${Object.entries(saldos).map(([c,s]) => `${c}: $${fmtN(s)}`).join('\n')}
+${Object.entries(saldos).map(([c,s]) => `${c}: ${s < 0 ? '-' : ''}$${fmtN(s)}`).join('\n')}
 
-=== GASTOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO) ===
+=== GASTOS POR CATEGORÍA, MES POR MES (todo el historial; formato AAAA-MM) ===
+${lineasMatriz(porMesGas)}
+
+=== INGRESOS POR CATEGORÍA, MES POR MES (todo el historial; formato AAAA-MM) ===
+${lineasMatriz(porMesIng)}
+
+=== GASTOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO HASTA HOY) ===
 ${Object.entries(gastosPorCatAnio).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: -$${fmtN(v)}`).join('\n') || 'Sin gastos'}
 
-=== INGRESOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO) ===
+=== INGRESOS POR CATEGORÍA — AÑO ${anioActual} (ACUMULADO HASTA HOY) ===
 ${Object.entries(ingresosPorCatAnio).sort((a,b)=>b[1]-a[1]).map(([c,v]) => `${c}: +$${fmtN(v)}`).join('\n') || 'Sin ingresos'}
 
 === GASTOS POR CATEGORÍA — ${mNames[mesActual].toUpperCase()} ${anioActual} ===
@@ -4039,10 +4121,14 @@ ${resumenMensual.join('\n')}
 Hoy es ${['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'][now.getDay()]} ${today}
 El viernes pasado fue: ${(() => { const d = new Date(now); const diff = (now.getDay() + 2) % 7; d.setDate(d.getDate() - diff); return toLocalDate(d); })()}
 El lunes de esta semana fue: ${(() => { const d = new Date(now); const diff = now.getDay() === 0 ? 6 : now.getDay() - 1; d.setDate(d.getDate() - diff); return toLocalDate(d); })()}
-
+${detalle.length ? `
+=== DETALLE RELACIONADO CON LA PREGUNTA (${mesesPreg.length ? 'meses mencionados' : 'todo el historial'}${catsPregunta.length ? '; categorías: ' + catsPregunta.join(', ') : ''}${detalleTotal > detalle.length ? `; se muestran los ${detalle.length} más recientes de ${detalleTotal}` : ''}) ===
+fecha|tipo|cartera|categoria|monto|nota|usuario
+${detalle.map(fila).join('\n')}
+` : ''}
 === REGISTROS RECIENTES (últimos 90 días, con fecha individual) ===
 fecha|tipo|cartera|categoria|monto|nota|usuario
-${allRecords.filter(r => r.fecha && r.fecha >= (() => { const d = new Date(now); d.setDate(d.getDate()-90); return toLocalDate(d); })() && r.fecha <= today && r.tipo !== 'TRANSFERENCIA' && r.tipo !== 'INGRESO POR TRANSFERENCIA').map(r => `${r.fecha}|${r.tipo}|${r.cartera}|${r.categoria||''}|${r.monto}|${r.nota||''}|${r.usuario||''}`).join('\n') || 'Sin registros recientes'}`;
+${reales.filter(r => r.fecha >= hace90 && !_esTransfIA(r)).map(fila).join('\n') || 'Sin registros recientes'}`;
 }
 
 function agregarMensaje(rol, texto) {
@@ -4281,10 +4367,10 @@ function actualizarSaldoBar() {
     if (esTdc) {
       const d = tdcDesglose(cartera, s, proximoPago24());
       const f = formatDateShort(d.pago);
-      bar.innerHTML = `<div class="sb">
-        <div><div class="sb-l">Saldo total</div>${v(s)}</div>
-        <div><div class="sb-l">Para el ${f}</div><div class="sb-v privacy-num">$${fmt0(d.para24)}</div></div>
-        <div><div class="sb-l">Después del ${f}</div><div class="sb-v privacy-num">$${fmt0(d.despues)}</div></div>
+      bar.innerHTML = `<div class="sb cts">
+        <div><div class="sb-l">Saldo total</div><div class="sb-v privacy-num${s < -CENTAVO ? ' neg' : ''}">${money2(s)}</div></div>
+        <div><div class="sb-l">Para el ${f}</div><div class="sb-v privacy-num">$${fmtN(d.para24)}</div></div>
+        <div><div class="sb-l">Después del ${f}</div><div class="sb-v privacy-num">$${fmtN(d.despues)}</div></div>
       </div>`;
     } else {
       bar.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;">

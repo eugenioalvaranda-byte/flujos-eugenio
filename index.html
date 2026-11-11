@@ -750,7 +750,7 @@ body { padding-bottom: 150px; }
 <div id="page-dash" class="page active">
   <!-- Mobile topbar (oculto en desktop) -->
   <div class="topbar r-top">
-    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.8 ⟳</span></div>
+    <div class="r-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.9 ⟳</span></div>
     <div style="display:flex;align-items:center;gap:8px;">
       <button class="icon-btn" id="privacy-btn" data-icon="1" onclick="togglePrivacy()" aria-label="Ocultar montos"><svg class="ico" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12zM12 9a3 3 0 1 0 0 6 3 3 0 0 0 0-6z"/></svg></button>
       <div class="user-toggle">
@@ -761,7 +761,7 @@ body { padding-bottom: 150px; }
   </div>
 
   <div class="dash-left-col r-wrap">
-    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.8 ⟳</span></div>
+    <div class="dash-desktop-title">Resumen <span class="r-ver" onclick="forzarSyncCompleto()" title="Tocar para sincronizar todo desde el Sheet" style="cursor:pointer;">v4.9 ⟳</span></div>
 
     <div class="r-tools">
       <div class="filter-toggle-btn" id="dash-adv-btn" onclick="toggleDashFilters()">Filtros</div>
@@ -1238,7 +1238,7 @@ body { padding-bottom: 150px; }
       </div>
       <div style="display:flex;justify-content:space-between;padding:8px 0;">
         <span style="font-size:13px;color:var(--text2);">Versión</span>
-        <span style="font-size:13px;font-weight:700;">Flujos v4.8</span>
+        <span style="font-size:13px;font-weight:700;">Flujos v4.9</span>
       </div>
     </div>
 
@@ -1612,14 +1612,19 @@ function buildRecurrente(monto, fechaBase, nota) {
   const veces  = parseInt(document.getElementById('rec-veces').value) || 12;
   const inicio = document.getElementById('rec-inicio').value || fechaBase;
   const finStr = document.getElementById('rec-fin').value;
-  const regs = []; let d = new Date(inicio + 'T12:00:00');
+  const regs = []; const base = new Date(inicio + 'T12:00:00');
   const fin = finStr ? new Date(finStr + 'T23:59:59') : null;
+  // ★ v4.9: cada fecha se calcula desde la fecha de inicio, no desde la
+  //   anterior. Antes un mensual del día 31 brincaba a 3 de marzo y se
+  //   quedaba en día 3 para siempre. Ahora cae en el último día del mes
+  //   corto (28/29/30) y regresa al 31 cuando el mes lo tiene.
   for (let i = 0; i < veces; i++) {
+    let d;
+    if (freq === 'mensual') d = mesFijo(base, i);
+    else if (freq === 'quincenal') d = new Date(base.getTime() + i * 15 * 86400000);
+    else d = new Date(base.getTime() + i * 7 * 86400000);
     if (fin && d > fin) break;
     regs.push(...buildRegistros(monto, toLocalDate(d), nota, currentType, selectedCartera, selectedCarteraDest, selectedCategoria));
-    if (freq === 'mensual') d = addMonths(d, 1);
-    else if (freq === 'quincenal') d = new Date(d.getTime() + 15 * 86400000);
-    else d = new Date(d.getTime() + 7 * 86400000);
   }
   return regs;
 }
@@ -1673,7 +1678,8 @@ function enviarAlSheet(regs, btn) {
   const programados = soloLocal.length;
   const ejecutados  = paraSheet.length;
   if (programados > 0) {
-    showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''}`, 'success');
+    const ultimoProg = soloLocal.map(r => r.fecha).sort().pop();
+    showToast(`${ejecutados > 0 ? ejecutados + ' registrado' + (ejecutados!==1?'s':'') + ' + ' : ''}${programados} programado${programados!==1?'s':''} · el último el ${formatDateFull(ultimoProg)}`, 'success');
   } else {
     showToast(regs.length > 2 ? `${regs.length} registros guardados ✓` : 'Registro guardado ✓', 'success');
   }
@@ -1682,21 +1688,31 @@ function enviarAlSheet(regs, btn) {
 
   // ── Subida en segundo plano. El usuario ya siguió con lo suyo. ──
   if (paraSheet.length === 0) return;
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: paraSheet }) })
+  subirConRespaldo(paraSheet);
+}
+
+// ★ v4.9: lo capturado entra a la cola ANTES de mandarse y solo sale cuando
+//   el servidor confirma. Antes entraba a la cola solo si el envío fallaba
+//   con la app abierta: si cerrabas la app justo al guardar, el movimiento
+//   se quedaba sin subir y el siguiente sync completo lo borraba de aquí.
+//   Mandar algo dos veces no duplica: el servidor descarta IDs repetidos.
+function subirConRespaldo(rows, alConfirmar) {
+  encolarSubida(rows);
+  const ids = rows.map(r => r.id);
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows }) })
     .then(r => r.json())
     .then(resp => {
       if (resp && resp.ok) {
-        // Confirmar contra el servidor en la siguiente vuelta.
+        quitarDeColaSubida(ids);
+        // Si alguno se borró aquí mientras iba en camino, se vuelve a pedir el borrado.
+        ids.filter(id => borradosSesion.has(id)).forEach(id => encolarOp({ op: 'deleteRow', id }));
+        if (alConfirmar) alConfirmar();
         setTimeout(() => autoSync(), 1500);
       } else {
-        encolarSubida(paraSheet);
-        showToast('Guardado local — se subirá al recuperar conexión', '');
+        showToast('Guardado aquí — se sube solo en el siguiente intento', '');
       }
     })
-    .catch(() => {
-      encolarSubida(paraSheet);
-      showToast('Guardado local — se subirá al recuperar conexión', '');
-    });
+    .catch(() => showToast('Guardado aquí — se sube solo al recuperar conexión', ''));
 }
 
 // ═══ RECURRENTES PENDIENTES DE CASH (v4.5) ═══════════════════════
@@ -1745,8 +1761,18 @@ function reintentarPendientesNoSubidos() {
 // mientras no haya respuesta, o cuando se captura sin señal.
 function aplicarPendientesDelServidor(data) {
   if (!data || !data.pendientes || !Array.isArray(data.pendientes.rows)) return;
-  const lista = expandirCompacto(data.pendientes).map(parseSheetRow).filter(r => r.id && r.fecha);
+  let lista = expandirCompacto(data.pendientes).map(parseSheetRow).filter(r => r.id && r.fecha);
   lista.forEach(r => { r._pendiente = true; r._subido = true; });
+  // ★ v4.9: lo que se editó o borró aquí y todavía no confirma el Sheet
+  //   manda sobre la lista del servidor (si no, el cambio se revertía solo).
+  const pops = leerPendOps();
+  if (pops.length) {
+    const pdel = new Set(pops.filter(o => o.t === 'del').map(o => o.id));
+    lista = lista.filter(r => !pdel.has(r.id)).map(r => {
+      const e = pops.find(o => o.t === 'edit' && o.id === r.id);
+      return e ? Object.assign({}, r, e.data, { _pendiente: true, _subido: true }) : r;
+    });
+  }
 
   // Conservar lo capturado aquí que todavía no llega al Sheet (sin señal, o
   // el POST aún en vuelo). Si se pisara con la lista del servidor, un
@@ -1786,7 +1812,7 @@ function migrarPendientesAlSheet() {
 function ejecutarRecurrentesPendientes() {
   if (recEjecutando) return;
   recEjecutando = true;
-  try { reintentarPendientesNoSubidos(); } finally { recEjecutando = false; }
+  try { reintentarPendientesNoSubidos(); flushPendOps(); } finally { recEjecutando = false; }
 }
 
 function resetForm() {
@@ -2331,13 +2357,24 @@ function renderRecords() {
     const mesFuturo = modoMes && listPeriodo === 'mes' && listMonth > today.slice(0, 7);
     const masterCollapsed = collapsedRecGroups['__future_master__'] === undefined ? !mesFuturo : collapsedRecGroups['__future_master__'] !== false;
 
+    // ★ v4.9: en vista por mes solo se ven los programados de ESE mes. Se
+    //   avisa cuántos hay en total y hasta cuándo llegan, para que no parezca
+    //   que la serie se quedó corta ni se acabe sin que te enteres.
+    let notaFuturos = '';
+    if (modoMes && listPeriodo === 'mes') {
+      const todosFut = allRecords.filter(r => r.fecha > today);
+      if (todosFut.length > future.length) {
+        const ult = todosFut.map(r => r.fecha).sort().pop();
+        notaFuturos = ' en este mes · ' + todosFut.length + ' en total, hasta el ' + formatDateFull(ult);
+      }
+    }
     const masterWrap = document.createElement('div');
     masterWrap.innerHTML = `
       <div class="rec-group-header" style="background:var(--bg2);border-color:var(--border2);"
            onclick="toggleFutureMaster(this)">
         <div>
           <div class="rec-group-name">⏳ Movimientos futuros</div>
-          <div class="rec-group-sub">${future.length} movimientos programados</div>
+          <div class="rec-group-sub">${future.length} movimientos programados${notaFuturos}</div>
         </div>
         <div style="display:flex;align-items:center">
           <div class="rec-group-total" style="color:var(--text2)">${futTotal >= 0 ? '+' : '−'}$${fmtN(Math.abs(futTotal))}</div>
@@ -2350,16 +2387,27 @@ function renderRecords() {
 
     const groups = {};
     future.forEach(r => { const k = (r.categoria || r.tipo) + '||' + r.cartera; if (!groups[k]) groups[k] = []; groups[k].push(r); });
+    const serieHasta = {};
+    allRecords.forEach(r => {
+      if (!(r.fecha > today)) return;
+      const k = (r.categoria || r.tipo) + '||' + r.cartera;
+      if (!serieHasta[k] || r.fecha > serieHasta[k]) serieHasta[k] = r.fecha;
+    });
 
     Object.entries(groups).forEach(([key, recs]) => {
       const safeKey = key.replace(/[^a-z0-9]/gi, '_');
       const collapsed = collapsedRecGroups[key] !== false;
       const total = recs.reduce((s, r) => s + (parseFloat(r.monto) || 0), 0);
-      const label = recs[0].categoria || recs[0].tipo;
+      const label = escH(recs[0].categoria || recs[0].tipo);
+      // ★ v4.9: mismo día y mismo monto dentro de la serie = probable captura doble.
+      const vistos = {}; let repetidos = 0;
+      recs.forEach(r => { const k2 = r.fecha + '|' + r.tipo + '|' + (parseFloat(r.monto) || 0); vistos[k2] = (vistos[k2] || 0) + 1; if (vistos[k2] === 2) repetidos++; });
+      const chipRep = repetidos ? ' <span class="warn-chip">¿Repetido? ' + repetidos + ' fecha' + (repetidos !== 1 ? 's' : '') + '</span>' : '';
+      const serieFin = serieHasta[key] ? ' · serie hasta ' + formatDateFull(serieHasta[key]) : '';
       const wrap = document.createElement('div');
       wrap.innerHTML = `
         <div class="rec-group-header" onclick="toggleRecGroup('${key}','recgrp_${safeKey}',this)">
-          <div><div class="rec-group-name">${label}</div><div class="rec-group-sub">${recs.length} movimientos · ${recs[0].cartera}</div></div>
+          <div><div class="rec-group-name">${label}${chipRep}</div><div class="rec-group-sub">${recs.length} movimientos · ${escH(recs[0].cartera)}${serieFin}</div></div>
           <div style="display:flex;align-items:center">
             <div class="rec-group-total" style="color:${total >= 0 ? 'var(--green)' : 'var(--red)'}">${total >= 0 ? '+' : '−'}$${fmtN(Math.abs(total))}</div>
             <div class="rec-chevron ${collapsed ? '' : 'open'}">▾</div>
@@ -2543,7 +2591,7 @@ function buildRecordItem(r, isFuture) {
     if (a.extra) avisos.push('Esta transferencia tiene ' + a.extra + ' movimientos ligados; debería tener 2.');
     if (a.iguales > 1) avisos.push('Hay ' + a.iguales + ' transferencias iguales este día. Si solo hiciste una, abre las demás y bórralas.');
     const chip = a.iguales > 1 ? '<span class="warn-chip">¿Repetida?</span>' : (avisos.length ? '<span class="warn-chip">Revisar</span>' : '');
-    const extraMeta = (badge || r.nota || isFuture) ? `<div class="record-meta">${badge}<span>${[r.nota, isFuture ? formatDateShort(r.fecha) : ''].filter(Boolean).join(' · ')}</span></div>` : '';
+    const extraMeta = (badge || r.nota || isFuture) ? `<div class="record-meta">${badge}<span>${escH([r.nota, isFuture ? formatDateShort(r.fecha) : ''].filter(Boolean).join(' · '))}</span></div>` : '';
     item.className += avisos.length ? ' has-warn' : '';
     item.innerHTML = `
     <div class="record-icon" style="background:${hexA(v.c, 0.16)};color:${v.c}">${svgIco(v.d)}</div>
@@ -2560,8 +2608,8 @@ function buildRecordItem(r, isFuture) {
   item.innerHTML = `
     <div class="record-icon" style="background:${hexA(v.c, 0.16)};color:${v.c}">${svgIco(v.d)}</div>
     <div class="record-body">
-      <div class="record-cat"><span>${titulo}</span>${msi}</div>
-      <div class="record-meta">${badge}<span>${meta}</span></div>
+      <div class="record-cat"><span>${escH(titulo)}</span>${msi}</div>
+      <div class="record-meta">${badge}<span>${escH(meta)}</span></div>
     </div>
     <div class="record-amount ${amtClass}">${amtStr}</div>`;
   item.onclick = () => openEditModal(r);
@@ -2672,12 +2720,14 @@ function actualizarRegistro() {
 
     saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
     showToast('Actualizando transferencia...', '');
-    Promise.all([
-      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: salida.id, data: salida }) }).then(x => x.json()),
-      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: entrada.id, data: entrada }) }).then(x => x.json())
-    ])
-      .then(() => showToast('Transferencia actualizada ✓ (2 registros)', 'success'))
-      .catch(() => showToast('Error de conexión al actualizar', 'error'));
+    // ★ v4.9: las dos mitades van a una cola que insiste hasta que el Sheet
+    //   confirme cada una. Antes, si una de las dos llamadas fallaba, la
+    //   transferencia quedaba descuadrada y nadie lo reintentaba.
+    if (salida._pendiente || entrada._pendiente) {
+      editarProgramados([salida, entrada], 'Transferencia programada actualizada ✓');
+    } else {
+      guardarCambios([salida, entrada], 'Transferencia actualizada ✓ (2 registros)');
+    }
     return;
   }
 
@@ -2688,9 +2738,12 @@ function actualizarRegistro() {
   r.fechaFlujo = calcFechaFlujo(r.fecha, r.cartera);
   r.monto      = r.monto < 0 ? -nm : nm;
   r.categoria  = document.getElementById('m-categoria').value;
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'updateRow', id: r.id, data: r }) }).catch(() => {});
   saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-  showToast('Registro actualizado ✓', 'success');
+  // ★ v4.9: antes el cambio se mandaba una sola vez y, si no llegaba, decía
+  //   "actualizado ✓" de todos modos y horas después regresaba el valor viejo.
+  //   Y si era un programado, el cambio nunca llegaba a la sala de espera.
+  if (r._pendiente) { r.fechaFlujo = r.fecha; editarProgramados([r], 'Programado actualizado ✓'); }
+  else guardarCambios([r], 'Registro actualizado ✓');
 }
 
 function eliminarRegistro() {
@@ -2707,77 +2760,50 @@ function eliminarRegistro() {
        || allRecords.find(x => x.id !== r.id && x.idTransferencia === idTransferencia))
     : null;
 
-  // Detectar si es recurrente pendiente de cash (guardado en Sheet con _pendiente flag)
+  // ★ v4.9: los borrados van a una cola que insiste hasta que el Sheet
+  //   confirme. Antes, si la llamada fallaba, el registro reaparecía después.
+  //   Los programados se revisan PRIMERO: una transferencia programada vive
+  //   en la sala de espera, no en REGISTROS, y antes se quedaba ahí.
+  const ids = (esTransferencia && parejo) ? [r.id, parejo.id] : [r.id];
   const esRecPendiente = r._pendiente === true;
 
-  if (esTransferencia && parejo) {
-    const id1 = r.id;
-    const id2 = parejo.id;
-    deletedIds.add(id1); deletedIds.add(id2);
-    [id1, id2].forEach(id => {
-      const i = allRecords.findIndex(x => x.id === id);
-      if (i >= 0) allRecords.splice(i, 1);
-    });
-    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-    showToast('Eliminando transferencia...', '');
-    Promise.all([
-      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id: id1 }) }).then(r => r.json()),
-      fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id: id2 }) }).then(r => r.json())
-    ])
-    .then(() => { deletedIds.delete(id1); deletedIds.delete(id2); showToast('Transferencia eliminada ✓ (2 registros)', 'error'); })
-    .catch(() => showToast('Error al eliminar', 'error'));
+  ids.forEach(id => {
+    const i = allRecords.findIndex(x => x.id === id);
+    if (i >= 0) allRecords.splice(i, 1);
+  });
 
-  } else if (esRecPendiente) {
-    // ★ v4.5: el programado vive en la sala de espera del Sheet, así que
-    //   hay que quitarlo de ahí también — si no, el trigger lo ejecutaría
-    //   mañana aunque aquí ya no se vea.
-    const id = r.id;
-    allRecords.splice(idx, 1);
-    setPendientesLocal(getPendientesLocal().filter(x => x.id !== id));
+  if (esRecPendiente) {
+    setPendientesLocal(getPendientesLocal().filter(x => !ids.includes(x.id)));
     saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
     showToast('Eliminando programado...', '');
-    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deletePendiente', id }) })
-      .then(r => r.json())
-      .then(resp => {
-        if (!resp || !resp.ok) throw new Error('rechazado');
-        showToast('Recurrente programado eliminado ✓', 'error');
-      })
-      .catch(() => showToast('No se pudo quitar del Sheet — vuelve a intentarlo', 'error'));
-
-  } else {
-    const id = r.id;
-    deletedIds.add(id);
-    allRecords.splice(idx, 1);
-    saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
-    showToast('Eliminando...', '');
-    fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'deleteRow', id }) })
-      .then(r => r.json())
-      .then(data => {
-        if (data.ok) { deletedIds.delete(id); showToast('Registro eliminado ✓', 'error'); }
-        else { showToast('Error al eliminar', 'error'); }
-      })
-      .catch(() => showToast('Error de conexión', 'error'));
+    ids.forEach(id => encolarPendOp({ t: 'del', id }));
+    flushPendOps().then(() => {
+      if (leerPendOps().length) showToast('Quitado aquí — se quita del Sheet en el siguiente intento', '');
+      else showToast('Programado eliminado ✓', 'error');
+    });
+    return;
   }
+
+  ids.forEach(id => { deletedIds.add(id); borradosSesion.add(id); pendingIds.delete(id); });
+  quitarDeColaSubida(ids);
+  ids.forEach(id => encolarOp({ op: 'deleteRow', id }));
+  saveLocal(); closeModalDirect(); renderRecords(); renderDashboard();
+  showToast('Eliminando...', '');
+  enviarOps(ids.length === 2 ? 'Transferencia eliminada ✓ (2 registros)' : 'Registro eliminado ✓', 'error');
 }
 
-// WALLET DETAIL — tap en cartera desde dashboard
-function openWalletDetail(cartera) {
-  // Preconfigurar filtro de lista con esa cartera y navegar
-  listFilters = { cartera };
-  document.getElementById('filt-cartera').value = cartera;
-  // Abrir panel de filtros para que sea visible
-  listAdvOpen = true;
-  document.getElementById('list-adv-filters').classList.add('show');
-  document.getElementById('list-adv-btn').classList.add('active');
-  showPage('list');
-}
-
-// STORAGE
 function loadRecords() {
   try { allRecords = JSON.parse(localStorage.getItem('flujos_records') || '[]'); } catch(e) { allRecords = []; }
   // Programados: se pintan desde el espejo local para que la pantalla no
   // salga vacía; el primer sync los reemplaza por la lista del Sheet.
   mezclarPendientesLocales();
+  // ★ v4.9: lo que quedó en la cola de subida sigue "en camino": se marca
+  //   para que ningún sync lo borre de aquí, y se repone si faltara.
+  leerColaSubida().forEach(q => {
+    pendingIds.add(q.id);
+    if (!allRecords.find(x => x.id === q.id)) allRecords.unshift(q);
+  });
+  aplicarOpsPendientes();
   try { carterasConfig = JSON.parse(localStorage.getItem('flujos_carteras') || '[]'); } catch(e) { carterasConfig = []; }
   try { metasConfig = JSON.parse(localStorage.getItem('flujos_metas') || '[]'); } catch(e) { metasConfig = []; }
   loadDeudas();
@@ -2849,6 +2875,7 @@ function cargarSnapshotInicial() {
         //   los que de verdad están en camino: subidas pendientes y programados.
         const pending = allRecords.filter(r => !sheetIds.has(r.id) && (pendingIds.has(r.id) || r._pendiente));
         allRecords = [...pending, ...sheetRecs];
+        aplicarOpsPendientes();
         ordenarRegistros(allRecords);
         ultimoSync = data.servidor || ultimoSync;
         totalServidor = (typeof data.total === 'number') ? data.total : totalServidor;
@@ -2940,6 +2967,11 @@ const pendingConc = new Map(); // id → true/false de conciliado, esperando con
 let syncBusy = false;
 // ★ v4.5.1: evita pedir el snapshot completo en bucle si algo no cuadra.
 let ultimoFullForzadoMs = 0;
+let ultimoFullVacioMs = 0;
+function desdeConMargen(iso) {
+  const t = Date.parse(iso);
+  return isNaN(t) ? iso : new Date(t - 120000).toISOString();
+}
 let ultimoSyncOkMs = 0; // ★ v4.1: hora del último sync exitoso
 
 // ── Estado del sync incremental (v4) ──
@@ -3003,44 +3035,220 @@ function expandirCompacto(data) {
 
 // ── Cola de subida: lo que no logró llegar al Sheet se guarda y se
 //    reintenta solo en el siguiente sync. Permite capturar sin señal.
+function leerColaSubida() {
+  try { return JSON.parse(localStorage.getItem('flujos_cola_subida') || '[]'); } catch (e) { return []; }
+}
+function guardarColaSubida(c) {
+  try {
+    if (c.length) localStorage.setItem('flujos_cola_subida', JSON.stringify(c));
+    else localStorage.removeItem('flujos_cola_subida');
+  } catch (e) {}
+}
 function encolarSubida(rows) {
-  let cola = [];
-  try { cola = JSON.parse(localStorage.getItem('flujos_cola_subida') || '[]'); } catch (e) {}
-  rows.forEach(function(r) { if (!cola.find(function(x) { return x.id === r.id; })) cola.push(r); });
-  try { localStorage.setItem('flujos_cola_subida', JSON.stringify(cola)); } catch (e) {}
+  const cola = leerColaSubida();
+  rows.forEach(function(r) {
+    const copia = Object.assign({}, r, { _q: Date.now() });
+    const i = cola.findIndex(function(x) { return x.id === r.id; });
+    if (i >= 0) { copia._q = cola[i]._q || copia._q; cola[i] = copia; } else cola.push(copia);
+  });
+  guardarColaSubida(cola);
+}
+function quitarDeColaSubida(ids) {
+  const cola = leerColaSubida(); if (!cola.length) return;
+  const s = new Set(ids);
+  const queda = cola.filter(function(x) { return !s.has(x.id); });
+  if (queda.length !== cola.length) guardarColaSubida(queda);
+}
+// Si se edita algo que todavía no sube, la cola se queda con la versión nueva.
+function refrescarColaSubida(rows) {
+  const cola = leerColaSubida(); if (!cola.length) return;
+  let cambio = false;
+  rows.forEach(function(r) {
+    const i = cola.findIndex(function(x) { return x.id === r.id; });
+    if (i >= 0) { cola[i] = Object.assign({}, r, { _q: cola[i]._q }); cambio = true; }
+  });
+  if (cambio) guardarColaSubida(cola);
 }
 
+// ★ v4.9: antes, al confirmar, se borraba la cola COMPLETA; si en ese
+//   instante había entrado otro movimiento, se perdía sin subir. Ahora
+//   solo salen de la cola los que se mandaron en esa vuelta.
+let subiendoCola = false;
 function flushColaSubida() {
-  let cola = [];
-  try { cola = JSON.parse(localStorage.getItem('flujos_cola_subida') || '[]'); } catch (e) {}
+  if (subiendoCola) return Promise.resolve();
+  const cola = leerColaSubida();
   if (!cola.length) return Promise.resolve();
+  subiendoCola = true;
+  const ids = cola.map(function(x) { return x.id; });
+  const viejos = cola.filter(function(x) { return Date.now() - (x._q || 0) > 30000; }).length;
   return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: cola }) })
     .then(function(r) { return r.json(); })
     .then(function(resp) {
       if (resp && resp.ok) {
-        localStorage.removeItem('flujos_cola_subida');
-        showToast(cola.length + ' registro' + (cola.length !== 1 ? 's' : '') + ' sincronizado' + (cola.length !== 1 ? 's' : '') + ' ✓', 'success');
+        quitarDeColaSubida(ids);
+        if (viejos) showToast(viejos + ' registro' + (viejos !== 1 ? 's' : '') + ' pendiente' + (viejos !== 1 ? 's' : '') + ' subido' + (viejos !== 1 ? 's' : '') + ' ✓', 'success');
       }
     })
-    .catch(function() {});
+    .catch(function() {})
+    .finally(function() { subiendoCola = false; });
+}
+
+// ═══ v4.9: COLA DE CAMBIOS (ediciones y borrados) ═════════════════
+// Cada edición o borrado se anota aquí y solo se tacha cuando el Sheet
+// confirma. Sobrevive a cerrar la app y a quedarse sin señal.
+const borradosSesion = new Set();
+function leerOps() { try { return JSON.parse(localStorage.getItem('flujos_cola_ops') || '[]'); } catch (e) { return []; } }
+function guardarOps(o) {
+  try { if (o.length) localStorage.setItem('flujos_cola_ops', JSON.stringify(o)); else localStorage.removeItem('flujos_cola_ops'); } catch (e) {}
+}
+function encolarOp(op) {
+  let ops = leerOps();
+  op = Object.assign({}, op, { k: generateId() });
+  if (op.data) { op.data = Object.assign({}, op.data); delete op.data.conciliado; }
+  if (op.op === 'deleteRow') {
+    ops = ops.filter(function(o) { return o.id !== op.id; });   // un borrado cancela ediciones previas
+    ops.push(op);
+  } else {
+    if (ops.some(function(o) { return o.id === op.id && o.op === 'deleteRow'; })) return;
+    ops = ops.filter(function(o) { return !(o.id === op.id && o.op === 'updateRow'); });
+    ops.push(op);
+  }
+  guardarOps(ops);
+}
+function quitarOp(k) { guardarOps(leerOps().filter(function(o) { return o.k !== k; })); }
+
+let flushingOps = false;
+function flushOps() {
+  if (flushingOps) return Promise.resolve();
+  if (leerColaSubida().length) return Promise.resolve();   // primero tienen que subir las altas
+  const ops = leerOps();
+  if (!ops.length) return Promise.resolve();
+  flushingOps = true;
+  let seguir = true;
+  let p = Promise.resolve();
+  ops.forEach(function(o) {
+    p = p.then(function() {
+      if (!seguir) return;
+      const body = o.op === 'updateRow' ? { action: 'updateRow', id: o.id, data: o.data } : { action: 'deleteRow', id: o.id };
+      return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(body) })
+        .then(function(r) { return r.json(); })
+        .then(function(resp) {
+          const noExiste = resp && !resp.ok && /no encontrado/i.test(String(resp.error || ''));
+          if ((resp && resp.ok) || noExiste) quitarOp(o.k);
+          else seguir = false;                 // servidor ocupado: se reintenta en el siguiente sync
+        });
+    });
+  });
+  return p.catch(function() {}).finally(function() { flushingOps = false; });
+}
+
+// Lo anotado en la cola manda sobre lo que diga el Sheet hasta que confirme.
+function aplicarOpsPendientes() {
+  const ops = leerOps(); if (!ops.length) return;
+  const borr = new Set(ops.filter(function(o) { return o.op === 'deleteRow'; }).map(function(o) { return o.id; }));
+  if (borr.size) allRecords = allRecords.filter(function(r) { return !borr.has(r.id); });
+  ops.forEach(function(o) {
+    if (o.op !== 'updateRow') return;
+    const i = allRecords.findIndex(function(r) { return r.id === o.id; });
+    if (i >= 0) allRecords[i] = Object.assign({}, allRecords[i], o.data);
+  });
+}
+function borradosEnCola() { return leerOps().filter(function(o) { return o.op === 'deleteRow'; }).length; }
+
+// Manda lo pendiente ahora mismo y avisa con la verdad: ✓ solo si llegó.
+function enviarOps(msgOk, tipoToast) {
+  return flushColaSubida().then(flushOps).then(function() {
+    if (leerOps().length) showToast('Guardado aquí — se sube solo al recuperar conexión', '');
+    else showToast(msgOk, tipoToast || 'success');
+  });
+}
+function guardarCambios(recs, msgOk) {
+  refrescarColaSubida(recs);
+  recs.forEach(function(r) { encolarOp({ op: 'updateRow', id: r.id, data: r }); });
+  return enviarOps(msgOk);
+}
+
+// ═══ v4.9: CAMBIOS A PROGRAMADOS (sala de espera) ═════════════════
+function leerPendOps() { try { return JSON.parse(localStorage.getItem('flujos_pend_ops') || '[]'); } catch (e) { return []; } }
+function guardarPendOps(o) {
+  try { if (o.length) localStorage.setItem('flujos_pend_ops', JSON.stringify(o)); else localStorage.removeItem('flujos_pend_ops'); } catch (e) {}
+}
+function encolarPendOp(op) {
+  let ops = leerPendOps().filter(function(o) { return o.id !== op.id; });
+  op = Object.assign({}, op, { k: generateId() });
+  if (op.data) op.data = Object.assign({}, op.data);
+  ops.push(op);
+  guardarPendOps(ops);
+}
+function quitarPendOp(k) { guardarPendOps(leerPendOps().filter(function(o) { return o.k !== k; })); }
+function postJSON_(body) {
+  return fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify(body) }).then(function(r) { return r.json(); });
+}
+let flushingPend = false;
+function flushPendOps() {
+  if (flushingPend) return Promise.resolve();
+  const ops = leerPendOps();
+  if (!ops.length) return Promise.resolve();
+  flushingPend = true;
+  let seguir = true;
+  let p = Promise.resolve();
+  ops.forEach(function(o) {
+    p = p.then(function() {
+      if (!seguir) return;
+      return postJSON_({ action: 'deletePendiente', id: o.id }).then(function(resp) {
+        if (!resp || !resp.ok) { seguir = false; return; }
+        if (o.t === 'del') { quitarPendOp(o.k); return; }
+        // Edición: se quita la versión vieja y se vuelve a poner la nueva con el mismo ID.
+        return postJSON_({ action: 'addPendientes', rows: [o.data] }).then(function(r2) {
+          if (!r2 || !r2.ok) { seguir = false; return; }
+          // Si el trigger ya lo había pasado a REGISTROS, el cambio se aplica allá.
+          if (!r2.added && r2.duplicados) {
+            const d = Object.assign({}, o.data); delete d._pendiente; delete d._subido;
+            encolarOp({ op: 'updateRow', id: o.id, data: d });
+          }
+          quitarPendOp(o.k);
+        });
+      });
+    });
+  });
+  return p.catch(function() {}).finally(function() { flushingPend = false; });
+}
+function editarProgramados(recs, msgOk) {
+  const espejo = getPendientesLocal();
+  recs.forEach(function(r) {
+    r._pendiente = true;
+    const i = espejo.findIndex(function(x) { return x.id === r.id; });
+    if (i >= 0) espejo[i] = Object.assign({}, r); else espejo.push(Object.assign({}, r));
+    encolarPendOp({ t: 'edit', id: r.id, data: r });
+  });
+  setPendientesLocal(espejo);
+  return flushPendOps().then(function() {
+    if (leerPendOps().length) showToast('Guardado aquí — se sube solo al recuperar conexión', '');
+    else showToast(msgOk, 'success');
+  });
 }
 
 function autoSync(forzarCompleto) {
   if (syncBusy) return;
   syncBusy = true;
 
-  // Reintenta primero lo que quedó atorado sin señal.
-  flushColaSubida();
 
   // ★ Sync incremental: si ya tenemos un corte del servidor, pedimos SOLO
   //   lo que cambió desde entonces. En un minuto normal son 0 o 2 filas
   //   en vez de los 4,267 registros completos.
   const usarIncremental = !forzarCompleto && !!ultimoSync;
-  const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(ultimoSync) : '');
+  // ★ v4.9: se pide con 2 minutos de traslape. Si otro dispositivo estaba
+  //   guardando justo cuando este sincronizó, ese cambio podía quedar con
+  //   una hora anterior al corte y no llegar aquí hasta 12 horas después.
+  //   Recibir una fila repetida no hace daño: solo pisa la misma fila.
+  const url = APPS_SCRIPT_URL + '?v=2' + (usarIncremental ? '&desde=' + encodeURIComponent(desdeConMargen(ultimoSync)) : '');
 
   let okCiclo = false, reintentarCompleto = false;
 
-  fetch(url)
+  // Primero sube lo que quedó pendiente (altas, luego ediciones y borrados)
+  // y hasta entonces baja, para no traer una foto vieja de lo que va en camino.
+  flushColaSubida().then(flushOps).catch(() => {})
+    .then(() => fetch(url))
     .then(r => r.json())
     .then(data => {
       if (!data.ok) return;
@@ -3063,8 +3271,10 @@ function autoSync(forzarCompleto) {
         // El servidor dice cuántas filas tiene en total. Si no coincide con
         // lo nuestro, alguien borró algo y el incremental no puede verlo:
         // pedimos snapshot completo en la siguiente vuelta.
-        const mios = allRecords.filter(r => !r._pendiente).length;
-        if (typeof data.total === 'number' && data.total !== mios && recibidos.length === 0) {
+        const mios = allRecords.filter(r => !r._pendiente && !pendingIds.has(r.id)).length + borradosEnCola();
+        if (typeof data.total === 'number' && data.total !== mios && recibidos.length === 0 &&
+            Date.now() - ultimoFullVacioMs > 120000) {
+          ultimoFullVacioMs = Date.now();
           // ★ v4.1: el reintento completo se lanza en finally, ya liberado
           //   syncBusy, para no correr dos sincronizaciones encimadas.
           ultimoSync = '';
@@ -3074,19 +3284,22 @@ function autoSync(forzarCompleto) {
         }
         if (recibidos.length === 0) {
           ultimoSync = data.servidor || ultimoSync;
+          if (data.pendientes) { aplicarPendientesDelServidor(data); ordenarRegistros(allRecords); saveLocal(); }
           return;
         }
         // Mezclar: lo recibido pisa lo que ya teníamos con el mismo id.
         const nuevosIds = new Set(recibidos.map(r => r.id));
         allRecords = [...recibidos, ...allRecords.filter(r => !nuevosIds.has(r.id))];
         recibidos.forEach(r => pendingIds.delete(r.id));
+        quitarDeColaSubida(recibidos.map(r => r.id));
+        aplicarOpsPendientes();
 
         // ★ v4.5.1: el chequeo de arriba solo detectaba filas quitadas del
         //   Sheet cuando NO llegaba ningún cambio en esa vuelta. Si coincidía
         //   con un movimiento nuevo, lo borrado se quedaba en este dispositivo
         //   (así sobrevivían los duplicados movidos a PAPELERA). Ahora se
         //   compara también después de mezclar.
-        const confirmados = allRecords.filter(r => !r._pendiente && !pendingIds.has(r.id)).length;
+        const confirmados = allRecords.filter(r => !r._pendiente && !pendingIds.has(r.id)).length + borradosEnCola();
         if (typeof data.total === 'number' && data.total !== confirmados &&
             Date.now() - ultimoFullForzadoMs > 120000) {
           ultimoFullForzadoMs = Date.now();
@@ -3099,6 +3312,8 @@ function autoSync(forzarCompleto) {
         const localPending = allRecords.filter(r => pendingIds.has(r.id));
         const sheetFiltered = recibidos.filter(r => !deletedIds.has(r.id));
         allRecords = [...localPending, ...sheetFiltered];
+        quitarDeColaSubida(recibidos.map(r => r.id));
+        aplicarOpsPendientes();
         try { localStorage.setItem('flujos_ultimo_full', String(Date.now())); } catch (e) {}
         setTimeout(() => showToast(sheetFiltered.length + ' registros sincronizados ✓', 'success'), 300);
       }
@@ -3173,6 +3388,13 @@ function toLocalDate(d) {
   return y + '-' + m + '-' + day;
 }
 function getHora() { return new Date().toTimeString().split(' ')[0]; }
+function mesFijo(base, n) {
+  const x = new Date(base.getFullYear(), base.getMonth() + n, 1, 12, 0, 0);
+  const ultimo = new Date(x.getFullYear(), x.getMonth() + 1, 0).getDate();
+  x.setDate(Math.min(base.getDate(), ultimo));
+  return x;
+}
+function escH(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])); }
 function addMonths(d, n) { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; }
 function fmtN(n) { return Math.abs(n).toLocaleString('es-MX', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
 function formatDate(str) { if (!str) return ''; const d = new Date(str + 'T12:00:00'); return d.toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' }); }
@@ -4950,10 +5172,7 @@ function importarFaltantesPDF() {
   }));
   regs.forEach(r => { allRecords.unshift(r); pendingIds.add(r.id); });
   saveLocal();
-  fetch(APPS_SCRIPT_URL, { method: 'POST', body: JSON.stringify({ action: 'addRows', rows: regs }) })
-    .then(r => r.json())
-    .then(d => { if (d.ok) showToast('✓ ' + regs.length + ' registros importados', 'success'); else showToast('Error al guardar en Sheet', 'error'); })
-    .catch(() => showToast('Sin conexión — se reintentará al sincronizar', 'error'));
+  subirConRespaldo(regs, () => showToast('✓ ' + regs.length + ' registros importados', 'success'));
   renderPDFConc();
   renderConciliacion();
 }
